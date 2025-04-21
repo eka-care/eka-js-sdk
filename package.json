@@ -1,0 +1,21 @@
+{
+  "name": "eka-js-sdk",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:eka-care/eka-js-sdk.git",
+  "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "start": "ts-node ./eka-sdk/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
+    "eslint": "^9.25.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
