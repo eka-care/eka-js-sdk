@@ -17,5 +17,13 @@
     "eslint": "^9.25.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "0.9.4",
+    "@ffmpeg/util": "^0.12.2",
+    "@ricky0123/vad-web": "^0.0.22",
+    "@types/chrome": "^0.0.315",
+    "aws-sdk": "^2.1692.0",
+    "uuid": "^11.1.0"
   }
 }
