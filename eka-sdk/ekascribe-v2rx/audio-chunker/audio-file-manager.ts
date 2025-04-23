@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { TAudioChunksInfo } from '../constants/types';
+import { TAudioChunksInfo, UploadProgressCallback } from '../constants/types';
 import {
   AUDIO_EXTENSION_TYPE_MAP,
   OUTPUT_FORMAT,
@@ -10,7 +10,6 @@ import EkaScribeStore from '../store/store';
 import uploadFileToS3 from '../aws-services/upload-file-to-s3';
 import { createFFmpeg } from '@ffmpeg/ffmpeg';
 
-type UploadProgressCallback = (success: string[], total: number) => void;
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
 class AudioFileManager {
@@ -153,6 +152,57 @@ class AudioFileManager {
     const audioChunkLength = this.updateAudioInfo(chunkInfo) || 0;
 
     await this.uploadJsonFile(somJson, 'som.json', audioChunkLength - 1);
+  }
+
+  /**
+   * Upload Eof.json to s3
+   */
+  async uploadEofToS3(): Promise<void> {
+    const audioInfo = this.audioChunks;
+    const { totalInsertedFrames, totalInsertedSamples } = this.getInsertedSampleDetails();
+    const { totalRawFrames, totalRawSamples } = this.getRawSampleDetails();
+
+    const chunks = Object.fromEntries(
+      audioInfo.map((audio) => [
+        audio.fileName,
+        {
+          st: audio.timestamp.st,
+          et: audio.timestamp.et,
+        },
+      ])
+    );
+
+    const audioFiles = audioInfo
+      .map((audio) => audio.fileName)
+      .filter((fileName) => fileName !== 'som.json');
+
+    const eofJson = {
+      chunks_info: chunks,
+      s3_url: `s3://${S3_BUCKET_NAME}/${this.filePath}`,
+      date: this.date,
+      uuid: this.txnID,
+      files: audioFiles,
+      doc_oid: '123456789',
+      doc_uuid: 'abae23c0-123456789',
+      context_data: {
+        totalInsertedFrames,
+        totalInsertedSamples,
+        totalRawFrames,
+        totalRawSamples,
+      },
+    };
+
+    const chunkInfo = {
+      timestamp: {
+        st: '0',
+        et: '0',
+      },
+      fileName: 'eof.json',
+    };
+
+    const audioChunkLength = this?.updateAudioInfo(chunkInfo) || 0;
+
+    await this?.uploadJsonFile(eofJson, 'eof.json', audioChunkLength - 1);
   }
 
   /**

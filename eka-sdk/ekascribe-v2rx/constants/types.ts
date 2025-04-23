@@ -29,6 +29,12 @@ export type TStartV2RxResponse = {
   success?: boolean;
 };
 
+export type TEndV2RxResponse = {
+  error?: string;
+  success?: boolean;
+  is_upload_failed?: boolean;
+};
+
 export type TAudioChunksInfo = {
   fileName: string;
   fileBlob?: Blob;
@@ -37,3 +43,5 @@ export type TAudioChunksInfo = {
     et: string;
   };
 };
+
+export type UploadProgressCallback = (success: string[], total: number) => void;

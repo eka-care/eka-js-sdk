@@ -1,5 +1,4 @@
 import { SAMPLING_RATE } from '../constants/audio-constants';
-
 class AudioBufferManager {
   private buffer!: Float32Array;
   private currentSampleLength: number = 0;

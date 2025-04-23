@@ -3,7 +3,7 @@ import postTransactionInitV2 from '../api/post-transaction-init-v2';
 import EkaScribeStore from '../store/store';
 import { S3_BUCKET_NAME } from '../constants/audio-constants';
 
-const startRecording = async (): Promise<TStartV2RxResponse> => {
+const startVoiceRecording = async (): Promise<TStartV2RxResponse> => {
   try {
     const vadInstance = EkaScribeStore.vadInstance;
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
@@ -57,4 +57,4 @@ const startRecording = async (): Promise<TStartV2RxResponse> => {
   }
 };
 
-export default startRecording;
+export default startVoiceRecording;
