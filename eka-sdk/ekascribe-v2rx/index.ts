@@ -76,13 +76,17 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  // handle reset class instance for some cases
+  resetEkaScribe() {
+    this.audioFileManagerInstance.resetFileManagerInstance();
+    this.audioBufferInstance.resetBufferManagerInstance();
+    EkaScribeStore.resetStore();
+  }
 
-  // get summaries
+  // TODO: get summaries function with retry logic
 
-  // apis - transaction api call
+  // TODO: apis - transaction api call
 
-  // TODO things
+  // TODO pending tasks
 }
 
 export default EkaScribe;

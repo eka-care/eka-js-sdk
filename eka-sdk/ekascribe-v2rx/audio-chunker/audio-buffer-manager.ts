@@ -48,12 +48,6 @@ class AudioBufferManager {
     return this.buffer.slice(0, this.currentSampleLength);
   }
 
-  public reset(): void {
-    // Zero out the existing buffer instead of allocating new memory
-    this.currentSampleLength = 0;
-    this.currentFrameLength = 0;
-  }
-
   /**
    * Get the current length of audio data in samples
    * @returns The number of samples currently in the buffer
@@ -122,6 +116,18 @@ class AudioBufferManager {
       start: formattedStartTime,
       end: formattedEndTime,
     };
+  }
+
+  public resetBufferState() {
+    // Zero out the existing buffer instead of allocating new memory
+    this.currentSampleLength = 0;
+    this.currentFrameLength = 0;
+  }
+
+  public resetBufferManagerInstance() {
+    this.buffer = new Float32Array(this.incrementalAllocationSize);
+    this.currentSampleLength = 0;
+    this.currentFrameLength = 0;
   }
 }
 

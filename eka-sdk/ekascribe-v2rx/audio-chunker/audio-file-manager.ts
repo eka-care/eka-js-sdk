@@ -17,19 +17,19 @@ class AudioFileManager {
    * Class that handles uploading audio files to S3
    * and downloading audio files for debugging
    */
-  private txnID: string;
-  private date: string;
-  private filePath: string;
-  public audioChunks: TAudioChunksInfo[];
-  private uploadPromises: UploadPromise[];
-  private successfulUploads: string[];
+  private txnID: string = '';
+  private date: string = '';
+  private filePath: string = '';
+  public audioChunks: TAudioChunksInfo[] = [];
+  private uploadPromises: UploadPromise[] = [];
+  private successfulUploads: string[] = [];
   private onProgressCallback?: UploadProgressCallback;
-  private totalRawSamples = 0;
-  private totalRawFrames = 0;
-  private totalInsertedSamples = 0;
-  private totalInsertedFrames = 0;
+  private totalRawSamples: number = 0;
+  private totalRawFrames: number = 0;
+  private totalInsertedSamples: number = 0;
+  private totalInsertedFrames: number = 0;
 
-  constructor() {
+  initialiseClassInstance() {
     this.txnID = 'ce-' + uuidv4();
     EkaScribeStore.txnID = this.txnID;
     // File path calculation
@@ -46,6 +46,14 @@ class AudioFileManager {
     this.audioChunks = [];
     this.uploadPromises = [];
     this.successfulUploads = [];
+    this.totalInsertedFrames = 0;
+    this.totalInsertedSamples = 0;
+    this.totalRawSamples = 0;
+    this.totalRawFrames = 0;
+  }
+
+  constructor() {
+    this.initialiseClassInstance();
   }
 
   getRawSampleDetails(): {
@@ -404,9 +412,8 @@ class AudioFileManager {
   /**
    * Reset the upload state
    */
-  reset(): void {
-    this.uploadPromises = [];
-    this.successfulUploads = [];
+  resetFileManagerInstance(): void {
+    this.initialiseClassInstance();
   }
 }
 

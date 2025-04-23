@@ -33,7 +33,7 @@ const endVoiceRecording = async (): Promise<TEndV2RxResponse> => {
         audioBufferInstance.getCurrentSampleLength(),
         audioBufferInstance.getCurrentFrameLength()
       );
-      audioBufferInstance.reset();
+      audioBufferInstance.resetBufferState();
 
       await fileManagerInstance.uploadAudioChunk(audio, filename, audioChunkLength - 1);
     }

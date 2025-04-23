@@ -168,7 +168,7 @@ class VadWebClient {
         audioBuffer.getCurrentSampleLength(),
         audioBuffer.getCurrentFrameLength()
       );
-      audioBuffer.reset();
+      audioBuffer.resetBufferState();
 
       await audioFileManager.uploadAudioChunk(audio, filename, audioChunkLength - 1);
     } catch (error) {

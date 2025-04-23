@@ -80,7 +80,7 @@ class EkaScribeStore {
   }
 
   // Reset store to initial state
-  reset(): void {
+  resetStore(): void {
     this._txnID = '';
     this._s3FilePath = '';
     this._mode = 'dictation';
