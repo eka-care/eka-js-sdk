@@ -1,12 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import { TAudioChunksInfo, UploadProgressCallback } from '../constants/types';
-import {
-  AUDIO_EXTENSION_TYPE_MAP,
-  OUTPUT_FORMAT,
-  S3_BUCKET_NAME,
-} from '../constants/audio-constants';
+import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-constants';
 import { utils } from '@ricky0123/vad-web';
-import EkaScribeStore from '../store/store';
 import uploadFileToS3 from '../aws-services/upload-file-to-s3';
 import { createFFmpeg } from '@ffmpeg/ffmpeg';
 
@@ -28,21 +22,9 @@ class AudioFileManager {
   private totalRawFrames: number = 0;
   private totalInsertedSamples: number = 0;
   private totalInsertedFrames: number = 0;
+  private businessID: string = '';
 
   initialiseClassInstance() {
-    this.txnID = 'ce-' + uuidv4();
-    EkaScribeStore.txnID = this.txnID;
-    // File path calculation
-    const currDate = new Date();
-    this.date = currDate.toISOString();
-    EkaScribeStore.date = this.date;
-    // Format date to YYYYMMDD
-    const day = currDate.getDate().toString().padStart(2, '0');
-    const month = (currDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = currDate.getFullYear().toString().substring(2);
-    // s3 file path format: <date>/txnID
-    this.filePath = `${year}${month}${day}/${this.txnID}`;
-    EkaScribeStore.s3FilePath = this.filePath;
     this.audioChunks = [];
     this.uploadPromises = [];
     this.successfulUploads = [];
@@ -54,6 +36,26 @@ class AudioFileManager {
 
   constructor() {
     this.initialiseClassInstance();
+  }
+
+  /**
+   * Set basic file information
+   */
+  setSessionInfo({
+    date,
+    sessionId,
+    filePath,
+    businessID,
+  }: {
+    date: string;
+    filePath: string;
+    businessID: string;
+    sessionId: string;
+  }) {
+    this.date = date;
+    this.txnID = sessionId;
+    this.filePath = filePath;
+    this.businessID = businessID;
   }
 
   getRawSampleDetails(): {
@@ -132,88 +134,6 @@ class AudioFileManager {
   }
 
   /**
-   * Upload Som.json to s3
-   */
-  async uploadSomToS3() {
-    const cookies = await chrome.cookies.getAll({ domain: '.eka.care' });
-    const sessToken = cookies.find((cookie) => cookie.name === 'sess');
-    const somJson = {
-      mode: EkaScribeStore.mode,
-      date: this.date,
-      uuid: this.txnID,
-      s3_url: `s3://${S3_BUCKET_NAME}/${this.filePath}`,
-      doc_oid: '123456789',
-      doc_uuid: 'abae23c0-123456789',
-      context_data: {
-        accessToken: sessToken?.value,
-      },
-    };
-
-    const chunkInfo = {
-      timestamp: {
-        st: '0',
-        et: '0',
-      },
-      fileName: 'som.json',
-    };
-
-    const audioChunkLength = this.updateAudioInfo(chunkInfo) || 0;
-
-    await this.uploadJsonFile(somJson, 'som.json', audioChunkLength - 1);
-  }
-
-  /**
-   * Upload Eof.json to s3
-   */
-  async uploadEofToS3(): Promise<void> {
-    const audioInfo = this.audioChunks;
-    const { totalInsertedFrames, totalInsertedSamples } = this.getInsertedSampleDetails();
-    const { totalRawFrames, totalRawSamples } = this.getRawSampleDetails();
-
-    const chunks = Object.fromEntries(
-      audioInfo.map((audio) => [
-        audio.fileName,
-        {
-          st: audio.timestamp.st,
-          et: audio.timestamp.et,
-        },
-      ])
-    );
-
-    const audioFiles = audioInfo
-      .map((audio) => audio.fileName)
-      .filter((fileName) => fileName !== 'som.json');
-
-    const eofJson = {
-      chunks_info: chunks,
-      s3_url: `s3://${S3_BUCKET_NAME}/${this.filePath}`,
-      date: this.date,
-      uuid: this.txnID,
-      files: audioFiles,
-      doc_oid: '123456789',
-      doc_uuid: 'abae23c0-123456789',
-      context_data: {
-        totalInsertedFrames,
-        totalInsertedSamples,
-        totalRawFrames,
-        totalRawSamples,
-      },
-    };
-
-    const chunkInfo = {
-      timestamp: {
-        st: '0',
-        et: '0',
-      },
-      fileName: 'eof.json',
-    };
-
-    const audioChunkLength = this?.updateAudioInfo(chunkInfo) || 0;
-
-    await this?.uploadJsonFile(eofJson, 'eof.json', audioChunkLength - 1);
-  }
-
-  /**
    * Upload a chunk of audio data to S3
    */
   async uploadAudioChunk(
@@ -242,6 +162,8 @@ class AudioFileManager {
     const uploadPromise = uploadFileToS3({
       fileBlob: audioBlob,
       fileName: s3FileName,
+      txnID: this.txnID,
+      businessID: this.businessID,
     }).then((response) => {
       if (response.success) {
         const successFilename = fileName; // fileName is ${fileCount}.m4a
@@ -294,6 +216,8 @@ class AudioFileManager {
     const uploadPromise = uploadFileToS3({
       fileBlob: jsonBlob,
       fileName: s3FileName,
+      txnID: this.txnID,
+      businessID: this.businessID,
     }).then((response) => {
       if (response.success) {
         // Extract base filename for tracking
@@ -386,6 +310,8 @@ class AudioFileManager {
         const uploadPromise = uploadFileToS3({
           fileBlob,
           fileName: `${this.filePath}/${fileName}`,
+          txnID: this.txnID,
+          businessID: this.businessID,
         }).then((response) => {
           if (response.success) {
             const successFilename = fileName;

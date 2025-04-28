@@ -8,7 +8,6 @@ export type TPostInitRequest = {
   txnId: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
-  transfer: string;
 };
 
 async function postTransactionInitV2({
@@ -17,7 +16,6 @@ async function postTransactionInitV2({
   s3Url,
   input_language,
   output_format_template,
-  transfer,
 }: TPostInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -28,7 +26,7 @@ async function postTransactionInitV2({
       s3_url: s3Url,
       input_language,
       output_format_template,
-      transfer,
+      transfer: 'vaded',
     };
 
     const options = {

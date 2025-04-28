@@ -4,9 +4,13 @@ import s3RetryWrapper from './s3-retry-wrapper';
 const uploadFileToS3 = async ({
   fileBlob,
   fileName,
+  txnID,
+  businessID,
 }: {
   fileBlob: Blob;
   fileName: string;
+  txnID: string;
+  businessID: string;
 }): Promise<{
   success?: string;
   error?: string;
@@ -16,6 +20,10 @@ const uploadFileToS3 = async ({
       Bucket: 'm-prod-voice2rx',
       Key: fileName,
       Body: fileBlob,
+      Metadata: {
+        txnid: txnID,
+        bid: businessID,
+      },
     };
 
     const uploadCall = () =>

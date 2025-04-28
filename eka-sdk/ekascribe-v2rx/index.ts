@@ -1,7 +1,6 @@
 // ekascribe main Class having all the methods
 
 import postTransactionCommitV2 from './api/post-transaction-commit-v2';
-import postTransactionInitV2 from './api/post-transaction-init-v2 copy';
 import postTransactionStopV2 from './api/post-transaction-stop-v2';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
@@ -12,12 +11,11 @@ import {
   FRAME_RATE,
   MAX_CHUNK_LENGTH,
   PREF_CHUNK_LENGTH,
-  S3_BUCKET_NAME,
   SAMPLING_RATE,
 } from './constants/audio-constants';
 import { UploadProgressCallback } from './constants/types';
 import endVoiceRecording from './main/end-recording';
-import initEkaScribe from './main/init-ekascribe';
+import initTransactionMethod from './main/init-transaction-method';
 import retryUploadFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
@@ -42,13 +40,6 @@ class EkaScribe {
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
-  }
-
-  async init({ mode }: { mode: string }) {
-    this.mode = mode;
-    EkaScribeStore.mode = mode;
-    const initResponse = await initEkaScribe();
-    return initResponse;
   }
 
   async startRecording() {
@@ -83,19 +74,18 @@ class EkaScribe {
   async initTransaction({
     input_language,
     output_format_template,
-    transfer,
+    mode,
   }: {
     input_language: string[];
     output_format_template: { template_id: string }[];
-    transfer: string;
+    mode: string;
   }) {
-    const initTransactionResponse = await postTransactionInitV2({
-      mode: this.mode,
-      txnId: EkaScribeStore.txnID,
-      s3Url: `s3://${S3_BUCKET_NAME}/${EkaScribeStore.s3FilePath}`,
+    this.mode = mode;
+    EkaScribeStore.mode = mode;
+    const initTransactionResponse = await initTransactionMethod({
+      mode,
       input_language,
       output_format_template,
-      transfer,
     });
     return initTransactionResponse;
   }
