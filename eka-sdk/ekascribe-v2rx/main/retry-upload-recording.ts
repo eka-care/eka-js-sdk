@@ -19,19 +19,6 @@ const retryUploadFiles = async (): Promise<TEndV2RxResponse> => {
       };
     }
 
-    await fileManagerInstance.uploadEofToS3();
-
-    // handle if eof upload fails
-    const eofUploadFailed = fileManagerInstance.getFailedUploads();
-    if (eofUploadFailed.length > 0) {
-      return {
-        error: 'Recording upload failed. Please try again.',
-        is_upload_failed: true,
-      };
-    }
-
-    // TODO: add commit and stop transaction apis
-
     return {
       success: true,
     };

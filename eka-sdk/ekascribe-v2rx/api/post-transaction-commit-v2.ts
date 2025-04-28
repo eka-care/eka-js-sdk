@@ -1,24 +1,29 @@
-import { TPostTransactionResponse } from '../constants/types';
 import fetchClient from '../fetch-client';
+import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
-export type TPostInitRequest = {
-  mode: string;
-  s3Url: string;
+export type TPostCommitRequest = {
+  audioFiles: string[];
   txnId: string;
 };
 
-async function postTransactionInitV2({
-  mode,
+export type TPostTransactionResponse = {
+  status: string;
+  message: string;
+  txn_id: string;
+  b_id: string;
+  code: number;
+};
+
+async function postTransactionCommitV2({
+  audioFiles,
   txnId,
-  s3Url,
-}: TPostInitRequest): Promise<TPostTransactionResponse> {
+}: TPostCommitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
     const raw = {
-      mode,
-      s3_url: s3Url,
+      audio_files: audioFiles,
     };
 
     const options = {
@@ -28,7 +33,7 @@ async function postTransactionInitV2({
     };
 
     const response = await fetchClient(
-      `http://api.eka.care/voice/api/v2/transaction/init/${txnId}`,
+      `${GET_EKA_V2RX_HOST()}/transaction/commit/${txnId}`,
       options
     );
 
@@ -39,4 +44,4 @@ async function postTransactionInitV2({
   }
 }
 
-export default postTransactionInitV2;
+export default postTransactionCommitV2;

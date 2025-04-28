@@ -1,5 +1,8 @@
-// ekascribe main export file having all the methods
+// ekascribe main Class having all the methods
 
+import postTransactionCommitV2 from './api/post-transaction-commit-v2';
+import postTransactionInitV2 from './api/post-transaction-init-v2 copy';
+import postTransactionStopV2 from './api/post-transaction-stop-v2';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
 import VadWebClient from './audio-chunker/vad-web';
@@ -9,6 +12,7 @@ import {
   FRAME_RATE,
   MAX_CHUNK_LENGTH,
   PREF_CHUNK_LENGTH,
+  S3_BUCKET_NAME,
   SAMPLING_RATE,
 } from './constants/audio-constants';
 import { UploadProgressCallback } from './constants/types';
@@ -76,17 +80,60 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
+  async initTransaction({
+    input_language,
+    output_format_template,
+    transfer,
+  }: {
+    input_language: string[];
+    output_format_template: { template_id: string }[];
+    transfer: string;
+  }) {
+    const initTransactionResponse = await postTransactionInitV2({
+      mode: this.mode,
+      txnId: EkaScribeStore.txnID,
+      s3Url: `s3://${S3_BUCKET_NAME}/${EkaScribeStore.s3FilePath}`,
+      input_language,
+      output_format_template,
+      transfer,
+    });
+    return initTransactionResponse;
+  }
+
+  async stopTransaction() {
+    const audioInfo = this.audioFileManagerInstance.audioChunks;
+    const audioFiles = audioInfo
+      .map((audio) => audio.fileName)
+      .filter((fileName) => fileName !== 'som.json');
+    const stopTransactionResponse = await postTransactionStopV2({
+      txnId: EkaScribeStore.txnID,
+      audioFiles,
+    });
+    return stopTransactionResponse;
+  }
+
+  async commitTransaction() {
+    const audioInfo = this.audioFileManagerInstance.audioChunks;
+    const audioFiles = audioInfo
+      .map((audio) => audio.fileName)
+      .filter((fileName) => fileName !== 'som.json');
+    const commitTransactionResponse = await postTransactionCommitV2({
+      txnId: EkaScribeStore.txnID,
+      audioFiles,
+    });
+    return commitTransactionResponse;
+  }
+
+  // TODO
+  async getOutputSummary() {}
+
   resetEkaScribe() {
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     EkaScribeStore.resetStore();
   }
 
-  // TODO: get summaries function with retry logic
-
-  // TODO: apis - transaction api call
-
-  // TODO pending tasks
+  // TODO: publish this to npm
 }
 
 export default EkaScribe;

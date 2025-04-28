@@ -1,4 +1,4 @@
-// TODO: check if this import working
+// TODO: test if this import working
 import * as AWS from 'aws-sdk';
 
 export function configureAWS({

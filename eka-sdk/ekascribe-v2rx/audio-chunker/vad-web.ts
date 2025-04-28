@@ -110,7 +110,7 @@ class VadWebClient {
     const vad = await MicVAD.new({
       frameSamples: this.frame_size,
       preSpeechPadFrames: this.speech_pad_frames,
-      //   TODO: check this startOnLoad
+      //   TODO: test this startOnLoad
       //   startOnLoad: false,
       onFrameProcessed: (prob, frames) => {
         audioFileManager?.incrementTotalRawSamples(frames);
@@ -189,11 +189,6 @@ class VadWebClient {
   pauseVad() {
     this.micVad.pause();
   }
-
-  /**
-   * Monitor audio capture after 2 seconds of recording starts
-   */
-  monitorAudioCapture() {}
 
   /**
    * Callback to configure constants
