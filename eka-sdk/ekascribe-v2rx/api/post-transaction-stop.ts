@@ -1,8 +1,8 @@
 import fetchClient from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
-import { TPostCommitRequest, TPostTransactionResponse } from './post-transaction-commit-v2';
+import { TPostCommitRequest, TPostTransactionResponse } from './post-transaction-commit';
 
-async function postTransactionStopV2({
+async function postTransactionStop({
   txnId,
   audioFiles,
 }: TPostCommitRequest): Promise<TPostTransactionResponse> {
@@ -29,4 +29,4 @@ async function postTransactionStopV2({
   }
 }
 
-export default postTransactionStopV2;
+export default postTransactionStop;

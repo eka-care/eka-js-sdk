@@ -14,7 +14,7 @@ export type TPostTransactionResponse = {
   code: number;
 };
 
-async function postTransactionCommitV2({
+async function postTransactionCommit({
   audioFiles,
   txnId,
 }: TPostCommitRequest): Promise<TPostTransactionResponse> {
@@ -44,4 +44,4 @@ async function postTransactionCommitV2({
   }
 }
 
-export default postTransactionCommitV2;
+export default postTransactionCommit;

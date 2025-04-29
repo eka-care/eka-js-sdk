@@ -294,6 +294,13 @@ class AudioFileManager {
   }
 
   /**
+   * Get list of all audio chunks
+   */
+  getTotalAudioChunks(): TAudioChunksInfo[] {
+    return this.audioChunks;
+  }
+
+  /**
    * Retry uploading failed files
    */
   async retryFailedUploads(): Promise<string[]> {

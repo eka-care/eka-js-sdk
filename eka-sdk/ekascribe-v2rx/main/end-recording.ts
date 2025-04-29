@@ -1,3 +1,5 @@
+import postTransactionCommit from '../api/post-transaction-commit';
+import postTransactionStop from '../api/post-transaction-stop';
 import { OUTPUT_FORMAT } from '../constants/audio-constants';
 import { TEndV2RxResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -50,8 +52,32 @@ const endVoiceRecording = async (): Promise<TEndV2RxResponse> => {
       };
     }
 
+    const audioInfo = fileManagerInstance?.audioChunks;
+    const audioFiles = audioInfo.map((audio) => audio.fileName);
+
+    const stopTransactionResponse = await postTransactionStop({
+      txnId: EkaScribeStore.txnID,
+      audioFiles,
+    });
+    if (stopTransactionResponse.status !== 'success') {
+      return {
+        stop_txn_error: stopTransactionResponse.message,
+      };
+    }
+
+    const commitTransactionResponse = await postTransactionCommit({
+      txnId: EkaScribeStore.txnID,
+      audioFiles,
+    });
+    if (commitTransactionResponse.status !== 'success') {
+      return {
+        commit_txn_error: commitTransactionResponse.message,
+      };
+    }
+
     return {
       success: true,
+      is_upload_failed: false,
     };
   } catch (error) {
     console.error('Error ending recording: ', error);

@@ -1,5 +1,5 @@
 import fetchClient from '../fetch-client';
-import { TPostTransactionResponse } from './post-transaction-commit-v2';
+import { TPostTransactionResponse } from './post-transaction-commit';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
 export type TPostInitRequest = {
@@ -10,7 +10,7 @@ export type TPostInitRequest = {
   output_format_template: { template_id: string }[];
 };
 
-async function postTransactionInitV2({
+async function postTransactionInit({
   mode,
   txnId,
   s3Url,
@@ -49,4 +49,4 @@ async function postTransactionInitV2({
   }
 }
 
-export default postTransactionInitV2;
+export default postTransactionInit;

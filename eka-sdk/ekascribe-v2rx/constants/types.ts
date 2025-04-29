@@ -27,12 +27,15 @@ export type TStartV2RxResponse = {
   vad_error?: string;
   error?: string;
   success?: boolean;
+  recording_error?: string;
 };
 
 export type TEndV2RxResponse = {
   error?: string;
   success?: boolean;
   is_upload_failed?: boolean;
+  stop_txn_error?: string;
+  commit_txn_error?: string;
 };
 
 export type TAudioChunksInfo = {

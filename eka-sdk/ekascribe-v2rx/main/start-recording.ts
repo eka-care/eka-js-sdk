@@ -42,7 +42,8 @@ const startVoiceRecording = async (): Promise<TStartV2RxResponse> => {
     setTimeout(() => {
       if (audioBufferInstance.getCurrentSampleLength() <= 0) {
         return {
-          error: 'Oops! We’ve encountered an error while recording, please restart the recording.',
+          recording_error:
+            'Oops! We’ve encountered an error while recording, please restart the recording.',
         };
       }
     }, 2000);

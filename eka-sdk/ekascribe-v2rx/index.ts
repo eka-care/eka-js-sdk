@@ -1,7 +1,8 @@
 // ekascribe main Class having all the methods
 
-import postTransactionCommitV2 from './api/post-transaction-commit-v2';
-import postTransactionStopV2 from './api/post-transaction-stop-v2';
+import { getVoiceApiV2Status } from './api/get-voice-api-v2-status';
+import postTransactionCommit from './api/post-transaction-commit';
+import postTransactionStop from './api/post-transaction-stop';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
 import VadWebClient from './audio-chunker/vad-web';
@@ -95,7 +96,7 @@ class EkaScribe {
     const audioFiles = audioInfo
       .map((audio) => audio.fileName)
       .filter((fileName) => fileName !== 'som.json');
-    const stopTransactionResponse = await postTransactionStopV2({
+    const stopTransactionResponse = await postTransactionStop({
       txnId: EkaScribeStore.txnID,
       audioFiles,
     });
@@ -107,20 +108,69 @@ class EkaScribe {
     const audioFiles = audioInfo
       .map((audio) => audio.fileName)
       .filter((fileName) => fileName !== 'som.json');
-    const commitTransactionResponse = await postTransactionCommitV2({
+    const commitTransactionResponse = await postTransactionCommit({
       txnId: EkaScribeStore.txnID,
       audioFiles,
     });
     return commitTransactionResponse;
   }
 
-  // TODO
-  async getOutputSummary() {}
+  async getOutputSummary() {
+    const outputSummaryResponse = await getVoiceApiV2Status({
+      txnId: EkaScribeStore.txnID,
+    });
+    return outputSummaryResponse;
+  }
+
+  // TODO: MAKE EVERY FUNCTION IN CLASS - PRIVATE
+
+  getSuccessFiles() {
+    return this.audioFileManagerInstance.getSuccessfulUploads();
+  }
+
+  getFailedFiles() {
+    return this.audioFileManagerInstance.getFailedUploads();
+  }
+
+  getTotalAudioFiles() {
+    return this.audioFileManagerInstance.getTotalAudioChunks();
+  }
 
   resetEkaScribe() {
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     EkaScribeStore.resetStore();
+  }
+
+  configureVadConstants({
+    pref_length,
+    desp_length,
+    max_length,
+    sr,
+    frame_size,
+    pre_speech_pad_frames,
+    short_thsld,
+    long_thsld,
+  }: {
+    pref_length: number;
+    desp_length: number;
+    max_length: number;
+    sr: number;
+    frame_size: number;
+    pre_speech_pad_frames: number;
+    short_thsld: number;
+    long_thsld: number;
+  }) {
+    return this.vadInstance.configureVadConstants({
+      pref_length,
+      desp_length,
+      max_length,
+      sr,
+      frame_size,
+      pre_speech_pad_frames,
+      short_thsld,
+      long_thsld,
+    });
   }
 
   // TODO: publish this to npm
