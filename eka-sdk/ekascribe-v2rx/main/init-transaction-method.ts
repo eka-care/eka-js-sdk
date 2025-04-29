@@ -1,5 +1,5 @@
 import postCogInit from '../api/post-cog-init';
-import postTransactionInitV2 from '../api/post-transaction-init-v2';
+import postTransactionInit from '../api/post-transaction-init';
 import { configureAWS } from '../aws-services/configure-aws';
 import { S3_BUCKET_NAME } from '../constants/audio-constants';
 import { TInitResponse } from '../constants/types';
@@ -31,7 +31,7 @@ const initTransactionMethod = async ({
     const filePath = `${year}${month}${day}/${txnID}`;
     EkaScribeStore.s3FilePath = filePath;
 
-    const txnInitResponse = await postTransactionInitV2({
+    const txnInitResponse = await postTransactionInit({
       mode,
       txnId: txnID,
       s3Url: `s3://${S3_BUCKET_NAME}/${EkaScribeStore.s3FilePath}`,
