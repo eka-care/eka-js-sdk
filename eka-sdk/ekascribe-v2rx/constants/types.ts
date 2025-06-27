@@ -1,3 +1,22 @@
+export type TGetConfigV2Response = {
+  data: {
+    supported_languages: TGetConfigItem[];
+    supported_output_formats: TGetConfigItem[];
+    consultation_modes: TGetConfigItem[];
+    max_selection: {
+      languages: number;
+      output_formats: number;
+      consultation_mode: number;
+    };
+  };
+};
+
+export type TGetConfigItem = {
+  id: string;
+  name: string;
+  desc?: string;
+};
+
 export type TInitResponse = {
   success?: boolean;
   error?: string;

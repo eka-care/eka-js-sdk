@@ -1,5 +1,6 @@
 // ekascribe main Class having all the methods - Entry point
 
+import { getConfigV2 } from './api/get-voice-api-v2-config';
 import { getVoiceApiV2Status } from './api/get-voice-api-v2-status';
 import postTransactionCommit from './api/post-transaction-commit';
 import postTransactionStop from './api/post-transaction-stop';
@@ -29,8 +30,6 @@ class EkaScribe {
   private audioBufferInstance;
 
   constructor() {
-    this.mode = 'dictation';
-    EkaScribeStore.mode = this.mode;
     this.vadInstance = new VadWebClient(
       PREF_CHUNK_LENGTH,
       DESP_CHUNK_LENGTH,
@@ -60,12 +59,30 @@ class EkaScribe {
     });
   }
 
+  public async getEkascribeConfig() {
+    return await getConfigV2();
+  }
+
   async startRecording() {
+    /*
+    check microphone permission (this check should also be on client side)
+    request params - selected mode, language, output template
+    call txn init api
+    start vad
+    return vad errors
+    monitor initial audio capture after 2 seconds of start
+    */
     const startResponse = await startVoiceRecording();
     return startResponse;
   }
 
+  // TODO: processAudioChunk implementation - chunking - chrome version check - upload with or without shared worker
+
   pauseRecording() {
+    /**
+     * pause vad
+     * upload till now recorded chunk
+     */
     this.vadInstance?.pauseVad();
     return;
   }
@@ -76,17 +93,48 @@ class EkaScribe {
   }
 
   async endRecording() {
+    /**
+     *
+     */
     const endRecordingResponse = await endVoiceRecording();
     return endRecordingResponse;
+  }
+
+  async retryUploadRecording() {
+    /**
+     *
+     */
+    const retryUploadResponse = await retryUploadFiles();
+    return retryUploadResponse;
   }
 
   setProgressCallback(callback: UploadProgressCallback): void {
     this.audioFileManagerInstance.setProgressCallback(callback);
   }
 
-  async retryUploadRecording() {
-    const retryUploadResponse = await retryUploadFiles();
-    return retryUploadResponse;
+  async getOutputSummary() {
+    const outputSummaryResponse = await getVoiceApiV2Status({
+      txnId: EkaScribeStore.txnID,
+    });
+    return outputSummaryResponse;
+  }
+
+  getSuccessFiles() {
+    return this.audioFileManagerInstance.getSuccessfulUploads();
+  }
+
+  getFailedFiles() {
+    return this.audioFileManagerInstance.getFailedUploads();
+  }
+
+  getTotalAudioFiles() {
+    return this.audioFileManagerInstance.getTotalAudioChunks();
+  }
+
+  resetEkaScribe() {
+    this.audioFileManagerInstance.resetFileManagerInstance();
+    this.audioBufferInstance.resetBufferManagerInstance();
+    EkaScribeStore.resetStore();
   }
 
   async initTransaction({
@@ -130,32 +178,7 @@ class EkaScribe {
     return commitTransactionResponse;
   }
 
-  async getOutputSummary() {
-    const outputSummaryResponse = await getVoiceApiV2Status({
-      txnId: EkaScribeStore.txnID,
-    });
-    return outputSummaryResponse;
-  }
-
   // TODO: MAKE EVERY FUNCTION IN CLASS - PRIVATE
-
-  getSuccessFiles() {
-    return this.audioFileManagerInstance.getSuccessfulUploads();
-  }
-
-  getFailedFiles() {
-    return this.audioFileManagerInstance.getFailedUploads();
-  }
-
-  getTotalAudioFiles() {
-    return this.audioFileManagerInstance.getTotalAudioChunks();
-  }
-
-  resetEkaScribe() {
-    this.audioFileManagerInstance.resetFileManagerInstance();
-    this.audioBufferInstance.resetBufferManagerInstance();
-    EkaScribeStore.resetStore();
-  }
 
   configureVadConstants({
     pref_length,
@@ -195,12 +218,14 @@ export default EkaScribe;
 
 const ekascribeInstance = new EkaScribe();
 
-export const initEkaScribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
+export const initEkascribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
+export const getEkascribeConfig = ekascribeInstance.getEkascribeConfig.bind(ekascribeInstance);
 
 /**
  * Client side handling:
  * 1. waiting for network
  * 2. recording too short error - reset store and start again
  * 3. failed too fetch - fetch summaries again
+ * 4. how will client show the activity indicator - user speaking/not speaking
  *
  */

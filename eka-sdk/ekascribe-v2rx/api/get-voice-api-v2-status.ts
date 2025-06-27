@@ -1,4 +1,4 @@
-import { RESULT_STATUS, TEMPLATE_ID } from '../constants/enum';
+import { RESULT_STATUS, TEMPLATE_ID } from '../constants/enums';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
