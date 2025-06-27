@@ -1,5 +1,5 @@
 import { RESULT_STATUS, TEMPLATE_ID } from '../constants/enum';
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
 export type TOutputSummary = {
@@ -34,7 +34,7 @@ export const getVoiceApiV2Status = async ({
     };
 
     const getSummary = async () => {
-      const getResponse = await fetchClient(`${GET_EKA_V2RX_HOST()}/status/${txnId}`, options);
+      const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST()}/status/${txnId}`, options);
       const response = await getResponse.json();
 
       if (response.status === RESULT_STATUS.SUCCESS || response.status === RESULT_STATUS.FAILURE) {

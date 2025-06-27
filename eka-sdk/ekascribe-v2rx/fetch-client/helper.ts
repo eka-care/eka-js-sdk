@@ -1,11 +1,11 @@
 const DEV = {
   EKA_COG_HOST: 'https://cog.dev.eka.care',
-  EKA_V2RX_HOST: 'https://api.dev.eka.care/voice/api/v2',
+  EKA_V2RX_HOST: 'https://api.dev.eka.care',
 };
 
 const PROD = {
   EKA_COG_HOST: 'https://cog.eka.care',
-  EKA_V2RX_HOST: 'https://api.eka.care/voice/api/v2',
+  EKA_V2RX_HOST: 'https://api.eka.care',
 };
 
 let envVar = PROD;

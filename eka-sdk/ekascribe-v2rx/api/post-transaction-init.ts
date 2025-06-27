@@ -1,4 +1,4 @@
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { TPostTransactionResponse } from './post-transaction-commit';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
@@ -35,7 +35,10 @@ async function postTransactionInit({
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchClient(`${GET_EKA_V2RX_HOST()}/transaction/init/${txnId}`, options);
+    const response = await fetchWrapper(
+      `${GET_EKA_V2RX_HOST()}/transaction/init/${txnId}`,
+      options
+    );
     let res = await response.json();
     res = {
       ...res,

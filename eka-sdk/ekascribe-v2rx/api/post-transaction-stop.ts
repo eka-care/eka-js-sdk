@@ -1,4 +1,4 @@
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 import { TPostCommitRequest, TPostTransactionResponse } from './post-transaction-commit';
 
@@ -20,7 +20,10 @@ async function postTransactionStop({
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchClient(`${GET_EKA_V2RX_HOST()}/transaction/stop/${txnId}`, options);
+    const response = await fetchWrapper(
+      `${GET_EKA_V2RX_HOST()}/transaction/stop/${txnId}`,
+      options
+    );
 
     return await response.json();
   } catch (error) {

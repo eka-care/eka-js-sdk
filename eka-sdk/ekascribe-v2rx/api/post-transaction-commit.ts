@@ -1,4 +1,4 @@
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
 export type TPostCommitRequest = {
@@ -32,7 +32,7 @@ async function postTransactionCommit({
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchClient(
+    const response = await fetchWrapper(
       `${GET_EKA_V2RX_HOST()}/transaction/commit/${txnId}`,
       options
     );

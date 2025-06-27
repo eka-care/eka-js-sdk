@@ -1,4 +1,4 @@
-// ekascribe main Class having all the methods
+// ekascribe main Class having all the methods - Entry point
 
 import { getVoiceApiV2Status } from './api/get-voice-api-v2-status';
 import postTransactionCommit from './api/post-transaction-commit';
@@ -15,6 +15,7 @@ import {
   SAMPLING_RATE,
 } from './constants/audio-constants';
 import { UploadProgressCallback } from './constants/types';
+import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import initTransactionMethod from './main/init-transaction-method';
 import retryUploadFiles from './main/retry-upload-recording';
@@ -41,6 +42,22 @@ class EkaScribe {
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+  }
+
+  public initEkaScribe({
+    access_token,
+    refresh_token,
+  }: {
+    access_token?: string;
+    refresh_token?: string;
+  }) {
+    // set access_token and refresh_token in env
+    if (!access_token || !refresh_token) return;
+
+    setEnv({
+      auth_token: access_token,
+      refresh_token,
+    });
   }
 
   async startRecording() {
@@ -93,9 +110,8 @@ class EkaScribe {
 
   async stopTransaction() {
     const audioInfo = this.audioFileManagerInstance.audioChunks;
-    const audioFiles = audioInfo
-      .map((audio) => audio.fileName)
-      .filter((fileName) => fileName !== 'som.json');
+    const audioFiles = audioInfo.map((audio) => audio.fileName);
+
     const stopTransactionResponse = await postTransactionStop({
       txnId: EkaScribeStore.txnID,
       audioFiles,
@@ -105,9 +121,8 @@ class EkaScribe {
 
   async commitTransaction() {
     const audioInfo = this.audioFileManagerInstance.audioChunks;
-    const audioFiles = audioInfo
-      .map((audio) => audio.fileName)
-      .filter((fileName) => fileName !== 'som.json');
+    const audioFiles = audioInfo.map((audio) => audio.fileName);
+
     const commitTransactionResponse = await postTransactionCommit({
       txnId: EkaScribeStore.txnID,
       audioFiles,
@@ -177,6 +192,10 @@ class EkaScribe {
 }
 
 export default EkaScribe;
+
+const ekascribeInstance = new EkaScribe();
+
+export const initEkaScribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
 
 /**
  * Client side handling:
