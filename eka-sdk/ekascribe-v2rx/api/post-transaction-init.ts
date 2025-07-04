@@ -1,5 +1,5 @@
+import { TPostTransactionApiResponse } from '../constants/types';
 import fetchWrapper from '../fetch-client';
-import { TPostTransactionResponse } from './post-transaction-commit';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
 export type TPostInitRequest = {
@@ -16,7 +16,7 @@ async function postTransactionInit({
   s3Url,
   input_language,
   output_format_template,
-}: TPostInitRequest): Promise<TPostTransactionResponse> {
+}: TPostInitRequest): Promise<TPostTransactionApiResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -48,7 +48,11 @@ async function postTransactionInit({
     return res;
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
-    throw error;
+    return {
+      // TODO: ask what should i use in this case: -1 or 520
+      code: 520, // web server error
+      message: `Something went wrong! ${error}`,
+    } as TPostTransactionApiResponse;
   }
 }
 

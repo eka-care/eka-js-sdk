@@ -5,7 +5,7 @@ import VadWebClient from '../audio-chunker/vad-web';
 class EkaScribeStore {
   private static instance: EkaScribeStore;
   private _txnID: string = '';
-  private _s3FilePath: string = '';
+  private _sessionBucketPath: string = '';
   private _mode: string = 'dictation';
   private _date: string = '';
   private _vadInstance: VadWebClient | null = null; // vadWebClient Instance
@@ -52,13 +52,13 @@ class EkaScribeStore {
     this._txnID = value;
   }
 
-  // S3 File Path
-  get s3FilePath(): string {
-    return this._s3FilePath;
+  // session file Path - date/txnID
+  get sessionBucketPath(): string {
+    return this._sessionBucketPath;
   }
 
-  set s3FilePath(value: string) {
-    this._s3FilePath = value;
+  set sessionBucketPath(value: string) {
+    this._sessionBucketPath = value;
   }
 
   // Mode (dictation, conversation, etc.)
@@ -82,7 +82,7 @@ class EkaScribeStore {
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
-    this._s3FilePath = '';
+    this._sessionBucketPath = '';
     this._mode = 'dictation';
     this._date = '';
   }

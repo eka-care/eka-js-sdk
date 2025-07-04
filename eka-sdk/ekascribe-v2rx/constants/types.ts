@@ -1,3 +1,5 @@
+import { ERROR_CODE } from './enums';
+
 export type TGetConfigV2Response = {
   data: {
     supported_languages: TGetConfigItem[];
@@ -17,9 +19,42 @@ export type TGetConfigItem = {
   desc?: string;
 };
 
-export type TInitResponse = {
-  success?: boolean;
-  error?: string;
+export type TStartRecordingRequest = {
+  mode: string;
+  input_language: string[];
+  output_format_template: { template_id: string }[];
+};
+
+export type TStartRecordingResponse = {
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+  business_id?: string;
+  txn_id?: string;
+};
+
+export type TPauseRecordingResponse = {
+  status_code: number;
+  message: string;
+  error_code?: ERROR_CODE;
+  is_paused?: boolean;
+};
+
+export type TEndRecordingResponse = {
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+  failed_files?: string[];
+  total_audio_files?: string[];
+};
+
+export type TPostTransactionApiResponse = {
+  status: string;
+  message: string;
+  txn_id: string;
+  b_id: string;
+  code: number;
+  error?: { code: string; message: string; display_message: string };
 };
 
 export type TPostCogResponse = {
@@ -33,20 +68,6 @@ export type TPostCogResponse = {
   token?: string;
   identity_id?: string;
   is_session_expired?: boolean;
-};
-
-export type TPostTransactionResponse = {
-  status: string;
-  message: string;
-  txn_id: string;
-};
-
-export type TStartV2RxResponse = {
-  microphone_error?: string;
-  vad_error?: string;
-  error?: string;
-  success?: boolean;
-  recording_error?: string;
 };
 
 export type TEndV2RxResponse = {

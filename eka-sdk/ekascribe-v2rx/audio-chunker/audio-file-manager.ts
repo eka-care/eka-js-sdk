@@ -3,6 +3,8 @@ import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-cons
 import { utils } from '@ricky0123/vad-web';
 import uploadFileToS3 from '../aws-services/upload-file-to-s3';
 import { createFFmpeg } from '@ffmpeg/ffmpeg';
+import postCogInit from '../api/post-cog-init';
+import { configureAWS } from '../aws-services/configure-aws';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -133,9 +135,32 @@ class AudioFileManager {
     return m4aBlob;
   }
 
+  // TODO: add a conditional check for shared worker
+  async setupAWSConfiguration() {
+    const response = await postCogInit();
+    const { credentials, is_session_expired } = response;
+    if (is_session_expired || !credentials) {
+      return {
+        error: 'Session expired, Please login again.',
+      };
+    }
+
+    // configuration of AWS
+    const { AccessKeyId, SecretKey, SessionToken } = credentials;
+    // TODO: sharedworker check
+    configureAWS({
+      accessKeyId: AccessKeyId,
+      secretKey: SecretKey,
+      sessionToken: SessionToken,
+    });
+
+    return { success: true };
+  }
+
   /**
    * Upload a chunk of audio data to S3
    */
+  // TODO: shared worker check
   async uploadAudioChunk(
     audio: Float32Array,
     fileName: string,
@@ -197,61 +222,6 @@ class AudioFileManager {
   }
 
   /**
-   * Upload JSON data to S3 (som.json or eof.json)
-   */
-  async uploadJsonFile(
-    jsonData: Record<string, unknown>,
-    fileName: string,
-    chunkIndex: number
-  ): Promise<{ success: boolean; fileName: string }> {
-    const s3FileName = `${this.filePath}/${fileName}`;
-    const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], {
-      type: 'application/json',
-    });
-
-    if (fileName !== 'eof.json' && this.onProgressCallback) {
-      this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
-    }
-
-    const uploadPromise = uploadFileToS3({
-      fileBlob: jsonBlob,
-      fileName: s3FileName,
-      txnID: this.txnID,
-      businessID: this.businessID,
-    }).then((response) => {
-      if (response.success) {
-        // Extract base filename for tracking
-        const parts = fileName.split('/');
-        const baseFileName = parts[parts.length - 1];
-        this.successfulUploads.push(baseFileName);
-
-        // remove fileBlob if file uploaded successfully
-        if (chunkIndex !== -1) {
-          this.audioChunks[chunkIndex].fileBlob = undefined;
-        }
-
-        if (fileName !== 'eof.json' && this.onProgressCallback) {
-          this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
-        }
-      } else {
-        // store that fileBlob in audioChunks
-        if (chunkIndex !== -1) {
-          this.audioChunks[chunkIndex].fileBlob = jsonBlob;
-        }
-      }
-
-      return response;
-    });
-
-    this.uploadPromises.push(uploadPromise);
-
-    return {
-      success: true,
-      fileName,
-    };
-  }
-
-  /**
    * Download audio as a file to the user's device (for debugging)
    */
   downloadAudio(audioBlob: Blob, fileName: string): void {
@@ -303,6 +273,7 @@ class AudioFileManager {
   /**
    * Retry uploading failed files
    */
+  // TODO: shared worker check
   async retryFailedUploads(): Promise<string[]> {
     const failedFiles = this.getFailedUploads();
     if (failedFiles.length === 0) {

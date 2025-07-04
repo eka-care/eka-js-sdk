@@ -48,6 +48,13 @@ class VadWebClient {
   }
 
   /**
+   * Get the micVad instance
+   */
+  getMicVad(): MicVAD {
+    return this.micVad;
+  }
+
+  /**
    * Process a VAD frame and determine if it's a clip point
    * @param vad_frame Voice activity detection frame (0 for silence, 1 for speech)
    */
@@ -107,11 +114,13 @@ class VadWebClient {
   async initVad() {
     const audioFileManager = EkaScribeStore.audioFileManagerInstance;
     const audioBuffer = EkaScribeStore.audioBufferInstance;
+
     const vad = await MicVAD.new({
       frameSamples: this.frame_size,
       preSpeechPadFrames: this.speech_pad_frames,
-      //   TODO: test this startOnLoad
-      //   startOnLoad: false,
+      // TODO: test this startOnLoad since it is undefined, so is the vad starting on load or not?
+      // TODO: handle vad 2 sec error case
+      // startOnLoad: false,
       onFrameProcessed: (prob, frames) => {
         audioFileManager?.incrementTotalRawSamples(frames);
 

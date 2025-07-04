@@ -1,3 +1,4 @@
+import { TPostTransactionApiResponse } from '../constants/types';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
@@ -6,18 +7,10 @@ export type TPostCommitRequest = {
   txnId: string;
 };
 
-export type TPostTransactionResponse = {
-  status: string;
-  message: string;
-  txn_id: string;
-  b_id: string;
-  code: number;
-};
-
 async function postTransactionCommit({
   audioFiles,
   txnId,
-}: TPostCommitRequest): Promise<TPostTransactionResponse> {
+}: TPostCommitRequest): Promise<TPostTransactionApiResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -40,7 +33,10 @@ async function postTransactionCommit({
     return await response.json();
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
-    throw error;
+    return {
+      code: 520,
+      message: `Something went wrong! ${error}`,
+    } as TPostTransactionApiResponse;
   }
 }
 
