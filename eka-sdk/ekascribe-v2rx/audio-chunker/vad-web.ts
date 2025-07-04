@@ -29,6 +29,7 @@ class VadWebClient {
    * @param max_length Maximum length in seconds
    * @param sr Sample rate in Hz
    */
+
   constructor(pref_length: number, desp_length: number, max_length: number, sr: number) {
     this.vad_past = [];
     this.last_clip_index = 0;

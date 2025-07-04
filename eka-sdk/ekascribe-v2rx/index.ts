@@ -1,7 +1,7 @@
 // ekascribe main Class having all the methods - Entry point
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
-import { getVoiceApiV2Status } from './api/get-voice-api-v2-status';
+import patchTransactionStatus, { processingError } from './api/patch-transaction-status';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
 import VadWebClient from './audio-chunker/vad-web';
@@ -13,12 +13,13 @@ import {
   PREF_CHUNK_LENGTH,
   SAMPLING_RATE,
 } from './constants/audio-constants';
-import { TStartRecordingRequest, UploadProgressCallback } from './constants/types';
+import { PROCESSING_STATUS } from './constants/enums';
+import { TStartRecordingRequest } from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
 import resumeVoiceRecorfing from './main/resume-recording';
-import retryUploadFiles from './main/retry-upload-recording';
+import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 
@@ -96,13 +97,37 @@ class EkaScribe {
     return endRecordingResponse;
   }
 
-  async retryUploadRecording() {
-    /**
-     *
-     */
-    const retryUploadResponse = await retryUploadFiles();
+  async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
+    const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
     return retryUploadResponse;
   }
+
+  async cancelRecordingSession({ txn_id }: { txn_id: string }) {
+    try {
+      const patchTransactionResponse = await patchTransactionStatus({
+        sessionId: txn_id,
+        processing_status: PROCESSING_STATUS.CANCELLED,
+        processing_error: processingError,
+      });
+
+      return patchTransactionResponse;
+    } catch (error) {
+      console.error('Error cancelling recording session:', error);
+      return {
+        code: 520,
+        message: `Failed to cancel recording session, ${error}`,
+      };
+    }
+  }
+
+  /**
+   * 1. get status (output)
+   * 3. record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes will form
+   * 5. failed to fetch - 1
+   * 6. txn stop failed
+   * 7. commit txn failed
+   * 9. upload audio file to s3 - monday
+   */
 
   getSuccessFiles() {
     return this.audioFileManagerInstance.getSuccessfulUploads();
@@ -167,6 +192,9 @@ export const startRecording = ekascribeInstance.startRecording.bind(ekascribeIns
 export const pauseRecording = ekascribeInstance.pauseRecording.bind(ekascribeInstance);
 export const resumeRecording = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
 export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstance);
+export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
+export const cancelRecordingSession =
+  ekascribeInstance.cancelRecordingSession.bind(ekascribeInstance);
 
 export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);

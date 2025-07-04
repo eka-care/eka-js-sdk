@@ -21,3 +21,10 @@ export enum ERROR_CODE {
   TXN_STOP_FAILED = 'txn_stop_failed',
   AUDIO_UPLOAD_FAILED = 'audio_upload_failed',
 }
+
+export enum PROCESSING_STATUS {
+  SUCCESS = 'success',
+  IN_PROGRESS = 'in-progress',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+}

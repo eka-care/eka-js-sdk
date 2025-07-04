@@ -1,58 +1,60 @@
 import postTransactionCommit from '../api/post-transaction-commit';
-import postTransactionStop from '../api/post-transaction-stop';
-import { TEndV2RxResponse } from '../constants/types';
+import { ERROR_CODE } from '../constants/enums';
+import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
-const retryUploadFiles = async (): Promise<TEndV2RxResponse> => {
+const retryUploadFailedFiles = async ({
+  force_commit,
+}: {
+  force_commit: boolean;
+}): Promise<TEndRecordingResponse> => {
   try {
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
+
     if (!fileManagerInstance) {
-      return {
-        error: 'Something went wrong',
-      };
+      throw new Error('Class instances are not initialized');
     }
 
     const failedFiles = (await fileManagerInstance.retryFailedUploads()) || [];
-
-    if (failedFiles.length > 0) {
-      return {
-        error: 'Recording upload failed. Please try again.',
-        is_upload_failed: true,
-      };
-    }
-
     const audioInfo = fileManagerInstance?.audioChunks;
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
-    const stopTransactionResponse = await postTransactionStop({
-      txnId: EkaScribeStore.txnID,
-      audioFiles,
-    });
-    if (stopTransactionResponse.status !== 'success') {
+    if (failedFiles.length > 0 && !force_commit) {
       return {
-        stop_txn_error: stopTransactionResponse.message,
+        error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+        status_code: 400,
+        message: 'Audio upload failed for some files after retry.',
+        failed_files: failedFiles,
+        total_audio_files: audioFiles,
       };
     }
 
-    const commitTransactionResponse = await postTransactionCommit({
+    // call commit transaction api
+    const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
       txnId: EkaScribeStore.txnID,
       audioFiles,
     });
-    if (commitTransactionResponse.status !== 'success') {
+
+    if (txnCommitStatusCode != 200) {
       return {
-        commit_txn_error: commitTransactionResponse.message,
+        error_code: ERROR_CODE.TXN_STOP_FAILED,
+        status_code: txnCommitStatusCode,
+        message: txnCommitMsg || 'Transaction stop failed.',
       };
     }
 
     return {
-      success: true,
+      status_code: 200,
+      message: 'All recordings uploaded successfully.',
     };
-  } catch (err) {
-    console.error('Error retrying upload: ', err);
+  } catch (error) {
+    console.error('Error retrying upload: ', error);
     return {
-      error: err as string,
+      error_code: ERROR_CODE.UNKNOWN_ERROR,
+      status_code: 520,
+      message: `An error occurred while retrying failed upload: ${error}`,
     };
   }
 };
 
-export default retryUploadFiles;
+export default retryUploadFailedFiles;

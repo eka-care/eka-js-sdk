@@ -95,7 +95,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     if (txnCommitStatusCode != 200) {
       return {
         error_code: ERROR_CODE.TXN_STOP_FAILED,
-        status_code: txnStopStatusCode,
+        status_code: txnCommitStatusCode,
         message: txnCommitMsg || 'Transaction stop failed.',
       };
     }
@@ -110,7 +110,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     return {
       error_code: ERROR_CODE.UNKNOWN_ERROR,
       status_code: 520,
-      message: `An error occurred while starting the recording: ${error}`,
+      message: `An error occurred while ending the recording: ${error}`,
     };
   }
 };

@@ -53,8 +53,23 @@ export type TPostTransactionApiResponse = {
   message: string;
   txn_id: string;
   b_id: string;
+  data: unknown;
   code: number;
   error?: { code: string; message: string; display_message: string };
+};
+
+export type TPatchProcessingError = {
+  error: {
+    type: string;
+    code: string;
+    msg: string;
+  };
+};
+
+export type TPatchTransactionRequest = {
+  sessionId: string;
+  processing_status: string;
+  processing_error?: TPatchProcessingError;
 };
 
 export type TPostCogResponse = {
