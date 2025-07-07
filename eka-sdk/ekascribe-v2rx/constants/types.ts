@@ -48,7 +48,20 @@ export type TEndRecordingResponse = {
   total_audio_files?: string[];
 };
 
-export type TPostTransactionApiResponse = {
+export type TPostTransactionInitRequest = {
+  mode: string;
+  s3Url: string;
+  txnId: string;
+  input_language: string[];
+  output_format_template: { template_id: string }[];
+};
+
+export type TPostTransactionCommitRequest = {
+  audioFiles: string[];
+  txnId: string;
+};
+
+export type TPostTransactionResponse = {
   status: string;
   message: string;
   txn_id: string;
@@ -58,7 +71,7 @@ export type TPostTransactionApiResponse = {
   error?: { code: string; message: string; display_message: string };
 };
 
-export type TPatchProcessingError = {
+export type TPatchTransactionError = {
   error: {
     type: string;
     code: string;
@@ -69,7 +82,7 @@ export type TPatchProcessingError = {
 export type TPatchTransactionRequest = {
   sessionId: string;
   processing_status: string;
-  processing_error?: TPatchProcessingError;
+  processing_error?: TPatchTransactionError;
 };
 
 export type TPostCogResponse = {

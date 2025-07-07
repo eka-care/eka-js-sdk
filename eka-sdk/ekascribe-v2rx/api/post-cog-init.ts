@@ -11,6 +11,7 @@ async function postCogInit(): Promise<TPostCogResponse> {
     // refresh COG token
     if (respJson.status === 401) {
       // @ts-ignore
+      // TODO: change this
       const response = await window.refreshAuth();
       if (response.ok) {
         return await postCogInit();

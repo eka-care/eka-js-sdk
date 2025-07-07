@@ -1,12 +1,12 @@
 import {
-  TPatchProcessingError,
+  TPatchTransactionError,
   TPatchTransactionRequest,
-  TPostTransactionApiResponse,
+  TPostTransactionResponse,
 } from '../constants/types';
 import fetchClient from '../fetch-client';
 import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
 
-export const processingError: TPatchProcessingError = {
+export const processingError: TPatchTransactionError = {
   error: {
     type: '',
     code: 'cancelled_by_user',
@@ -18,7 +18,7 @@ const patchTransactionStatus = async ({
   sessionId,
   processing_status,
   processing_error,
-}: TPatchTransactionRequest): Promise<TPostTransactionApiResponse> => {
+}: TPatchTransactionRequest): Promise<TPostTransactionResponse> => {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -48,7 +48,7 @@ const patchTransactionStatus = async ({
     return {
       code: 520,
       message: `Something went wrong! ${error}`,
-    } as TPostTransactionApiResponse;
+    } as TPostTransactionResponse;
   }
 };
 
