@@ -1,6 +1,6 @@
 import { TPostTransactionCommitRequest, TPostTransactionResponse } from '../constants/types';
 import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
+import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
 async function postTransactionCommit({
   audioFiles,
@@ -21,7 +21,7 @@ async function postTransactionCommit({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST()}/transaction/commit/${txnId}`,
+      `${GET_EKA_V2RX_HOST_V2()}/transaction/commit/${txnId}`,
       options
     );
 

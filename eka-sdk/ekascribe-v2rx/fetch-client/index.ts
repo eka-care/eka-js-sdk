@@ -1,7 +1,7 @@
 import setEnv, {
   GET_AUTH_TOKEN,
   GET_CLIENT_ID,
-  GET_EKA_V2RX_HOST,
+  GET_EKA_V2RX_HOST_V2,
   GET_REFRESH_TOKEN,
 } from './helper';
 
@@ -27,7 +27,7 @@ async function refreshToken() {
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST()}/connect-auth/v1/account/refresh-token`,
+      `${GET_EKA_V2RX_HOST_V2()}/connect-auth/v1/account/refresh-token`,
       options,
       false
     );

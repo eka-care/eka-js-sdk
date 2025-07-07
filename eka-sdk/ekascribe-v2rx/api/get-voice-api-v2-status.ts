@@ -1,62 +1,85 @@
-import { RESULT_STATUS, TEMPLATE_ID } from '../constants/enums';
 import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST } from '../fetch-client/helper';
+import { GET_EKA_V2RX_HOST_V3 } from '../fetch-client/helper';
 
-export type TOutputSummary = {
-  template_id: TEMPLATE_ID;
-  value: string; //<base 64 encoded>
-  type: string;
-  name: string;
+export type TTemplateMessage = {
+  type: 'warning' | 'error';
+  code?: string;
+  msg: string;
 };
 
-type TStatusApiResponse = {
-  data?: {
-    output: TOutputSummary[];
+export type TOutputSummary = {
+  template_id: string;
+  value?: string | null; //<base 64 encoded>
+  type: string;
+  name: string;
+  status: TTemplateStatus;
+  errors?: TTemplateMessage[];
+  warnings?: TTemplateMessage[];
+};
+
+export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
+
+type TAdditionalData = {
+  doctor: {
+    _id: string;
+    profile: {
+      personal: {
+        name: {
+          l: string;
+          f: string;
+        };
+      };
+    };
   };
-  status?: RESULT_STATUS;
-  error?: string;
+};
+
+type TApiResponse = {
+  data: {
+    output?: TOutputSummary[];
+    additional_data?: TAdditionalData;
+    meta_data?: {
+      total_resources?: number;
+      total_parsed_resources?: number;
+    };
+  };
+  error?: {
+    code: string;
+    msg: string;
+  };
+};
+
+export type TGetStatusResponse = {
+  response?: TApiResponse | null;
+  code: number;
+  message?: string;
 };
 
 export const getVoiceApiV2Status = async ({
   txnId,
 }: {
   txnId: string;
-}): Promise<TStatusApiResponse> => {
+}): Promise<TGetStatusResponse> => {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    let attempts = 0;
-    const maxAttempts = 60;
 
     const options = {
       method: 'GET',
       headers,
     };
 
-    const getSummary = async () => {
-      const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST()}/status/${txnId}`, options);
-      const response = await getResponse.json();
+    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options);
 
-      if (response.status === RESULT_STATUS.SUCCESS || response.status === RESULT_STATUS.FAILURE) {
-        return response;
-      }
+    const response = await getResponse.json();
 
-      if (response.status === RESULT_STATUS.IN_PROGRESS) {
-        if (attempts >= maxAttempts) {
-          return response;
-        }
-        attempts++;
-        return getSummary();
-      }
-
-      return response;
-    };
-
-    return getSummary();
-  } catch (error) {
-    console.error('getVoiceApiV2Status =>', error);
     return {
-      error: error as string,
+      response,
+      code: getResponse.status,
+    };
+  } catch (error) {
+    return {
+      code: 520, // web server error
+      message: `Something went wrong! ${error}`,
     };
   }
 };

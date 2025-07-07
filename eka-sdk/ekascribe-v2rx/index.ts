@@ -1,7 +1,9 @@
 // ekascribe main Class having all the methods - Entry point
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
+import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v2-status';
 import patchTransactionStatus, { processingError } from './api/patch-transaction-status';
+import postTransactionCommit from './api/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
 import VadWebClient from './audio-chunker/vad-web';
@@ -14,7 +16,7 @@ import {
   SAMPLING_RATE,
 } from './constants/audio-constants';
 import { PROCESSING_STATUS } from './constants/enums';
-import { TStartRecordingRequest } from './constants/types';
+import { TPostTransactionResponse, TStartRecordingRequest } from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
@@ -102,7 +104,7 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  async cancelRecordingSession({ txn_id }: { txn_id: string }) {
+  async cancelRecordingSession({ txn_id }: { txn_id: string }): Promise<TPostTransactionResponse> {
     try {
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId: txn_id,
@@ -116,17 +118,56 @@ class EkaScribe {
       return {
         code: 520,
         message: `Failed to cancel recording session, ${error}`,
-      };
+      } as TPostTransactionResponse;
+    }
+  }
+
+  async commitTransactionCall(): Promise<TPostTransactionResponse> {
+    try {
+      const audioInfo = this.audioFileManagerInstance?.audioChunks;
+      const audioFiles = audioInfo.map((audio) => audio.fileName);
+
+      const postTransactionResponse = await postTransactionCommit({
+        audioFiles,
+        txnId: EkaScribeStore.txnID,
+      });
+
+      return postTransactionResponse;
+    } catch (error) {
+      console.error('Error in transaction commit: ', error);
+      return {
+        code: 520,
+        message: `Failed to cancel recording session, ${error}`,
+      } as TPostTransactionResponse;
+    }
+  }
+
+  async stopTransactionCall() {
+    // call endRecording method since all the steps are same
+    const endRecordingResponse = await endVoiceRecording();
+    return endRecordingResponse;
+  }
+
+  async getTemplateOutput({ txnID }: { txnID: string }) {
+    try {
+      const getStatusResponse = await getVoiceApiV2Status({
+        txnId: txnID,
+      });
+
+      return getStatusResponse;
+    } catch (error) {
+      console.error('Error in fetching templates response: ', error);
+      return {
+        code: 520,
+        message: `Failed to fetch output templates, ${error}`,
+      } as TGetStatusResponse;
     }
   }
 
   /**
-   * 1. get status (output)
-   * 3. record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes will form
-   * 5. failed to fetch - 1
-   * 6. txn stop failed
-   * 7. commit txn failed
-   * 9. upload audio file to s3 - monday
+   * TODO
+   * 3. record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes form?
+   * 4. upload audio file to s3 - monday
    */
 
   getSuccessFiles() {
@@ -146,7 +187,6 @@ class EkaScribe {
     this.audioBufferInstance.resetBufferManagerInstance();
     EkaScribeStore.resetStore();
   }
-  // TODO: MAKE EVERY FUNCTION IN CLASS - PRIVATE
 
   configureVadConstants({
     pref_length,
@@ -178,8 +218,6 @@ class EkaScribe {
       long_thsld,
     });
   }
-
-  // TODO: publish this to npm
 }
 
 export default EkaScribe;
@@ -195,6 +233,10 @@ export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstanc
 export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
 export const cancelRecordingSession =
   ekascribeInstance.cancelRecordingSession.bind(ekascribeInstance);
+export const commitTransactionCall =
+  ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
+export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
+export const getTemplateOutput = ekascribeInstance.getTemplateOutput.bind(ekascribeInstance);
 
 export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
@@ -205,5 +247,8 @@ export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekas
  * Client side handling:
  * 1. show the activity indicator - user speaking/not speaking
  *
+ * SDK pending tasks:
+ * 1. publish this to npm
+ * 2. write documentation
  *
  */
