@@ -28,3 +28,16 @@ export enum PROCESSING_STATUS {
   FAILED = 'failed',
   CANCELLED = 'cancelled',
 }
+
+export enum SHARED_WORKER_ACTION {
+  UPLOAD_FILE_WITH_WORKER = 'upload_file_with_worker',
+  UPLOAD_FILE_WITH_WORKER_SUCCESS = 'upload_file_with_worker_success',
+  UPLOAD_FILE_WITH_WORKER_ERROR = 'upload_file_with_worker_error',
+  TEST_WORKER = 'test_worker',
+  CONFIGURE_AWS = 'configure_aws',
+  CONFIGURE_AWS_SUCCESS = 'configure_aws_success',
+  CONFIGURE_AWS_ERROR = 'configure_aws_error',
+  WAIT_FOR_ALL_UPLOADS = 'wait_for_all_uploads',
+  WAIT_FOR_ALL_UPLOADS_SUCCESS = 'wait_for_all_uploads_success',
+  WAIT_FOR_ALL_UPLOADS_ERROR = 'wait_for_all_uploads_error',
+}

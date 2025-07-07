@@ -1,13 +1,18 @@
 import { TAudioChunksInfo, UploadProgressCallback } from '../constants/types';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-constants';
-import { utils } from '@ricky0123/vad-web';
-import uploadFileToS3 from '../aws-services/upload-file-to-s3';
-import { createFFmpeg } from '@ffmpeg/ffmpeg';
+import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import postCogInit from '../api/post-cog-init';
 import { configureAWS } from '../aws-services/configure-aws';
+import { SHARED_WORKER_ACTION } from '../constants/enums';
+import compressAudioToMp3 from '../utils/compress-mp3-audio';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
+type TUploadAudioChunkParams = {
+  audioFrames: Float32Array;
+  fileName: string;
+  chunkIndex: number;
+};
 class AudioFileManager {
   /**
    * Class that handles uploading audio files to S3
@@ -25,6 +30,8 @@ class AudioFileManager {
   private totalInsertedSamples: number = 0;
   private totalInsertedFrames: number = 0;
   private businessID: string = '';
+  private isAWSConfigured: boolean = false;
+  private sharedWorkerInstance: SharedWorker | null = null;
 
   initialiseClassInstance() {
     this.audioChunks = [];
@@ -106,106 +113,175 @@ class AudioFileManager {
     return this.audioChunks.length;
   }
 
-  /**
-   * Convert wav to m4a using ffmpeg
-   */
-  async convertWavToM4a(wavFile: ArrayBuffer): Promise<Blob> {
-    const uint8buffer = new Uint8Array(wavFile);
-    const ffmpeg = createFFmpeg({
-      log: true,
-      corePath: chrome.runtime.getURL('../ffmpeg/ffmpeg-core.js'),
-    });
+  createSharedWorkerInstance(): {
+    success: boolean;
+  } {
+    try {
+      const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.ts'));
 
-    if (!ffmpeg.isLoaded()) {
-      await ffmpeg.load();
-    }
+      this.sharedWorkerInstance = worker;
 
-    // Write the WAV file to memory
-    ffmpeg.FS('writeFile', 'input.wav', uint8buffer);
+      this.sharedWorkerInstance.port.onmessage = async (event: MessageEvent) => {
+        const workerResponse = event.data;
 
-    // Run the conversion
-    await ffmpeg.run('-i', 'input.wav', '-c:a', 'aac', '-b:a', '192k', 'output.m4a');
+        switch (workerResponse.action) {
+          case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
+            console.log('AWS configured successfully in worker');
+            return;
+          }
 
-    // Read the result
-    const data = ffmpeg.FS('readFile', 'output.m4a');
+          case SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR: {
+            console.error('Error configuring AWS in worker:', workerResponse.error);
+            return;
+          }
 
-    // Create a Blob from the output
-    const m4aBlob = new Blob([data.buffer], { type: 'audio/mp4' });
+          case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS: {
+            const { fileCount: fileName, chunkIndex, fileBlob } = workerResponse.requestBody;
 
-    return m4aBlob;
-  }
+            if (workerResponse.response.success) {
+              this.successfulUploads.push(fileName);
 
-  // TODO: add a conditional check for shared worker
-  async setupAWSConfiguration() {
-    const response = await postCogInit();
-    const { credentials, is_session_expired } = response;
-    if (is_session_expired || !credentials) {
+              // remove audioFrames if file uploaded successfully
+              if (chunkIndex !== -1) {
+                this.audioChunks[chunkIndex] = {
+                  ...this.audioChunks[chunkIndex],
+                  fileBlob: undefined,
+                  status: 'success',
+                  response: workerResponse.response.success,
+                };
+              }
+
+              if (this.onProgressCallback) {
+                this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+              }
+            } else {
+              // store that audioFrames in audioChunks
+              if (chunkIndex !== -1) {
+                this.audioChunks[chunkIndex] = {
+                  ...this.audioChunks[chunkIndex],
+                  fileBlob,
+                  status: 'failure',
+                  response: workerResponse.response.error || 'Upload failed',
+                };
+              }
+
+              // call COG if S3 throws ExpiredToken error
+              if (workerResponse.response.errorCode === 'ExpiredToken') {
+                this.setupAWSConfiguration({
+                  is_shared_worker: true,
+                });
+              }
+            }
+          }
+        }
+      };
+
+      worker.port.start();
+
       return {
-        error: 'Session expired, Please login again.',
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error creating shared worker instance:', error);
+      return {
+        success: false,
       };
     }
+  }
 
-    // configuration of AWS
-    const { AccessKeyId, SecretKey, SessionToken } = credentials;
-    // TODO: sharedworker check
-    configureAWS({
-      accessKeyId: AccessKeyId,
-      secretKey: SecretKey,
-      sessionToken: SessionToken,
-    });
+  private async setupAWSConfiguration({ is_shared_worker }: { is_shared_worker: boolean }) {
+    try {
+      const response = await postCogInit();
+      const { credentials, is_session_expired } = response;
+      if (is_session_expired || !credentials) {
+        return false;
+      }
 
-    return { success: true };
+      const { AccessKeyId, SecretKey, SessionToken } = credentials;
+
+      if (is_shared_worker) {
+        this.sharedWorkerInstance?.port.postMessage({
+          action: SHARED_WORKER_ACTION.CONFIGURE_AWS,
+          payload: {
+            accessKeyId: AccessKeyId,
+            secretKey: SecretKey,
+            sessionToken: SessionToken,
+          },
+        });
+      } else {
+        configureAWS({
+          accessKeyId: AccessKeyId,
+          secretKey: SecretKey,
+          sessionToken: SessionToken,
+        });
+      }
+
+      this.isAWSConfigured = true;
+
+      return true;
+    } catch (error) {
+      console.log('%c Line:198 🥃 error', 'color:#42b983', error);
+
+      this.isAWSConfigured = false;
+      return false;
+    }
   }
 
   /**
-   * Upload a chunk of audio data to S3
+   * Upload a chunk of audio data to S3 in main thread
    */
-  // TODO: shared worker check
-  async uploadAudioChunk(
-    audio: Float32Array,
-    fileName: string,
-    chunkIndex: number
-  ): Promise<{
+  private async uploadAudioChunkInMain({
+    audioFrames,
+    fileName,
+    chunkIndex,
+  }: TUploadAudioChunkParams): Promise<{
     success: boolean;
     fileName: string;
-    audioBlob: Blob;
   }> {
-    const s3FileName = `${this.filePath}/${fileName}`;
-    // Generate WAV file
-    const wavBuffer = utils.encodeWAV(audio);
+    const s3FileName = `${this.filePath}/${fileName}`; // fileName is ${fileCount}.mp3
 
-    // const m4ablob = await this.convertWavToM4a(wavBuffer);
-    // console.log('%c Line:150 🍷 m4ablob', 'color:#ed9ec7', m4ablob);
-    // this.downloadAudio(m4ablob, fileName);
-    const audioBlob = new Blob([wavBuffer], { type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT] });
+    const compressedAudioBuffer = compressAudioToMp3(audioFrames);
+
+    const audioBlob = new Blob(compressedAudioBuffer, {
+      type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
+    });
 
     if (this.onProgressCallback) {
       this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
     }
 
-    // Push upload promise to track it
-    const uploadPromise = uploadFileToS3({
+    // Push upload promise to track status
+    const uploadPromise = pushFileToS3({
       fileBlob: audioBlob,
       fileName: s3FileName,
       txnID: this.txnID,
       businessID: this.businessID,
+      is_shared_worker: false,
     }).then((response) => {
       if (response.success) {
-        const successFilename = fileName; // fileName is ${fileCount}.m4a
-        this.successfulUploads.push(successFilename);
+        this.successfulUploads.push(fileName);
 
-        // remove fileBlob if file uploaded successfully
+        // update file status if file uploaded successfully
         if (chunkIndex !== -1) {
-          this.audioChunks[chunkIndex].fileBlob = undefined;
+          this.audioChunks[chunkIndex] = {
+            ...this.audioChunks[chunkIndex],
+            fileBlob: undefined,
+            status: 'success',
+            response: response.success,
+          };
         }
 
         if (this.onProgressCallback) {
           this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
         }
       } else {
-        // store that fileBlob in audioChunks
         if (chunkIndex !== -1) {
-          this.audioChunks[chunkIndex].fileBlob = audioBlob;
+          this.audioChunks[chunkIndex] = {
+            ...this.audioChunks[chunkIndex],
+            fileBlob: audioBlob,
+            status: 'failure',
+            response: response.error || 'Upload failed',
+          };
         }
       }
 
@@ -216,9 +292,103 @@ class AudioFileManager {
 
     return {
       success: true,
-      fileName: `${fileName}`,
-      audioBlob,
+      fileName,
     };
+  }
+
+  /**
+   * Upload audio chunks to S3 in shared worker
+   */
+  private async uploadAudioChunkInWorker({
+    audioFrames,
+    fileName,
+    chunkIndex,
+  }: TUploadAudioChunkParams): Promise<{
+    success: boolean;
+    fileName: string;
+  }> {
+    const s3FileName = `${this.filePath}/${fileName}`;
+
+    if (this.onProgressCallback) {
+      this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+    }
+
+    this.sharedWorkerInstance?.port.postMessage({
+      action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
+      payload: {
+        audioFrames,
+        fileName: s3FileName,
+        txnID: this.txnID,
+        businessID: this.businessID,
+        chunkIndex,
+        fileCount: fileName,
+      },
+    });
+
+    return {
+      success: true,
+      fileName,
+    };
+  }
+
+  async uploadAudioToS3({ audioFrames, fileName, chunkIndex }: TUploadAudioChunkParams) {
+    if (typeof SharedWorker === 'undefined' || !SharedWorker) {
+      // Shared Workers are not supported in this browser
+      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+    } else {
+      // Shared Workers are supported
+      console.log('Shared Workers are NOT supported in this browser.');
+
+      if (!this.sharedWorkerInstance) {
+        this.createSharedWorkerInstance();
+      }
+
+      this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
+    }
+  }
+
+  private async uploadAudioToS3WithWorker({
+    audioFrames,
+    fileName,
+    chunkIndex,
+  }: TUploadAudioChunkParams) {
+    try {
+      if (!this.isAWSConfigured) {
+        const awsConfigResponse = await this.setupAWSConfiguration({
+          is_shared_worker: true,
+        });
+
+        if (!awsConfigResponse) {
+          throw new Error('Failed to configure AWS');
+        }
+      }
+
+      await this.uploadAudioChunkInWorker({ audioFrames, fileName, chunkIndex });
+    } catch (error) {
+      console.error('Error uploading audio to S3:', error);
+    }
+  }
+
+  private async uploadAudioToS3WithoutWorker({
+    audioFrames,
+    fileName,
+    chunkIndex,
+  }: TUploadAudioChunkParams) {
+    try {
+      if (!this.isAWSConfigured) {
+        const awsConfigResponse = await this.setupAWSConfiguration({
+          is_shared_worker: false,
+        });
+
+        if (!awsConfigResponse) {
+          throw new Error('Failed to configure AWS');
+        }
+      }
+
+      await this.uploadAudioChunkInMain({ audioFrames, fileName, chunkIndex });
+    } catch (error) {
+      console.error('Error uploading audio to S3:', error);
+    }
   }
 
   /**
@@ -240,7 +410,44 @@ class AudioFileManager {
    * Wait for all upload promises to complete
    */
   async waitForAllUploads(): Promise<void> {
-    await Promise.allSettled(this.uploadPromises);
+    if (this.sharedWorkerInstance) {
+      return new Promise((resolve, reject) => {
+        let pollInterval: NodeJS.Timeout | null = null;
+
+        // one-time message handler to listen for the response
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS) {
+            const { uploadRequestRecieved, uploadRequestCompleted } = event.data.response || {};
+
+            if (uploadRequestRecieved === uploadRequestCompleted) {
+              if (pollInterval) clearInterval(pollInterval);
+              this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+              resolve();
+            }
+          } else if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_ERROR) {
+            if (pollInterval) clearInterval(pollInterval);
+            this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+            reject(new Error(event.data.error || 'Failed to wait for uploads'));
+          }
+        };
+
+        // one-time listener
+        this.sharedWorkerInstance?.port.addEventListener('message', messageHandler);
+
+        // poll for status every 200ms
+        pollInterval = setInterval(() => {
+          this.sharedWorkerInstance?.port.postMessage({
+            action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
+          });
+        }, 200);
+
+        this.sharedWorkerInstance?.port.postMessage({
+          action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
+        });
+      });
+    } else {
+      await Promise.allSettled(this.uploadPromises);
+    }
   }
 
   /**
@@ -273,39 +480,62 @@ class AudioFileManager {
   /**
    * Retry uploading failed files
    */
-  // TODO: shared worker check
   async retryFailedUploads(): Promise<string[]> {
     const failedFiles = this.getFailedUploads();
     if (failedFiles.length === 0) {
       return [];
     }
 
-    this.uploadPromises = []; // Reset upload promises for retries
+    if (this.sharedWorkerInstance) {
+      this.audioChunks.forEach((chunk, index) => {
+        const { fileName, fileBlob } = chunk;
+        if (fileBlob) {
+          this.sharedWorkerInstance?.port.postMessage({
+            action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
+            payload: {
+              fileBlob,
+              fileName: `${this.filePath}/${fileName}`,
+              txnID: this.txnID,
+              businessID: this.businessID,
+              chunkIndex: index,
+              fileCount: fileName,
+            },
+          });
+        }
+      });
+    } else {
+      this.uploadPromises = []; // Reset upload promises for retries
 
-    this.audioChunks.forEach((chunk) => {
-      const { fileName, fileBlob } = chunk;
-      if (fileBlob) {
-        const uploadPromise = uploadFileToS3({
-          fileBlob,
-          fileName: `${this.filePath}/${fileName}`,
-          txnID: this.txnID,
-          businessID: this.businessID,
-        }).then((response) => {
-          if (response.success) {
-            const successFilename = fileName;
-            this.successfulUploads.push(successFilename);
-            if (this.onProgressCallback) {
-              this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+      this.audioChunks.forEach((chunk) => {
+        const { fileName, fileBlob } = chunk;
+        if (fileBlob) {
+          const uploadPromise = pushFileToS3({
+            fileBlob,
+            fileName: `${this.filePath}/${fileName}`,
+            txnID: this.txnID,
+            businessID: this.businessID,
+            is_shared_worker: false,
+          }).then((response) => {
+            if (response.success) {
+              this.successfulUploads.push(fileName);
+
+              if (this.onProgressCallback) {
+                this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+              }
+
+              // Update audio chunk upload status
+              chunk.fileBlob = undefined;
+              chunk.status = 'success';
+              chunk.response = response.success;
             }
-            // remove fileBlob if file uploaded successfully
-            chunk.fileBlob = undefined;
-          }
-          return response;
-        });
 
-        this.uploadPromises.push(uploadPromise);
-      }
-    });
+            return response;
+          });
+
+          this.uploadPromises.push(uploadPromise);
+        }
+      });
+    }
 
     // Wait for all retry promises to complete
     await this.waitForAllUploads();

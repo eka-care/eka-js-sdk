@@ -20,7 +20,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
 
     // upload last audio chunk
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
-      const audio = audioBufferInstance.getAudioData();
+      const audioFrames = audioBufferInstance.getAudioData();
       const filenumber = fileManagerInstance.audioChunks.length || 1;
       const filename = `${filenumber}.${OUTPUT_FORMAT}`;
 
@@ -45,7 +45,11 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
       );
       audioBufferInstance.resetBufferState();
 
-      await fileManagerInstance.uploadAudioChunk(audio, filename, audioChunkLength - 1);
+      await fileManagerInstance.uploadAudioToS3({
+        audioFrames,
+        fileName: filename,
+        chunkIndex: audioChunkLength - 1,
+      });
     }
 
     await fileManagerInstance.waitForAllUploads();

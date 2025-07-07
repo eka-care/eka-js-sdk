@@ -82,8 +82,6 @@ class EkaScribe {
     return startResponse;
   }
 
-  // TODO: processAudioChunk implementation - chunking - chrome version check - upload with or without shared worker - return error reason for failure to client side
-
   async pauseRecording() {
     const pauseRecordingResponse = await pauseVoiceRecording();
     return pauseRecordingResponse;
@@ -167,7 +165,6 @@ class EkaScribe {
   /**
    * TODO
    * 3. record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes form?
-   * 4. upload audio file to s3 - monday
    */
 
   getSuccessFiles() {
@@ -250,5 +247,6 @@ export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekas
  * SDK pending tasks:
  * 1. publish this to npm
  * 2. write documentation
+ * 3. thoroughly test the SDK - each function end to end
  *
  */

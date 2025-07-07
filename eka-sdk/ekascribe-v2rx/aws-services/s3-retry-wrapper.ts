@@ -5,7 +5,8 @@ async function s3RetryWrapper<T>(
   s3Fn: () => Promise<T>,
   maxRetryCount: number,
   delay: number,
-  retryAttempt: number
+  retryAttempt: number,
+  is_shared_worker = false
 ): Promise<T> {
   try {
     return await s3Fn();
@@ -14,17 +15,25 @@ async function s3RetryWrapper<T>(
       throw error;
     }
 
-    // eslint-disable-next-line
-    // @ts-ignore
-    if (error.code === 'ExpiredToken') {
-      const cogResponse = await postCogInit();
-      const { credentials } = cogResponse;
-      if (credentials) {
-        configureAWS({
-          accessKeyId: credentials.AccessKeyId,
-          secretKey: credentials.SecretKey,
-          sessionToken: credentials.SessionToken,
-        });
+    if (is_shared_worker) {
+      // eslint-disable-next-line
+      // @ts-ignore
+      if (error.statusCode >= 400) {
+        throw error;
+      }
+    } else {
+      // eslint-disable-next-line
+      // @ts-ignore
+      if (error.code === 'ExpiredToken') {
+        const cogResponse = await postCogInit();
+        const { credentials } = cogResponse;
+        if (credentials) {
+          configureAWS({
+            accessKeyId: credentials.AccessKeyId,
+            secretKey: credentials.SecretKey,
+            sessionToken: credentials.SessionToken,
+          });
+        }
       }
     }
 

@@ -140,7 +140,7 @@ class VadWebClient {
         if (is_clip_point) {
           // audio chunk is of float32 Array <ArrayBuffer>
           const activeAudioChunk = audioBuffer?.getAudioData();
-          this.processAudioChunk({ audio: activeAudioChunk });
+          this.processAudioChunk({ audioFrames: activeAudioChunk });
         }
       },
     });
@@ -151,10 +151,10 @@ class VadWebClient {
   /**
    * process and upload audio chunk to s3
    */
-  async processAudioChunk({ audio }: { audio?: Float32Array }) {
+  async processAudioChunk({ audioFrames }: { audioFrames?: Float32Array }) {
     const audioFileManager = EkaScribeStore.audioFileManagerInstance;
     const audioBuffer = EkaScribeStore.audioBufferInstance;
-    if (!audio || !audioFileManager || !audioBuffer) return;
+    if (!audioFrames || !audioFileManager || !audioBuffer) return;
 
     // get the number of chunks already processed
     const filenumber = audioFileManager.audioChunks.length || 1;
@@ -180,7 +180,11 @@ class VadWebClient {
       );
       audioBuffer.resetBufferState();
 
-      await audioFileManager.uploadAudioChunk(audio, filename, audioChunkLength - 1);
+      await audioFileManager.uploadAudioToS3({
+        audioFrames,
+        fileName: filename,
+        chunkIndex: audioChunkLength - 1,
+      });
     } catch (error) {
       console.error('Error uploading audio chunk:', error);
     }

@@ -16,7 +16,7 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
     vadInstance.pauseVad();
 
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
-      const audio = audioBufferInstance.getAudioData();
+      const audioFrames = audioBufferInstance.getAudioData();
       const filenumber = fileManagerInstance.audioChunks.length || 1;
       const filename = `${filenumber}.${OUTPUT_FORMAT}`;
 
@@ -41,7 +41,11 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
       );
       audioBufferInstance.resetBufferState();
 
-      await fileManagerInstance.uploadAudioChunk(audio, filename, audioChunkLength - 1);
+      await fileManagerInstance.uploadAudioToS3({
+        audioFrames,
+        fileName: filename,
+        chunkIndex: audioChunkLength - 1,
+      });
     }
 
     return {

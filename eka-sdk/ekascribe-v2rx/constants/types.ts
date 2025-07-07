@@ -109,10 +109,13 @@ export type TEndV2RxResponse = {
 export type TAudioChunksInfo = {
   fileName: string;
   fileBlob?: Blob;
+  audioFrames?: Float32Array[];
   timestamp: {
     st: string;
     et: string;
   };
+  status?: 'success' | 'failure';
+  response?: string;
 };
 
 export type UploadProgressCallback = (success: string[], total: number) => void;

@@ -1,19 +1,22 @@
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
 
-const uploadFileToS3 = async ({
+const pushFileToS3 = async ({
   fileBlob,
   fileName,
   txnID,
   businessID,
+  is_shared_worker = false,
 }: {
   fileBlob: Blob;
   fileName: string;
   txnID: string;
   businessID: string;
+  is_shared_worker?: boolean;
 }): Promise<{
   success?: string;
   error?: string;
+  errorCode?: string;
 }> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
@@ -40,16 +43,33 @@ const uploadFileToS3 = async ({
       });
 
     // retry upload with s3RetryWrapper
-    const result = await s3RetryWrapper<AWS.S3.ManagedUpload.SendData>(uploadCall, 3, 2000, 0);
+    const result = await s3RetryWrapper<AWS.S3.ManagedUpload.SendData>(
+      uploadCall,
+      3,
+      2000,
+      0,
+      is_shared_worker
+    );
 
     // Return success with the data
     return { success: result.ETag || 'Upload successful' };
   } catch (error) {
-    console.error('pushFilesToS3V2 =>', error);
+    const err = JSON.stringify(error, null, 2);
+    console.error('pushFilesToS3V2 error =>', err);
+
+    // eslint-disable-next-line
+    // @ts-ignore
+    if (error.statusCode && error.statusCode >= 400) {
+      return {
+        error: `Expired token. Please re-authenticate! ${err}`,
+        errorCode: 'ExpiredToken',
+      };
+    }
+
     return {
-      error: `Something went wrong! ${error}`,
+      error: `Something went wrong! ${err}`,
     };
   }
 };
 
-export default uploadFileToS3;
+export default pushFileToS3;

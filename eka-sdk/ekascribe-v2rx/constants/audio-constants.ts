@@ -16,9 +16,10 @@ export const BITRATE = 128;
 export const QUALITY = 0;
 export const CHANNELS = 1;
 export const AUDIO_BUFFER_SIZE_IN_S = DESP_CHUNK_LENGTH + 5;
-export const OUTPUT_FORMAT = 'm4a';
+export const OUTPUT_FORMAT = 'mp3';
 export const AUDIO_EXTENSION_TYPE_MAP: Record<string, string> = {
   m4a: 'audio/m4a',
   wav: 'audio/wav',
+  mp3: 'audio/mpeg',
 };
 export const S3_BUCKET_NAME = 'm-prod-voice2rx';
