@@ -11,6 +11,13 @@ const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
     }
 
     vadInstance.startVad();
+    const txn_id = EkaScribeStore.txnID;
+    EkaScribeStore.sessionStatus[txn_id] = {
+      ...EkaScribeStore.sessionStatus[txn_id],
+      vad: {
+        status: 'resume',
+      },
+    };
 
     return {
       status_code: 200,

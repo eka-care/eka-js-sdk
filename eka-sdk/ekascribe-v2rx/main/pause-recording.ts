@@ -15,6 +15,14 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
 
     vadInstance.pauseVad();
 
+    const txn_id = EkaScribeStore.txnID;
+    EkaScribeStore.sessionStatus[txn_id] = {
+      ...EkaScribeStore.sessionStatus[txn_id],
+      vad: {
+        status: 'pause',
+      },
+    };
+
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
       const audioFrames = audioBufferInstance.getAudioData();
       const filenumber = fileManagerInstance.audioChunks.length || 1;

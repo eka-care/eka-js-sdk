@@ -128,3 +128,17 @@ export type TErrorCallback = (args: {
   status_code: number;
   message: string;
 }) => void;
+
+export type TSessionStatus = {
+  [key: string]: {
+    api?: {
+      status: 'na' | 'init' | 'stop' | 'commit';
+      error?: string;
+      response?: string;
+      code: number;
+    };
+    vad?: {
+      status: 'start' | 'pause' | 'stop' | 'resume';
+    };
+  };
+};

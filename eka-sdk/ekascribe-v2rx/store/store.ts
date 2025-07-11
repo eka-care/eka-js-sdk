@@ -1,16 +1,16 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
+import { TSessionStatus } from '../constants/types';
 
 class EkaScribeStore {
   private static instance: EkaScribeStore;
   private _txnID: string = '';
   private _sessionBucketPath: string = '';
-  private _mode: string = 'dictation';
-  private _date: string = '';
   private _vadInstance: VadWebClient | null = null; // vadWebClient Instance
   private _audioFileManagerInstance: AudioFileManager | null = null; // AudioFileManager Instance
   private _audioBufferInstance: AudioBufferManager | null = null; // AudioBuffer Instance
+  private _sessionStatus: TSessionStatus = {};
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -61,21 +61,20 @@ class EkaScribeStore {
     this._sessionBucketPath = value;
   }
 
-  // Mode (dictation, conversation, etc.)
-  get mode(): string {
-    return this._mode;
+  // Session Status
+  get sessionStatus(): TSessionStatus {
+    return this._sessionStatus;
   }
 
-  set mode(value: string) {
-    this._mode = value;
+  set sessionStatus(value: TSessionStatus) {
+    this._sessionStatus = value;
   }
 
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
     this._sessionBucketPath = '';
-    this._mode = 'dictation';
-    this._date = '';
+    this._sessionStatus = {};
   }
 }
 

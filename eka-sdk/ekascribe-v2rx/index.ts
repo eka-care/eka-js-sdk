@@ -81,10 +81,7 @@ class EkaScribe {
     });
   }
 
-  // TODO: needs to maintain the api status (na, init, stop, commit), api response (error code, status), vad status for a txn_id, what all has done yet, to avoid unexpected bugs and return response accordingly
   // TODO: callbacks - excalidraw dependency
-  // TODO: before calling api or executing an action check that txn previous status in every method
-  // TODO: check every method once with logics in excalidraw
 
   async startRecording({
     mode,
@@ -128,12 +125,13 @@ class EkaScribe {
 
   async cancelRecordingSession({ txn_id }: { txn_id: string }): Promise<TPostTransactionResponse> {
     try {
-      // TODO: reinstantiate classes instance
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId: txn_id,
         processing_status: PROCESSING_STATUS.CANCELLED,
         processing_error: processingError,
       });
+
+      this.resetEkaScribe();
 
       return patchTransactionResponse;
     } catch (error) {
@@ -187,8 +185,6 @@ class EkaScribe {
     }
   }
 
-  // TODO record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes form?
-
   getSuccessFiles() {
     return this.audioFileManagerInstance.getSuccessfulUploads();
   }
@@ -204,6 +200,7 @@ class EkaScribe {
   resetEkaScribe() {
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
+    this.vadInstance.resetVadWebInstance();
     EkaScribeStore.resetStore();
   }
 

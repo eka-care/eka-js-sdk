@@ -17,6 +17,12 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     vadInstance.pauseVad();
+    EkaScribeStore.sessionStatus[txnID] = {
+      ...EkaScribeStore.sessionStatus[txnID],
+      vad: {
+        status: 'stop',
+      },
+    };
 
     // upload last audio chunk
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
@@ -58,16 +64,28 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
     // call stop txn api
-    const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({
-      audioFiles,
-      txnId: txnID,
-    });
+    // TODO: handle if status is not what it is supposed to be
+    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'init') {
+      const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({
+        audioFiles,
+        txnId: txnID,
+      });
 
-    if (txnStopStatusCode != 200) {
-      return {
-        error_code: ERROR_CODE.TXN_STOP_FAILED,
-        status_code: txnStopStatusCode,
-        message: txnStopMsg || 'Transaction stop failed.',
+      if (txnStopStatusCode != 200) {
+        return {
+          error_code: ERROR_CODE.TXN_STOP_FAILED,
+          status_code: txnStopStatusCode,
+          message: txnStopMsg || 'Transaction stop failed.',
+        };
+      }
+
+      EkaScribeStore.sessionStatus[txnID] = {
+        ...EkaScribeStore.sessionStatus[txnID],
+        api: {
+          status: 'stop',
+          code: txnStopStatusCode,
+          response: txnStopMsg,
+        },
       };
     }
 
@@ -91,16 +109,27 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     // call commit transaction api
-    const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
-      txnId: txnID,
-      audioFiles,
-    });
+    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+      const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
+        txnId: txnID,
+        audioFiles,
+      });
 
-    if (txnCommitStatusCode != 200) {
-      return {
-        error_code: ERROR_CODE.TXN_COMMIT_FAILED,
-        status_code: txnCommitStatusCode,
-        message: txnCommitMsg || 'Transaction stop failed.',
+      if (txnCommitStatusCode != 200) {
+        return {
+          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
+          status_code: txnCommitStatusCode,
+          message: txnCommitMsg || 'Transaction stop failed.',
+        };
+      }
+
+      EkaScribeStore.sessionStatus[txnID] = {
+        ...EkaScribeStore.sessionStatus[txnID],
+        api: {
+          status: 'commit',
+          code: txnCommitStatusCode,
+          response: txnCommitMsg,
+        },
       };
     }
 

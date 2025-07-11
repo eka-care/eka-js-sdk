@@ -30,16 +30,28 @@ const retryUploadFailedFiles = async ({
     }
 
     // call commit transaction api
-    const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
-      txnId: EkaScribeStore.txnID,
-      audioFiles,
-    });
+    const txnID = EkaScribeStore.txnID;
+    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+      const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
+        txnId: EkaScribeStore.txnID,
+        audioFiles,
+      });
 
-    if (txnCommitStatusCode != 200) {
-      return {
-        error_code: ERROR_CODE.TXN_COMMIT_FAILED,
-        status_code: txnCommitStatusCode,
-        message: txnCommitMsg || 'Transaction stop failed.',
+      if (txnCommitStatusCode != 200) {
+        return {
+          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
+          status_code: txnCommitStatusCode,
+          message: txnCommitMsg || 'Transaction stop failed.',
+        };
+      }
+
+      EkaScribeStore.sessionStatus[txnID] = {
+        ...EkaScribeStore.sessionStatus[txnID],
+        api: {
+          status: 'commit',
+          code: txnCommitStatusCode,
+          response: txnCommitMsg,
+        },
       };
     }
 
