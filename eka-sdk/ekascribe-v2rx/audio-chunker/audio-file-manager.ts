@@ -19,7 +19,6 @@ class AudioFileManager {
    * and downloading audio files for debugging
    */
   private txnID: string = '';
-  private date: string = '';
   private filePath: string = '';
   public audioChunks: TAudioChunksInfo[] = [];
   private uploadPromises: UploadPromise[] = [];
@@ -51,17 +50,14 @@ class AudioFileManager {
    * Set basic file information
    */
   setSessionInfo({
-    date,
     sessionId,
     filePath,
     businessID,
   }: {
-    date: string;
     filePath: string;
     businessID: string;
     sessionId: string;
   }) {
-    this.date = date;
     this.txnID = sessionId;
     this.filePath = filePath;
     this.businessID = businessID;
@@ -194,6 +190,7 @@ class AudioFileManager {
       const response = await postCogInit();
       const { credentials, is_session_expired } = response;
       if (is_session_expired || !credentials) {
+        this.isAWSConfigured = false;
         return false;
       }
 
@@ -409,6 +406,8 @@ class AudioFileManager {
   /**
    * Wait for all upload promises to complete
    */
+
+  // TODO: need to check its working once
   async waitForAllUploads(): Promise<void> {
     if (this.sharedWorkerInstance) {
       return new Promise((resolve, reject) => {

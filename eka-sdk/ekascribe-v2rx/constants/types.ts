@@ -1,7 +1,7 @@
 import { ERROR_CODE } from './enums';
 
 export type TGetConfigV2Response = {
-  data: {
+  data?: {
     supported_languages: TGetConfigItem[];
     supported_output_formats: TGetConfigItem[];
     consultation_modes: TGetConfigItem[];
@@ -11,6 +11,8 @@ export type TGetConfigV2Response = {
       consultation_mode: number;
     };
   };
+  message?: string;
+  code?: number;
 };
 
 export type TGetConfigItem = {
@@ -23,6 +25,7 @@ export type TStartRecordingRequest = {
   mode: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
+  txn_id: string;
 };
 
 export type TStartRecordingResponse = {
@@ -119,3 +122,9 @@ export type TAudioChunksInfo = {
 };
 
 export type UploadProgressCallback = (success: string[], total: number) => void;
+
+export type TErrorCallback = (args: {
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+}) => void;

@@ -1,4 +1,5 @@
 import { TPostCogResponse } from '../constants/types';
+import fetchWrapper from '../fetch-client';
 
 async function postCogInit(): Promise<TPostCogResponse> {
   try {
@@ -6,23 +7,8 @@ async function postCogInit(): Promise<TPostCogResponse> {
       method: 'GET',
     };
 
-    const respJson = await fetch(`https://cog.eka.care/credentials`, options);
+    const respJson = await fetchWrapper(`https://cog.eka.care/credentials`, options);
 
-    // refresh COG token
-    if (respJson.status === 401) {
-      // @ts-ignore
-      // TODO: change this
-      const response = await window.refreshAuth();
-      if (response.ok) {
-        return await postCogInit();
-      }
-
-      return { is_session_expired: true };
-    }
-
-    if (respJson.status >= 400) {
-      throw new Error(`Invalid status code: ${respJson.status}`);
-    }
     const resp = await respJson.json();
     return resp;
   } catch (error) {

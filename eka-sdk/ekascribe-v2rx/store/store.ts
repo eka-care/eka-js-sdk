@@ -70,15 +70,6 @@ class EkaScribeStore {
     this._mode = value;
   }
 
-  // Date
-  get date(): string {
-    return this._date;
-  }
-
-  set date(value: string) {
-    this._date = value;
-  }
-
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';

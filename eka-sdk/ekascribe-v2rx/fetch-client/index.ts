@@ -80,7 +80,9 @@ export default async function fetchWrapper(
       headers: newHeaders,
     });
 
-    if (response.status === 401 && retry) {
+    const refresh_token = GET_REFRESH_TOKEN();
+
+    if (response.status === 401 && retry && refresh_token) {
       const refreshSuccess = await refreshToken();
 
       if (refreshSuccess) {

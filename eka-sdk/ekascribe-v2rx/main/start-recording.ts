@@ -3,14 +3,23 @@ import { S3_BUCKET_NAME } from '../constants/audio-constants';
 import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
-import { v4 as uuidv4 } from 'uuid';
 
 const startVoiceRecording = async ({
   mode,
   input_language,
   output_format_template,
+  txn_id,
 }: TStartRecordingRequest): Promise<TStartRecordingResponse> => {
   try {
+    if (!mode || !input_language || !output_format_template || !txn_id) {
+      return {
+        error_code: ERROR_CODE.INVALID_REQUEST,
+        status_code: 400,
+        message:
+          'Invalid request parameters. Please provide mode, input_language, output_format_template, and txn_id.',
+      };
+    }
+
     const vadInstance = EkaScribeStore.vadInstance;
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
 
@@ -30,24 +39,21 @@ const startVoiceRecording = async ({
       };
     }
 
-    const txnID = 'ce-' + uuidv4();
-    EkaScribeStore.txnID = txnID;
+    EkaScribeStore.txnID = txn_id;
     // File path calculation
-    const currDate = new Date();
-    const date = currDate.toISOString();
-    EkaScribeStore.date = date;
+    const date = new Date();
     // Format date to YYYYMMDD
-    const day = currDate.getDate().toString().padStart(2, '0');
-    const month = (currDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = currDate.getFullYear().toString().substring(2);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().substring(2);
     // s3 file path format: <date>/txnID
-    const filePath = `${year}${month}${day}/${txnID}`;
+    const filePath = `${year}${month}${day}/${txn_id}`;
     EkaScribeStore.sessionBucketPath = filePath;
 
     const txnInitResponse = await postTransactionInit({
       mode,
-      txnId: txnID,
-      s3Url: `s3://${S3_BUCKET_NAME}/${EkaScribeStore.sessionBucketPath}`,
+      txnId: txn_id,
+      s3Url: `s3://${S3_BUCKET_NAME}/${filePath}`,
       input_language,
       output_format_template,
     });
@@ -76,8 +82,7 @@ const startVoiceRecording = async ({
     }
 
     fileManagerInstance?.setSessionInfo({
-      date: filePath,
-      sessionId: txnID,
+      sessionId: txn_id,
       filePath: filePath,
       businessID: businessId,
     });
@@ -96,7 +101,7 @@ const startVoiceRecording = async ({
       message: 'Recording started successfully.',
       status_code: 200,
       business_id: businessId,
-      txn_id: txnID,
+      txn_id,
     };
   } catch (err) {
     console.log('%c Line:102 🍇 startRecording err', 'color:#b03734', err);

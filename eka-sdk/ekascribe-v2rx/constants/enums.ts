@@ -20,6 +20,8 @@ export enum ERROR_CODE {
   UNKNOWN_ERROR = 'unknown_error',
   TXN_STOP_FAILED = 'txn_stop_failed',
   AUDIO_UPLOAD_FAILED = 'audio_upload_failed',
+  TXN_COMMIT_FAILED = 'txn_commit_failed',
+  INVALID_REQUEST = 'invalid_request',
 }
 
 export enum PROCESSING_STATUS {

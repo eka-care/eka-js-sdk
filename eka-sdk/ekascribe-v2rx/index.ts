@@ -16,7 +16,11 @@ import {
   SAMPLING_RATE,
 } from './constants/audio-constants';
 import { PROCESSING_STATUS } from './constants/enums';
-import { TPostTransactionResponse, TStartRecordingRequest } from './constants/types';
+import {
+  TErrorCallback,
+  TPostTransactionResponse,
+  TStartRecordingRequest,
+} from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
@@ -64,20 +68,40 @@ class EkaScribe {
     return await getConfigV2();
   }
 
-  async startRecording({ mode, input_language, output_format_template }: TStartRecordingRequest) {
+  public updateAuthTokens({
+    access_token,
+    refresh_token,
+  }: {
+    access_token: string;
+    refresh_token: string;
+  }) {
+    setEnv({
+      auth_token: access_token,
+      refresh_token,
+    });
+  }
+
+  // TODO: needs to maintain the api status (na, init, stop, commit), api response (error code, status), vad status for a txn_id, what all has done yet, to avoid unexpected bugs and return response accordingly
+  // TODO: callbacks - excalidraw dependency
+  // TODO: before calling api or executing an action check that txn previous status in every method
+  // TODO: check every method once with logics in excalidraw
+
+  async startRecording({
+    mode,
+    input_language,
+    output_format_template,
+    txn_id,
+  }: TStartRecordingRequest) {
     /*
     Client side handling:
     1. check network
     2. check microphone permission
-
-    SDK side handling:
-    1. vad error
-    2. check if vad is capturing frames or not
     */
     const startResponse = await startVoiceRecording({
       mode,
       input_language,
       output_format_template,
+      txn_id,
     });
     return startResponse;
   }
@@ -104,6 +128,7 @@ class EkaScribe {
 
   async cancelRecordingSession({ txn_id }: { txn_id: string }): Promise<TPostTransactionResponse> {
     try {
+      // TODO: reinstantiate classes instance
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId: txn_id,
         processing_status: PROCESSING_STATUS.CANCELLED,
@@ -162,10 +187,7 @@ class EkaScribe {
     }
   }
 
-  /**
-   * TODO
-   * 3. record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes form?
-   */
+  // TODO record again - reset and restart - monday // on restarting ekascribe will new instances of internal classes form?
 
   getSuccessFiles() {
     return this.audioFileManagerInstance.getSuccessfulUploads();
@@ -184,6 +206,8 @@ class EkaScribe {
     this.audioBufferInstance.resetBufferManagerInstance();
     EkaScribeStore.resetStore();
   }
+
+  onError(callback: TErrorCallback) {}
 
   configureVadConstants({
     pref_length,

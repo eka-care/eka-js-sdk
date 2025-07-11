@@ -37,7 +37,7 @@ const retryUploadFailedFiles = async ({
 
     if (txnCommitStatusCode != 200) {
       return {
-        error_code: ERROR_CODE.TXN_STOP_FAILED,
+        error_code: ERROR_CODE.TXN_COMMIT_FAILED,
         status_code: txnCommitStatusCode,
         message: txnCommitMsg || 'Transaction stop failed.',
       };

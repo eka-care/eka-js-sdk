@@ -42,7 +42,6 @@ async function postTransactionInit({
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
     return {
-      // TODO: ask what should i use in this case: -1 or 520
       code: 520, // web server error
       message: `Something went wrong! ${error}`,
     } as TPostTransactionResponse;
