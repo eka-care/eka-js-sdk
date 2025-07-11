@@ -16,7 +16,7 @@ onconnect = function (event: MessageEvent) {
   // after connection messages are being channelled through the port
   const workerPort = event.ports[0];
 
-  let uploadRequestRecieved: number = 0;
+  let uploadRequestReceived: number = 0;
   let uploadRequestCompleted: number = 0;
 
   // onmessage - to handle messages from the main thread
@@ -50,7 +50,7 @@ onconnect = function (event: MessageEvent) {
 
       case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER: {
         const { fileName, audioFrames, txnID, businessID, fileBlob } = workerData.payload;
-        uploadRequestRecieved++;
+        uploadRequestReceived++;
 
         let audioBlob: Blob;
 
@@ -92,28 +92,24 @@ onconnect = function (event: MessageEvent) {
       }
 
       case SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS: {
-        if (uploadRequestRecieved === 0) {
+        if (uploadRequestReceived === uploadRequestCompleted) {
           workerPort.postMessage({
             action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS,
             response: {
-              uploadRequestRecieved,
+              uploadRequestReceived,
               uploadRequestCompleted,
             },
           });
           return;
         }
 
-        if (uploadRequestRecieved === uploadRequestCompleted) {
-          workerPort.postMessage({
-            action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS,
-            response: {
-              uploadRequestRecieved,
-              uploadRequestCompleted,
-            },
-          });
-          return;
-        }
-
+        workerPort.postMessage({
+          action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_ERROR,
+          response: {
+            uploadRequestReceived,
+            uploadRequestCompleted,
+          },
+        });
         return;
       }
     }

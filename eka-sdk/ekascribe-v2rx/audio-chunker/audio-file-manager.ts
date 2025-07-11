@@ -406,39 +406,30 @@ class AudioFileManager {
   /**
    * Wait for all upload promises to complete
    */
-
-  // TODO: need to check its working once
   async waitForAllUploads(): Promise<void> {
     if (this.sharedWorkerInstance) {
       return new Promise((resolve, reject) => {
-        let pollInterval: NodeJS.Timeout | null = null;
-
         // one-time message handler to listen for the response
         const messageHandler = (event: MessageEvent) => {
           if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS) {
-            const { uploadRequestRecieved, uploadRequestCompleted } = event.data.response || {};
-
-            if (uploadRequestRecieved === uploadRequestCompleted) {
-              if (pollInterval) clearInterval(pollInterval);
-              this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
-              resolve();
-            }
-          } else if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_ERROR) {
-            if (pollInterval) clearInterval(pollInterval);
             this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
-            reject(new Error(event.data.error || 'Failed to wait for uploads'));
+            resolve();
+          } else if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_ERROR) {
+            const { uploadRequestReceived } = event.data.response || {};
+
+            if (uploadRequestReceived === 0) {
+              this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+              reject();
+            }
+
+            this.sharedWorkerInstance?.port.postMessage({
+              action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
+            });
           }
         };
 
         // one-time listener
         this.sharedWorkerInstance?.port.addEventListener('message', messageHandler);
-
-        // poll for status every 200ms
-        pollInterval = setInterval(() => {
-          this.sharedWorkerInstance?.port.postMessage({
-            action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
-          });
-        }, 200);
 
         this.sharedWorkerInstance?.port.postMessage({
           action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
