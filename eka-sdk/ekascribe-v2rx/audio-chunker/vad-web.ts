@@ -7,6 +7,7 @@ import {
   SHORT_SILENCE_THRESHOLD,
 } from '../constants/audio-constants';
 import EkaScribeStore from '../store/store';
+import { TPauseRecordingResponse } from '../constants/types';
 
 class VadWebClient {
   private vad_past: number[];
@@ -21,6 +22,7 @@ class VadWebClient {
   private frame_size: number;
   private speech_pad_frames: number;
   private micVad: MicVAD; // MicVad Object
+  private initialAudioCaptureTimeout: NodeJS.Timeout | null = null;
 
   /**
    * Class that handle Vad functions and manages audio chunk
@@ -119,9 +121,6 @@ class VadWebClient {
     const vad = await MicVAD.new({
       frameSamples: this.frame_size,
       preSpeechPadFrames: this.speech_pad_frames,
-      // TODO: test this startOnLoad since it is undefined, so is the vad starting on load or not?
-      // TODO: handle vad 2 sec error case
-      // startOnLoad: false,
       onFrameProcessed: (prob, frames) => {
         audioFileManager?.incrementTotalRawSamples(frames);
 
@@ -202,6 +201,31 @@ class VadWebClient {
    */
   pauseVad() {
     this.micVad.pause();
+  }
+
+  /**
+   * reset vadWeb instance
+   */
+  resetVadWebInstance() {
+    this.vad_past = [];
+    this.last_clip_index = 0;
+    this.clip_points = [0];
+    this.sil_duration_acc = 0;
+  }
+
+  /**
+   * monitor initial audio capture within starting 4 seconds
+   */
+  // TODO: this has to be a callback
+  monitorInitialAudioCapture(): TPauseRecordingResponse {
+    const audioBuffer = EkaScribeStore.audioBufferInstance;
+    this.initialAudioCaptureTimeout = setTimeout(() => {
+      if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
+        this.micVad.pause();
+
+        return;
+      }
+    }, 4000);
   }
 
   /**
