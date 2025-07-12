@@ -217,16 +217,16 @@ class VadWebClient {
    * monitor initial audio capture within starting 4 seconds
    */
   // TODO: this has to be a callback
-  monitorInitialAudioCapture(): TPauseRecordingResponse {
-    const audioBuffer = EkaScribeStore.audioBufferInstance;
-    this.initialAudioCaptureTimeout = setTimeout(() => {
-      if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
-        this.micVad.pause();
+  // monitorInitialAudioCapture(): TPauseRecordingResponse {
+  //   const audioBuffer = EkaScribeStore.audioBufferInstance;
+  //   this.initialAudioCaptureTimeout = setTimeout(() => {
+  //     if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
+  //       this.micVad.pause();
 
-        return;
-      }
-    }, 4000);
-  }
+  //       return;
+  //     }
+  //   }, 4000);
+  // }
 
   /**
    * Callback to configure constants
