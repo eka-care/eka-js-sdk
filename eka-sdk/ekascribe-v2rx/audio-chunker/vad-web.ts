@@ -22,7 +22,6 @@ class VadWebClient {
   private frame_size: number;
   private speech_pad_frames: number;
   private micVad: MicVAD; // MicVad Object
-  private initial_audio_capture_timeout: NodeJS.Timeout | null = null;
   private is_vad_loading: boolean = true;
 
   /**
@@ -223,7 +222,6 @@ class VadWebClient {
     this.last_clip_index = 0;
     this.clip_points = [0];
     this.sil_duration_acc = 0;
-    this.initial_audio_capture_timeout = null;
   }
 
   /**
@@ -232,7 +230,7 @@ class VadWebClient {
   monitorInitialAudioCapture() {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     const errorCallback = EkaScribeStore.errorCallback;
-    this.initial_audio_capture_timeout = setTimeout(() => {
+    setTimeout(() => {
       if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
         this.micVad.pause();
         if (errorCallback) {

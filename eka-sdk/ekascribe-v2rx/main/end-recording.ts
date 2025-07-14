@@ -64,7 +64,6 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
     // call stop txn api
-    // TODO: handle if status is not what it is supposed to be ?
     if (EkaScribeStore.sessionStatus[txnID].api?.status === 'init') {
       const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({
         audioFiles,
@@ -86,6 +85,13 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
           code: txnStopStatusCode,
           response: txnStopMsg,
         },
+      };
+    } else if (EkaScribeStore.sessionStatus[txnID].api?.status === 'na') {
+      // transaction is not initialised
+      return {
+        error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+        status_code: 400,
+        message: 'Transaction is not initialized. Cannot end recording.',
       };
     }
 
@@ -130,6 +136,13 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
           code: txnCommitStatusCode,
           response: txnCommitMsg,
         },
+      };
+    } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+      // transaction is not stopped or committed
+      return {
+        error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+        status_code: 400,
+        message: 'Transaction is not initialised or stopped. Cannot end recording.',
       };
     }
 

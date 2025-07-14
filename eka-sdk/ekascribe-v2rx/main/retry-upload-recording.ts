@@ -53,6 +53,13 @@ const retryUploadFailedFiles = async ({
           response: txnCommitMsg,
         },
       };
+    } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+      // transaction is not stopped or committed
+      return {
+        error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+        status_code: 400,
+        message: 'Transaction is not initialised or stopped. Cannot end recording.',
+      };
     }
 
     return {
