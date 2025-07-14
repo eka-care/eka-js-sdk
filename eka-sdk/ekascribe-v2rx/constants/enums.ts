@@ -22,6 +22,8 @@ export enum ERROR_CODE {
   AUDIO_UPLOAD_FAILED = 'audio_upload_failed',
   TXN_COMMIT_FAILED = 'txn_commit_failed',
   INVALID_REQUEST = 'invalid_request',
+  VAD_NOT_INITIALIZED = 'vad_not_initialized',
+  NO_AUDIO_CAPTURE = 'no_audio_capture',
 }
 
 export enum PROCESSING_STATUS {

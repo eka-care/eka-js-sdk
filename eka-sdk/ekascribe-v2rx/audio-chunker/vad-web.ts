@@ -7,7 +7,7 @@ import {
   SHORT_SILENCE_THRESHOLD,
 } from '../constants/audio-constants';
 import EkaScribeStore from '../store/store';
-import { TPauseRecordingResponse } from '../constants/types';
+import { ERROR_CODE } from '../constants/enums';
 
 class VadWebClient {
   private vad_past: number[];
@@ -22,7 +22,8 @@ class VadWebClient {
   private frame_size: number;
   private speech_pad_frames: number;
   private micVad: MicVAD; // MicVad Object
-  private initialAudioCaptureTimeout: NodeJS.Timeout | null = null;
+  private initial_audio_capture_timeout: NodeJS.Timeout | null = null;
+  private is_vad_loading: boolean = true;
 
   /**
    * Class that handle Vad functions and manages audio chunk
@@ -55,6 +56,13 @@ class VadWebClient {
    */
   getMicVad(): MicVAD {
     return this.micVad;
+  }
+
+  /**
+   * Check if VAD is loading
+   */
+  isVadLoading(): boolean {
+    return this.is_vad_loading;
   }
 
   /**
@@ -117,6 +125,7 @@ class VadWebClient {
   async initVad() {
     const audioFileManager = EkaScribeStore.audioFileManagerInstance;
     const audioBuffer = EkaScribeStore.audioBufferInstance;
+    this.is_vad_loading = true;
 
     const vad = await MicVAD.new({
       frameSamples: this.frame_size,
@@ -144,6 +153,7 @@ class VadWebClient {
       },
     });
 
+    this.is_vad_loading = false;
     this.micVad = vad;
   }
 
@@ -194,6 +204,8 @@ class VadWebClient {
    */
   startVad() {
     this.micVad.start();
+
+    this.monitorInitialAudioCapture();
   }
 
   /**
@@ -211,22 +223,32 @@ class VadWebClient {
     this.last_clip_index = 0;
     this.clip_points = [0];
     this.sil_duration_acc = 0;
+    this.initial_audio_capture_timeout = null;
   }
 
   /**
    * monitor initial audio capture within starting 4 seconds
    */
-  // TODO: this has to be a callback
-  // monitorInitialAudioCapture(): TPauseRecordingResponse {
-  //   const audioBuffer = EkaScribeStore.audioBufferInstance;
-  //   this.initialAudioCaptureTimeout = setTimeout(() => {
-  //     if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
-  //       this.micVad.pause();
+  monitorInitialAudioCapture() {
+    const audioBuffer = EkaScribeStore.audioBufferInstance;
+    const errorCallback = EkaScribeStore.errorCallback;
+    this.initial_audio_capture_timeout = setTimeout(() => {
+      if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
+        this.micVad.pause();
+        if (errorCallback) {
+          errorCallback({
+            error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
+            status_code: 400,
+            message:
+              'No audio captured within the initial 4 seconds. Please check your microphone.',
+          });
+        }
+        return false;
+      }
 
-  //       return;
-  //     }
-  //   }, 4000);
-  // }
+      return true;
+    }, 4000);
+  }
 
   /**
    * Callback to configure constants

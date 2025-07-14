@@ -81,8 +81,6 @@ class EkaScribe {
     });
   }
 
-  // TODO: callbacks - excalidraw dependency
-
   async startRecording({
     mode,
     input_language,
@@ -204,7 +202,9 @@ class EkaScribe {
     EkaScribeStore.resetStore();
   }
 
-  onError(callback: TErrorCallback) {}
+  onError(callback: TErrorCallback) {
+    EkaScribeStore.errorCallback = callback;
+  }
 
   configureVadConstants({
     pref_length,

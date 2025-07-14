@@ -104,13 +104,15 @@ const startVoiceRecording = async ({
       });
     }
 
-    // TODO: return if vad is still loading or throws error - how to detect error - go through github doc
-    // const micVad = vadInstance?.getMicVad();
-    // if (micVad.errored) {
-    //   return {
-    //     vad_error: 'Microphone access not granted. Please check access in your system settings.',
-    //   };
-    // }
+    const micVad = vadInstance?.getMicVad();
+    const isVadLoading = vadInstance?.isVadLoading();
+    if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
+      return {
+        error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
+        status_code: 400,
+        message: 'VAD instance is not initialized. Please try again later.',
+      };
+    }
 
     vadInstance?.startVad();
     EkaScribeStore.sessionStatus[txn_id] = {
