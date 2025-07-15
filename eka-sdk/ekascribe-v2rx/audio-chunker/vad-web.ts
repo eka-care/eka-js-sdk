@@ -47,7 +47,17 @@ class VadWebClient {
     this.micVad = {} as MicVAD;
 
     // instantiate MicVad
-    this.initVad();
+
+    /**
+     * TODO:
+     * create shared worker in main thread - class initialization
+     * pass msg to shared worker
+     * maintain fileManager and bufferInstance in worker (message passing)
+     * call this method in shared worker
+     *
+     */
+
+    // this.initVad();
   }
 
   /**
@@ -119,6 +129,15 @@ class VadWebClient {
   }
 
   /**
+   * initialise VAD in shared worker
+   */
+  initializeVadInSharedWorker() {
+    EkaScribeStore.sharedWorkerInstance?.port.postMessage({
+      action: 'INIT_VAD',
+    });
+  }
+
+  /**
    * initialize the VAD instance
    */
   async initVad() {
@@ -155,6 +174,8 @@ class VadWebClient {
     this.is_vad_loading = false;
     this.micVad = vad;
   }
+
+  // TODO: recieve the vad instance from shared worker and update the boolean, little messy and buggy - bit complex - resolve
 
   /**
    * process and upload audio chunk to s3

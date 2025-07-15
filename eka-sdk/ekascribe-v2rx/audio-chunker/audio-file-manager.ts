@@ -109,14 +109,14 @@ class AudioFileManager {
     return this.audioChunks.length;
   }
 
-  createSharedWorkerInstance(): {
+  /**
+   * set shared worker instance
+   */
+  setSharedWorkerInstance(sharedWorker: SharedWorker): {
     success: boolean;
   } {
     try {
-      const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.ts'));
-
-      this.sharedWorkerInstance = worker;
-
+      this.sharedWorkerInstance = sharedWorker;
       this.sharedWorkerInstance.port.onmessage = async (event: MessageEvent) => {
         const workerResponse = event.data;
 
@@ -171,8 +171,6 @@ class AudioFileManager {
           }
         }
       };
-
-      worker.port.start();
 
       return {
         success: true,
@@ -335,10 +333,6 @@ class AudioFileManager {
     } else {
       // Shared Workers are supported
       console.log('Shared Workers are NOT supported in this browser.');
-
-      if (!this.sharedWorkerInstance) {
-        this.createSharedWorkerInstance();
-      }
 
       this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }

@@ -12,6 +12,7 @@ class EkaScribeStore {
   private _audioBufferInstance: AudioBufferManager | null = null; // AudioBuffer Instance
   private _sessionStatus: TSessionStatus = {};
   private _errorCallback: TErrorCallback | null = null;
+  private _sharedWorkerInstance: SharedWorker | null = null; // SharedWorker Instance
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -77,6 +78,15 @@ class EkaScribeStore {
   }
   set errorCallback(callback: TErrorCallback | null) {
     this._errorCallback = callback;
+  }
+
+  // SharedWorker Instance
+  get sharedWorkerInstance(): SharedWorker | null {
+    return this._sharedWorkerInstance;
+  }
+
+  set sharedWorkerInstance(value: SharedWorker) {
+    this._sharedWorkerInstance = value;
   }
 
   // Reset store to initial state

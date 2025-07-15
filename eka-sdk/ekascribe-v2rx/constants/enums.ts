@@ -45,4 +45,8 @@ export enum SHARED_WORKER_ACTION {
   WAIT_FOR_ALL_UPLOADS = 'wait_for_all_uploads',
   WAIT_FOR_ALL_UPLOADS_SUCCESS = 'wait_for_all_uploads_success',
   WAIT_FOR_ALL_UPLOADS_ERROR = 'wait_for_all_uploads_error',
+  INIT_VAD = 'init_vad',
+  INIT_VAD_ERROR = 'init_vad_error',
+  INIT_VAD_SUCCESS = 'init_vad_success',
+  SET_CLASS_INSTANCE = 'set_class_instance',
 }

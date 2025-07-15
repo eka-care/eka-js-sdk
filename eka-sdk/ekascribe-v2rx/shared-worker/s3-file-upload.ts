@@ -3,6 +3,9 @@ if (typeof window === 'undefined') {
   self.window = self;
 }
 
+import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
+import AudioFileManager from '../audio-chunker/audio-file-manager';
+import VadWebClient from '../audio-chunker/vad-web';
 import { configureAWS } from '../aws-services/configure-aws';
 import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-constants';
@@ -18,6 +21,9 @@ onconnect = function (event: MessageEvent) {
 
   let uploadRequestReceived: number = 0;
   let uploadRequestCompleted: number = 0;
+  let audioFileManager: AudioFileManager;
+  let audioBuffer: AudioBufferManager;
+  let vadWeb: VadWebClient;
 
   // onmessage - to handle messages from the main thread
   workerPort.onmessage = async function (event) {
@@ -109,6 +115,32 @@ onconnect = function (event: MessageEvent) {
             uploadRequestReceived,
             uploadRequestCompleted,
           },
+        });
+        return;
+      }
+
+      case SHARED_WORKER_ACTION.SET_CLASS_INSTANCE: {
+        const { audioFileManagerInstance, audioBufferInstance, vadInstance } = workerData.payload;
+        audioBuffer = audioBufferInstance;
+        audioFileManager = audioFileManagerInstance;
+        vadWeb = vadInstance;
+        return;
+      }
+
+      case SHARED_WORKER_ACTION.INIT_VAD: {
+        if (!vadWeb) {
+          workerPort.postMessage({
+            action: SHARED_WORKER_ACTION.INIT_VAD_ERROR,
+            error: 'VAD instance is not initialized',
+          });
+          return;
+        }
+
+        await vadWeb.initVad();
+
+        workerPort.postMessage({
+          action: SHARED_WORKER_ACTION.INIT_VAD_SUCCESS,
+          message: 'VAD initialized successfully',
         });
         return;
       }

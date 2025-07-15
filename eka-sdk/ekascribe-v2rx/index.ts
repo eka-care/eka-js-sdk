@@ -15,7 +15,7 @@ import {
   PREF_CHUNK_LENGTH,
   SAMPLING_RATE,
 } from './constants/audio-constants';
-import { PROCESSING_STATUS } from './constants/enums';
+import { PROCESSING_STATUS, SHARED_WORKER_ACTION } from './constants/enums';
 import {
   TErrorCallback,
   TPostTransactionResponse,
@@ -35,6 +35,10 @@ class EkaScribe {
   private audioBufferInstance;
 
   constructor() {
+    this.audioFileManagerInstance = new AudioFileManager();
+    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
+    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
     this.vadInstance = new VadWebClient(
       PREF_CHUNK_LENGTH,
       DESP_CHUNK_LENGTH,
@@ -42,10 +46,23 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
-    this.audioFileManagerInstance = new AudioFileManager();
-    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
-    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
+    const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.ts'));
+    worker.port.start();
+
+    EkaScribeStore.sharedWorkerInstance = worker;
+    this.audioFileManagerInstance.setSharedWorkerInstance(worker);
+
+    worker.port.postMessage({
+      action: SHARED_WORKER_ACTION.SET_CLASS_INSTANCE,
+      payload: {
+        audioFileManagerInstance: this.audioFileManagerInstance,
+        audioBufferInstance: this.audioBufferInstance,
+        vadInstance: this.vadInstance,
+      },
+    });
+
+    EkaScribeStore.vadInstance.initializeVadInSharedWorker();
   }
 
   public initEkaScribe({
@@ -243,17 +260,16 @@ export default EkaScribe;
 const ekascribeInstance = new EkaScribe();
 
 export const initEkascribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
-export const getEkascribeConfig = ekascribeInstance.getEkascribeConfig.bind(ekascribeInstance);
-export const startRecording = ekascribeInstance.startRecording.bind(ekascribeInstance);
-export const pauseRecording = ekascribeInstance.pauseRecording.bind(ekascribeInstance);
-export const resumeRecording = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
-export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstance);
+export const getConfig = ekascribeInstance.getEkascribeConfig.bind(ekascribeInstance);
+export const start = ekascribeInstance.startRecording.bind(ekascribeInstance);
+export const pause = ekascribeInstance.pauseRecording.bind(ekascribeInstance);
+export const resume = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
+export const end = ekascribeInstance.endRecording.bind(ekascribeInstance);
 export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
 export const cancelRecordingSession =
   ekascribeInstance.cancelRecordingSession.bind(ekascribeInstance);
-export const commitTransactionCall =
-  ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
-export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
+export const commitTransaction = ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
+export const stopTransaction = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
 export const getTemplateOutput = ekascribeInstance.getTemplateOutput.bind(ekascribeInstance);
 
 export const getSuccessfullyUploadedFiles =

@@ -1,10 +1,16 @@
 {
   "name": "eka-js-sdk",
+  "private": "true",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "description": "ADD A DESCRIPTION",
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
   "license": "MIT",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "default": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint . --ext .ts",
