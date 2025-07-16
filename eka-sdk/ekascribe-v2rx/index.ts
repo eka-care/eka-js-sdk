@@ -15,8 +15,9 @@ import {
   PREF_CHUNK_LENGTH,
   SAMPLING_RATE,
 } from './constants/audio-constants';
-import { PROCESSING_STATUS } from './constants/enums';
+import { ERROR_CODE, PROCESSING_STATUS } from './constants/enums';
 import {
+  TEndRecordingResponse,
   TErrorCallback,
   TPostTransactionResponse,
   TStartRecordingRequest,
@@ -65,7 +66,8 @@ class EkaScribe {
   }
 
   public async getEkascribeConfig() {
-    return await getConfigV2();
+    const response = await getConfigV2();
+    return response;
   }
 
   public updateAuthTokens({
@@ -87,11 +89,6 @@ class EkaScribe {
     output_format_template,
     txn_id,
   }: TStartRecordingRequest) {
-    /*
-    Client side handling:
-    1. check network
-    2. check microphone permission
-    */
     const startResponse = await startVoiceRecording({
       mode,
       input_language,
@@ -141,23 +138,35 @@ class EkaScribe {
     }
   }
 
-  async commitTransactionCall(): Promise<TPostTransactionResponse> {
+  async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
       const audioInfo = this.audioFileManagerInstance?.audioChunks;
       const audioFiles = audioInfo.map((audio) => audio.fileName);
 
-      const postTransactionResponse = await postTransactionCommit({
+      const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         audioFiles,
         txnId: EkaScribeStore.txnID,
       });
 
-      return postTransactionResponse;
+      if (txnCommitStatusCode != 200) {
+        return {
+          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
+          status_code: txnCommitStatusCode,
+          message: txnCommitMsg || 'Transaction stop failed.',
+        };
+      }
+
+      return {
+        status_code: 200,
+        message: txnCommitMsg || 'Transaction committed successfully.',
+      };
     } catch (error) {
       console.error('Error in transaction commit: ', error);
       return {
-        code: 520,
+        error_code: ERROR_CODE.UNKNOWN_ERROR,
+        status_code: 520,
         message: `Failed to cancel recording session, ${error}`,
-      } as TPostTransactionResponse;
+      } as TEndRecordingResponse;
     }
   }
 
@@ -167,10 +176,10 @@ class EkaScribe {
     return endRecordingResponse;
   }
 
-  async getTemplateOutput({ txnID }: { txnID: string }) {
+  async getTemplateOutput({ txn_id }: { txn_id: string }) {
     try {
       const getStatusResponse = await getVoiceApiV2Status({
-        txnId: txnID,
+        txnId: txn_id,
       });
 
       return getStatusResponse;
@@ -260,14 +269,3 @@ export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
 export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
 export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
-
-/**
- * Client side handling:
- * 1. show the activity indicator - user speaking/not speaking
- *
- * SDK pending tasks:
- * 1. publish this to npm
- * 2. write documentation
- * 3. thoroughly test the SDK - each function end to end
- *
- */

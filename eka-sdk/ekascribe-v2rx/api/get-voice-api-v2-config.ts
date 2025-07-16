@@ -11,10 +11,13 @@ export const getConfigV2 = async (): Promise<TGetConfigV2Response> => {
       },
     };
 
-    const response = await fetchWrapper(`${GET_EKA_V2RX_HOST_V2()}/voice/api/v2/config/`, options);
+    const response = await fetchWrapper(`${GET_EKA_V2RX_HOST_V2()}/config/`, options);
     const res = await response.json();
 
-    return res;
+    return {
+      ...res,
+      code: response.status,
+    };
   } catch (error) {
     console.log('Returning hardcoded settings in getConfig api: ', error);
 
