@@ -158,8 +158,8 @@ await endRecording();
   error_code?: ERROR_CODE;
   status_code: number;
   message: string;
-  failed_files?: ['1.mp3', '2.mp3'];
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
+  failed_files?: ['1.mp3', '2.mp3']; // if there are any failed files
+  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3']; // list of all audio files generated
 };
 ```
 
@@ -200,12 +200,15 @@ await cancelRecordingSession({ txn_id: 'abc-123' });
 
 ```ts
 {
-  error_code?: ERROR_CODE;
-  status_code: number;
+  status: string;
   message: string;
-  failed_files?: ['1.mp3', '2.mp3'];
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
-};
+  code: number;
+  error?: {
+    code: string;
+    message: string;
+    display_message: string;
+  };
+}
 ```
 
 ## Step 9: Commit transaction
@@ -277,7 +280,7 @@ const successFiles = await getSuccessfullyUploadedFiles();
 ### Response type:
 
 ```ts
-['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
+['3.mp3', '4.mp3'];
 ```
 
 ## Step 14: Get failed audio files
@@ -303,3 +306,19 @@ onError(({ error_code, status_code, message }) => {
   console.error('Ekascribe SDK Error:', { error_code, status_code, message });
 });
 ```
+
+## ERROR CODES:
+
+| Error Code            | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `microphone`          | Microphone access error (permission denied or unavailable)  |
+| `txn_init_failed`     | Failed to initialize transaction                            |
+| `txn_limit_exceeded`  | Maximum number of concurrent transactions exceeded          |
+| `unknown_error`       | An unknown or unclassified error occurred                   |
+| `txn_stop_failed`     | Error occurred while stopping the transaction               |
+| `audio_upload_failed` | Audio file upload to server failed                          |
+| `txn_commit_failed`   | Commit call failed for the current transaction              |
+| `invalid_request`     | Request to SDK was malformed or missing required parameters |
+| `vad_not_initialized` | Voice activity detection engine was not initialized         |
+| `no_audio_capture`    | No audio was captured during the recording session          |
+| `txn_status_mismatch` | Invalid operation due to mismatched transaction status      |

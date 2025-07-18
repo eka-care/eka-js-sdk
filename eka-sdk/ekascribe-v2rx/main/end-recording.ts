@@ -1,6 +1,6 @@
 import postTransactionCommit from '../api/post-transaction-commit';
 import postTransactionStop from '../api/post-transaction-stop';
-import { OUTPUT_FORMAT } from '../constants/audio-constants';
+import { OUTPUT_FORMAT, SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -27,7 +27,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     // upload last audio chunk
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
       const audioFrames = audioBufferInstance.getAudioData();
-      const filenumber = fileManagerInstance.audioChunks.length || 1;
+      const filenumber = (fileManagerInstance.audioChunks.length || 0) + 1;
       const filename = `${filenumber}.${OUTPUT_FORMAT}`;
 
       const rawSampleDetails = fileManagerInstance.getRawSampleDetails();
@@ -90,7 +90,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
       // transaction is not initialised
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
         message: 'Transaction is not initialized. Cannot end recording.',
       };
     }
@@ -107,7 +107,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     if (retryFailedFiles.length > 0) {
       return {
         error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.AUDIO_ERROR,
         message: 'Audio upload failed for some files after retry.',
         failed_files: retryFailedFiles,
         total_audio_files: audioFiles,
@@ -141,13 +141,13 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
       // transaction is not stopped or committed
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
         message: 'Transaction is not initialised or stopped. Cannot end recording.',
       };
     }
 
     return {
-      status_code: 200,
+      status_code: SDK_STATUS_CODE.SUCCESS,
       message: 'Recording ended successfully.',
     };
   } catch (error) {
@@ -155,7 +155,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
 
     return {
       error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: 520,
+      status_code: SDK_STATUS_CODE.BAD_REQUEST,
       message: `An error occurred while ending the recording: ${error}`,
     };
   }

@@ -1,4 +1,4 @@
-import { OUTPUT_FORMAT } from '../constants/audio-constants';
+import { OUTPUT_FORMAT, SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TPauseRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -25,7 +25,7 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
 
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
       const audioFrames = audioBufferInstance.getAudioData();
-      const filenumber = fileManagerInstance.audioChunks.length || 1;
+      const filenumber = (fileManagerInstance.audioChunks.length || 0) + 1;
       const filename = `${filenumber}.${OUTPUT_FORMAT}`;
 
       const rawSampleDetails = fileManagerInstance.getRawSampleDetails();
@@ -57,7 +57,7 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
     }
 
     return {
-      status_code: 200,
+      status_code: SDK_STATUS_CODE.SUCCESS,
       message: 'Recording paused successfully',
       is_paused: true,
     };
@@ -65,7 +65,7 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
     console.log('%c Line:7 🍔 pauseRecording error', 'color:#3f7cff', error);
     return {
       error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: 520,
+      status_code: SDK_STATUS_CODE.BAD_REQUEST,
       message: `An error occurred while starting the recording: ${error}`,
     };
   }

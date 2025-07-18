@@ -1,5 +1,5 @@
 import postTransactionInit from '../api/post-transaction-init';
-import { S3_BUCKET_NAME } from '../constants/audio-constants';
+import { S3_BUCKET_NAME } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -10,6 +10,7 @@ const startVoiceRecording = async ({
   output_format_template,
   txn_id,
 }: TStartRecordingRequest): Promise<TStartRecordingResponse> => {
+  let txnInitResponse;
   try {
     if (!mode || !input_language || !output_format_template || !txn_id) {
       return {
@@ -42,6 +43,7 @@ const startVoiceRecording = async ({
     const sessionStatus = EkaScribeStore.sessionStatus;
     let businessID = '';
     if (
+      !sessionStatus[txn_id] ||
       Object.keys(sessionStatus[txn_id]).length === 0 ||
       sessionStatus[txn_id].api?.status === 'na'
     ) {
@@ -56,13 +58,15 @@ const startVoiceRecording = async ({
       const filePath = `${year}${month}${day}/${txn_id}`;
       EkaScribeStore.sessionBucketPath = filePath;
 
-      const txnInitResponse = await postTransactionInit({
+      txnInitResponse = await postTransactionInit({
         mode,
         txnId: txn_id,
         s3Url: `s3://${S3_BUCKET_NAME}/${filePath}`,
         input_language,
         output_format_template,
       });
+
+      console.log('%c Line:61 🍻 txnInitResponse', 'color:#3f7cff', txnInitResponse);
 
       const {
         code: txnInitStatusCode,
@@ -76,14 +80,16 @@ const startVoiceRecording = async ({
           error_code: ERROR_CODE.TXN_LIMIT_EXCEEDED,
           status_code: txnInitStatusCode,
           message: txnInitMessage || 'Transaction limit exceeded.',
+          txnInitResponse,
         };
       }
 
-      if (txnInitStatusCode != 200) {
+      if (txnInitStatusCode >= 400) {
         return {
           error_code: ERROR_CODE.TXN_INIT_FAILED,
           status_code: txnInitStatusCode,
           message: txnInitMessage || 'Transaction initialization failed.',
+          txnInitResponse,
         };
       }
 
@@ -127,6 +133,8 @@ const startVoiceRecording = async ({
       status_code: 200,
       business_id: businessID,
       txn_id,
+      txnInitResponse,
+      vadInstance,
     };
   } catch (err) {
     console.log('%c Line:102 🍇 startRecording err', 'color:#b03734', err);
@@ -134,6 +142,7 @@ const startVoiceRecording = async ({
       error_code: ERROR_CODE.UNKNOWN_ERROR,
       status_code: 520,
       message: `An error occurred while starting the recording: ${err}`,
+      txnInitResponse,
     };
   }
 };

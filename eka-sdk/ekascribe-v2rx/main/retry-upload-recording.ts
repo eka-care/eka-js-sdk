@@ -1,4 +1,5 @@
 import postTransactionCommit from '../api/post-transaction-commit';
+import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -22,7 +23,7 @@ const retryUploadFailedFiles = async ({
     if (failedFiles.length > 0 && !force_commit) {
       return {
         error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.AUDIO_ERROR,
         message: 'Audio upload failed for some files after retry.',
         failed_files: failedFiles,
         total_audio_files: audioFiles,
@@ -57,20 +58,20 @@ const retryUploadFailedFiles = async ({
       // transaction is not stopped or committed
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
         message: 'Transaction is not initialised or stopped. Cannot end recording.',
       };
     }
 
     return {
-      status_code: 200,
+      status_code: SDK_STATUS_CODE.SUCCESS,
       message: 'All recordings uploaded successfully.',
     };
   } catch (error) {
     console.error('Error retrying upload: ', error);
     return {
       error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: 520,
+      status_code: SDK_STATUS_CODE.BAD_REQUEST,
       message: `An error occurred while retrying failed upload: ${error}`,
     };
   }

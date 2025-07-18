@@ -14,7 +14,8 @@ import {
   MAX_CHUNK_LENGTH,
   PREF_CHUNK_LENGTH,
   SAMPLING_RATE,
-} from './constants/audio-constants';
+  SDK_STATUS_CODE,
+} from './constants/constant';
 import { ERROR_CODE, PROCESSING_STATUS } from './constants/enums';
 import {
   TEndRecordingResponse,
@@ -36,6 +37,20 @@ class EkaScribe {
   private audioBufferInstance;
 
   constructor() {
+    this.audioFileManagerInstance = new AudioFileManager();
+    console.log(
+      '%c Line:48 🥕 this.audioFileManagerInstance',
+      'color:#b03734',
+      this.audioFileManagerInstance
+    );
+    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
+    console.log(
+      '%c Line:50 🍇 this.audioBufferInstance',
+      'color:#fca650',
+      this.audioBufferInstance
+    );
+    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
     this.vadInstance = new VadWebClient(
       PREF_CHUNK_LENGTH,
       DESP_CHUNK_LENGTH,
@@ -43,10 +58,6 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
-    this.audioFileManagerInstance = new AudioFileManager();
-    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
-    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
   }
 
   public initEkaScribe({
@@ -58,15 +69,19 @@ class EkaScribe {
   }) {
     // set access_token and refresh_token in env
     if (!access_token || !refresh_token) return;
+    console.log('%c Line:62 🍖 access_token', 'color:#2eafb0', access_token, refresh_token);
 
     setEnv({
       auth_token: access_token,
       refresh_token,
     });
+    console.log('init ekascribe called with access_token and refresh_token');
   }
 
   public async getEkascribeConfig() {
+    console.log('Fetching EkaScribe configuration...');
     const response = await getConfigV2();
+    console.log('%c Line:74 🍭 response', 'color:#42b983', response);
     return response;
   }
 
@@ -89,32 +104,59 @@ class EkaScribe {
     output_format_template,
     txn_id,
   }: TStartRecordingRequest) {
+    console.log('Starting recording with parameters:', {
+      mode,
+      input_language,
+      output_format_template,
+      txn_id,
+    });
     const startResponse = await startVoiceRecording({
       mode,
       input_language,
       output_format_template,
       txn_id,
     });
+    console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
+
     return startResponse;
   }
 
+  getVADInfo() {
+    const x = this.audioFileManagerInstance.getRawSampleDetails();
+    console.log('%c Line:116 🍋 x', 'color:#6ec1c2', x);
+
+    const vadInstane = this.vadInstance.getMicVad();
+    console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
+
+    const frames = this.vadInstance.getFramesArray();
+    console.log('%c Line:122 🍎 frames', 'color:#ea7e5c', frames);
+  }
+
   async pauseRecording() {
+    console.log('Pausing recording...');
     const pauseRecordingResponse = await pauseVoiceRecording();
+    console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
     return pauseRecordingResponse;
   }
 
   resumeRecording() {
+    console.log('Resuming recording...');
     const resumeRecordingResponse = resumeVoiceRecorfing();
+    console.log('%c Line:124 🌶 resumeRecordingResponse', 'color:#33a5ff', resumeRecordingResponse);
     return resumeRecordingResponse;
   }
 
   async endRecording() {
+    console.log('Ending recording...');
     const endRecordingResponse = await endVoiceRecording();
+    console.log('%c Line:131 🍅 endRecordingResponse', 'color:#e41a6a', endRecordingResponse);
     return endRecordingResponse;
   }
 
   async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
+    console.log('Retrying upload for failed files...');
     const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
+    console.log('%c Line:138 🍖 retryUploadResponse', 'color:#3f7cff', retryUploadResponse);
     return retryUploadResponse;
   }
 
@@ -157,14 +199,14 @@ class EkaScribe {
       }
 
       return {
-        status_code: 200,
+        status_code: SDK_STATUS_CODE.SUCCESS,
         message: txnCommitMsg || 'Transaction committed successfully.',
       };
     } catch (error) {
       console.error('Error in transaction commit: ', error);
       return {
         error_code: ERROR_CODE.UNKNOWN_ERROR,
-        status_code: 520,
+        status_code: SDK_STATUS_CODE.BAD_REQUEST,
         message: `Failed to cancel recording session, ${error}`,
       } as TEndRecordingResponse;
     }
@@ -269,3 +311,4 @@ export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
 export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
 export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
+export const getVADInfo = ekascribeInstance.getVADInfo.bind(ekascribeInstance);

@@ -1,5 +1,6 @@
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
+import { S3_BUCKET_NAME } from '../constants/constant';
 
 const pushFileToS3 = async ({
   fileBlob,
@@ -20,7 +21,7 @@ const pushFileToS3 = async ({
 }> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
-      Bucket: 'm-prod-voice2rx',
+      Bucket: S3_BUCKET_NAME,
       Key: fileName,
       Body: fileBlob,
       Metadata: {

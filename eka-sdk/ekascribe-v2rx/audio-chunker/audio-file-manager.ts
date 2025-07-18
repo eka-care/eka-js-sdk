@@ -1,10 +1,11 @@
 import { TAudioChunksInfo, UploadProgressCallback } from '../constants/types';
-import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-constants';
+import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import postCogInit from '../api/post-cog-init';
 import { configureAWS } from '../aws-services/configure-aws';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
-import compressAudioToMp3 from '../utils/compress-mp3-audio';
+// import compressAudioToMp3 from '../utils/compress-mp3-audio';
+import { utils } from '@ricky0123/vad-web';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -74,6 +75,7 @@ class AudioFileManager {
   }
 
   incrementTotalRawSamples(frames: Float32Array): void {
+    // console.log('%c Line:77 🥝 frames', 'color:#ea7e5c', frames);
     this.totalRawSamples += frames.length;
     this.totalRawFrames += 1;
   }
@@ -105,6 +107,7 @@ class AudioFileManager {
    * (+ the latest chunk , affects the length of chunks data struct)
    */
   updateAudioInfo(audioChunks: TAudioChunksInfo): number {
+    console.log('%c Line:110 🍣 audioChunks', 'color:#93c0a4', audioChunks);
     this.audioChunks.push(audioChunks);
     return this.audioChunks.length;
   }
@@ -113,7 +116,13 @@ class AudioFileManager {
     success: boolean;
   } {
     try {
-      const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.ts'));
+      // const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.js'));
+      const worker = new SharedWorker(
+        new URL('node_modules/ekascribe-ts-sdk/dist/shared-worker/s3-file-upload.js'),
+        { type: 'module' }
+      );
+
+      console.log('%c Line:118 🍯 worker', 'color:#4fff4B', worker);
 
       this.sharedWorkerInstance = worker;
 
@@ -132,6 +141,7 @@ class AudioFileManager {
           }
 
           case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS: {
+            console.log('File uploaded successfully in worker:', workerResponse.response);
             const { fileCount: fileName, chunkIndex, fileBlob } = workerResponse.requestBody;
 
             if (workerResponse.response.success) {
@@ -178,6 +188,7 @@ class AudioFileManager {
         success: true,
       };
     } catch (error) {
+      // TODO
       console.error('Error creating shared worker instance:', error);
       return {
         success: false,
@@ -188,6 +199,7 @@ class AudioFileManager {
   private async setupAWSConfiguration({ is_shared_worker }: { is_shared_worker: boolean }) {
     try {
       const response = await postCogInit();
+      console.log('%c Line:196 🍔 response', 'color:#93c0a4', response);
       const { credentials, is_session_expired } = response;
       if (is_session_expired || !credentials) {
         this.isAWSConfigured = false;
@@ -237,9 +249,11 @@ class AudioFileManager {
   }> {
     const s3FileName = `${this.filePath}/${fileName}`; // fileName is ${fileCount}.mp3
 
-    const compressedAudioBuffer = compressAudioToMp3(audioFrames);
+    // const compressedAudioBuffer = compressAudioToMp3(audioFrames); - NOT WORKING
+    const compressedAudioBuffer = utils.encodeWAV(audioFrames);
+    console.log('%c Line:252 🥓 compressedAudioBuffer', 'color:#465975', compressedAudioBuffer);
 
-    const audioBlob = new Blob(compressedAudioBuffer, {
+    const audioBlob = new Blob([compressedAudioBuffer], {
       type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
     });
 
@@ -255,6 +269,7 @@ class AudioFileManager {
       businessID: this.businessID,
       is_shared_worker: false,
     }).then((response) => {
+      console.log('%c Line:265 🥝 response', 'color:#ea7e5c', response);
       if (response.success) {
         this.successfulUploads.push(fileName);
 
@@ -305,6 +320,7 @@ class AudioFileManager {
     fileName: string;
   }> {
     const s3FileName = `${this.filePath}/${fileName}`;
+    console.log('%c Line:309 🌶 s3FileName', 'color:#e41a6a', s3FileName);
 
     if (this.onProgressCallback) {
       this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
@@ -330,17 +346,26 @@ class AudioFileManager {
 
   async uploadAudioToS3({ audioFrames, fileName, chunkIndex }: TUploadAudioChunkParams) {
     if (typeof SharedWorker === 'undefined' || !SharedWorker) {
-      // Shared Workers are not supported in this browser
-      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
-    } else {
-      // Shared Workers are supported
       console.log('Shared Workers are NOT supported in this browser.');
+      // Shared Workers are not supported in this browser
+      // this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
 
       if (!this.sharedWorkerInstance) {
         this.createSharedWorkerInstance();
       }
 
       this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
+    } else {
+      // Shared Workers are supported
+      console.log('Shared Workers are supported in this browser.');
+
+      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+
+      // if (!this.sharedWorkerInstance) {
+      //   this.createSharedWorkerInstance();
+      // }
+
+      // this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }
   }
 
@@ -350,10 +375,14 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
+      console.log('%c Line:356 🍿 this.isAWSConfigured', 'color:#93c0a4', this.isAWSConfigured);
+
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: true,
         });
+
+        console.log('%c Line:359 🍯 awsConfigResponse', 'color:#465975', awsConfigResponse);
 
         if (!awsConfigResponse) {
           throw new Error('Failed to configure AWS');
@@ -362,7 +391,8 @@ class AudioFileManager {
 
       await this.uploadAudioChunkInWorker({ audioFrames, fileName, chunkIndex });
     } catch (error) {
-      console.error('Error uploading audio to S3:', error);
+      console.error('Error uploading audio to S3: uploadAudioToS3WithWorker: ', error);
+      // TODO: handling of this catch block
     }
   }
 
@@ -372,6 +402,8 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
+      console.log('%c Line:390 🍆 this.isAWSConfigured', 'color:#e41a6a', this.isAWSConfigured);
+
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: false,

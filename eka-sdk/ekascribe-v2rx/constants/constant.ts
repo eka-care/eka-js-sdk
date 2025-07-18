@@ -22,4 +22,15 @@ export const AUDIO_EXTENSION_TYPE_MAP: Record<string, string> = {
   wav: 'audio/wav',
   mp3: 'audio/mpeg',
 };
-export const S3_BUCKET_NAME = 'm-prod-voice2rx';
+export const S3_BUCKET_NAME = 'm-prod-voice-record';
+
+export const SDK_STATUS_CODE = {
+  AUDIO_ERROR: 1001,
+  SUCCESS: 1002,
+  TXN_ERROR: 1003,
+  BAD_REQUEST: 1004,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+};

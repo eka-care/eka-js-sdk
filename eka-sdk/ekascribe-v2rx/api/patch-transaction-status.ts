@@ -43,8 +43,11 @@ const patchTransactionStatus = async ({
       throw new Error(`Error: ${response.statusText}`);
     }
 
-    const res = await response.json();
-
+    let res = await response.json();
+    res = {
+      ...res,
+      code: response.status,
+    };
     return res;
   } catch (error) {
     console.error('Patch transaction status api failed', error);

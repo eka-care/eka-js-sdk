@@ -25,7 +25,12 @@ async function postTransactionCommit({
       options
     );
 
-    return await response.json();
+    let res = await response.json();
+    res = {
+      ...res,
+      code: response.status,
+    };
+    return res;
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
     return {

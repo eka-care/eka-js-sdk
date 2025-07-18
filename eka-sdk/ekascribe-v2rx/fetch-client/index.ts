@@ -1,9 +1,4 @@
-import setEnv, {
-  GET_AUTH_TOKEN,
-  GET_CLIENT_ID,
-  GET_EKA_V2RX_HOST_V2,
-  GET_REFRESH_TOKEN,
-} from './helper';
+import setEnv, { GET_AUTH_TOKEN, GET_CLIENT_ID, GET_EKA_HOST, GET_REFRESH_TOKEN } from './helper';
 
 async function refreshToken() {
   try {
@@ -27,7 +22,7 @@ async function refreshToken() {
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST_V2()}/connect-auth/v1/account/refresh-token`,
+      `${GET_EKA_HOST()}/connect-auth/v1/account/refresh-token`,
       options,
       false
     );
@@ -95,6 +90,7 @@ export default async function fetchWrapper(
           false
         );
       } else {
+        // TODO: return a separate status code for token expired in all apis response
         throw new Error('Unable to refresh user token');
       }
     }

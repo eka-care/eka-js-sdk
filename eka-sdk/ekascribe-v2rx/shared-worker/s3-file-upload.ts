@@ -5,7 +5,7 @@ if (typeof window === 'undefined') {
 
 import { configureAWS } from '../aws-services/configure-aws';
 import pushFileToS3 from '../aws-services/upload-file-to-s3';
-import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/audio-constants';
+import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
 

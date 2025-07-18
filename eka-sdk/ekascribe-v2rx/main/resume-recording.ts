@@ -1,3 +1,4 @@
+import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TPauseRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -20,7 +21,7 @@ const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
     };
 
     return {
-      status_code: 200,
+      status_code: SDK_STATUS_CODE.SUCCESS,
       message: 'Recording resumed successfully',
       is_paused: false,
     };
@@ -29,7 +30,7 @@ const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
 
     return {
       error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: 520,
+      status_code: SDK_STATUS_CODE.BAD_REQUEST,
       message: `Failed to resume recording: ${error}`,
     };
   }

@@ -1,4 +1,4 @@
-import { SAMPLING_RATE } from '../constants/audio-constants';
+import { SAMPLING_RATE } from '../constants/constant';
 class AudioBufferManager {
   private buffer!: Float32Array;
   private currentSampleLength: number = 0;
@@ -28,6 +28,7 @@ class AudioBufferManager {
    * @returns The current position in the buffer after appending
    */
   public append(audioFrame: Float32Array): number {
+    // console.log('%c Line:31 🧀 audioFrame', 'color:#ed9ec7', audioFrame);
     // Check if we need to allocate more memory
     if (this.currentSampleLength + audioFrame.length > this.buffer.length) {
       this.expandBuffer();

@@ -1,3 +1,4 @@
+import VadWebClient from '../audio-chunker/vad-web';
 import { ERROR_CODE } from './enums';
 
 export type TGetConfigV2Response = {
@@ -34,6 +35,8 @@ export type TStartRecordingResponse = {
   message: string;
   business_id?: string;
   txn_id?: string;
+  txnInitResponse?: TPostTransactionResponse;
+  vadInstance?: VadWebClient | null;
 };
 
 export type TPauseRecordingResponse = {

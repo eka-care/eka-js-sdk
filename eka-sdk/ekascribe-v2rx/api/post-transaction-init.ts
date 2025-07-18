@@ -41,10 +41,11 @@ async function postTransactionInit({
     return res;
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
-    return {
-      code: 520, // web server error
-      message: `Something went wrong! ${error}`,
-    } as TPostTransactionResponse;
+    throw error;
+    // return {
+    //   code: 520, // web server error
+    //   message: `Something went wrong! ${error}`,
+    // } as TPostTransactionResponse;
   }
 }
 
