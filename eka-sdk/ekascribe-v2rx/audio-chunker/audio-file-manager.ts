@@ -184,7 +184,6 @@ class AudioFileManager {
 
       return true;
     } catch (error) {
-      // TODO
       console.error('Error creating shared worker instance:', error);
       return false;
     }
@@ -379,7 +378,6 @@ class AudioFileManager {
       await this.uploadAudioChunkInWorker({ audioFrames, fileName, chunkIndex });
     } catch (error) {
       console.error('Error uploading audio to S3: uploadAudioToS3WithWorker: ', error);
-      // TODO: handling of this catch block
     }
   }
 

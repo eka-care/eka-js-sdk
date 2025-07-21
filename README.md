@@ -6,10 +6,15 @@ This guide explains how to integrate the Eka Care Ekascribe Typescript SDK into 
 
 The Eka Care Ekascribe SDK allows you to capture and process audio, generating structured medical documentation using Eka Care's voice transcription API.
 
+## Documentation
+
+[Visit the documentation site](https://developer.eka.care/api-reference/general-tools/medical/voice/SDKs/TS-sdk)
+
 ## Prerequisites
 
 Before getting started, ensure you have:
 
+- Node 14 or higher
 - `npm` or `yarn` for dependency management
 - Access and refresh tokens from Eka Care (optional for some methods)
 - Microphone access via browser permissions
@@ -25,7 +30,9 @@ npm install ekascribe-ts-sdk
 yarn add ekascribe-ts-sdk
 ```
 
-## Step 1: Initialize Ekascribe
+## Usage
+
+### 1. Initialize Ekascribe
 
 Before using any other method, initialize the SDK with access and refresh tokens.
 
@@ -36,7 +43,7 @@ initEkascribe({
 });
 ```
 
-## Step 2: Fetch configurations list
+### 2. Fetch configurations list
 
 Get supported input languages, output formats, and consultation modes.
 
@@ -44,7 +51,7 @@ Get supported input languages, output formats, and consultation modes.
 getEkascribeConfig();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -80,7 +87,7 @@ getEkascribeConfig();
 }
 ```
 
-## Step 3: Start recording
+### 3. Start recording
 
 Start recording with user-selected options.
 
@@ -93,7 +100,7 @@ await startVoiceRecording({
 });
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -105,7 +112,7 @@ await startVoiceRecording({
 };
 ```
 
-## Step 4: Pause recording
+### 4. Pause recording
 
 Use the method to pause voice recording
 
@@ -113,7 +120,7 @@ Use the method to pause voice recording
 await pauseRecording();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -124,7 +131,7 @@ await pauseRecording();
 };
 ```
 
-## Step 5: Resume recording
+### 5. Resume recording
 
 Use the method to resume voice recording
 
@@ -132,7 +139,7 @@ Use the method to resume voice recording
 await resumeRecording();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -143,7 +150,7 @@ await resumeRecording();
 };
 ```
 
-## Step 6: End recording
+### 6. End recording
 
 Use the method to end voice recording
 
@@ -151,7 +158,7 @@ Use the method to end voice recording
 await endRecording();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -163,7 +170,7 @@ await endRecording();
 };
 ```
 
-## Step 7: Retry upload recording
+### 7. Retry upload recording
 
 Use this method to retry uploading failed audio files.
 
@@ -171,7 +178,7 @@ Use this method to retry uploading failed audio files.
 await retryUploadRecording({ force_commit: true / false });
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -183,12 +190,13 @@ await retryUploadRecording({ force_commit: true / false });
 };
 ```
 
-#### `force_commit` behavior
+`force_commit` behavior
 
-- If `force_commit` is set to `true`, the SDK will call the commit API even if some audio files still fail to upload after retrying once.
-- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
+-- If `force_commit` is set to `true`, the SDK will call the commit API even if some audio files still fail to upload after retrying once.
 
-## Step 8: Cancel recording session
+-- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
+
+### 8. Cancel recording session
 
 Use the method to cancel a recording session.
 
@@ -196,7 +204,7 @@ Use the method to cancel a recording session.
 await cancelRecordingSession({ txn_id: 'abc-123' });
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -211,7 +219,7 @@ await cancelRecordingSession({ txn_id: 'abc-123' });
 }
 ```
 
-## Step 9: Commit transaction
+### 9. Commit transaction
 
 Use this method to commit a transaction that is not yet committed or returned a "commit failed" error in a previous step.
 
@@ -219,7 +227,7 @@ Use this method to commit a transaction that is not yet committed or returned a 
 await commitTransactionCall();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -229,7 +237,7 @@ await commitTransactionCall();
 };
 ```
 
-## Step 10: Stop transaction
+### 10. Stop transaction
 
 Use this method to stop a transaction that has not yet been stopped or returned a "stop failed" error in a previous step.
 
@@ -237,7 +245,7 @@ Use this method to stop a transaction that has not yet been stopped or returned 
 await stopTransactionCall();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 {
@@ -247,7 +255,7 @@ await stopTransactionCall();
 };
 ```
 
-## Step 11: Get output template prescriptions
+### 11. Get output template prescriptions
 
 Use this method to fetch the final generated prescription output for a session.
 
@@ -255,7 +263,7 @@ Use this method to fetch the final generated prescription output for a session.
 await getTemplateOutput({ txn_id: 'abc-123' });
 ```
 
-## Step 12: Get total uploaded files
+### 12. Get total uploaded files
 
 Use this method to retrieve all the audio files generated for a specific session.
 
@@ -263,13 +271,13 @@ Use this method to retrieve all the audio files generated for a specific session
 const files = await getTotalAudioFiles();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
 ```
 
-## Step 13: Get successfully uploaded files
+### 13. Get successfully uploaded files
 
 Use this method to retrieve all the audio files that were uploaded successfully.
 
@@ -277,13 +285,13 @@ Use this method to retrieve all the audio files that were uploaded successfully.
 const successFiles = await getSuccessfullyUploadedFiles();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 ['3.mp3', '4.mp3'];
 ```
 
-## Step 14: Get failed audio files
+### 14. Get failed audio files
 
 Use this method to retrieve all the audio files that failed to upload.
 
@@ -291,13 +299,13 @@ Use this method to retrieve all the audio files that failed to upload.
 const failedFiles = await getFailedFiles();
 ```
 
-### Response type:
+- #### Response type:
 
 ```ts
 ['1.mp3', '2.mp3'];
 ```
 
-## Step 15: Generic Error Callback
+### 15. Generic Error Callback
 
 Whenever an error occurs in the SDK during voice recording, the following callback will be triggered. You can listen to this to handle errors globally.
 
@@ -307,7 +315,7 @@ onError(({ error_code, status_code, message }) => {
 });
 ```
 
-## ERROR CODES:
+### Error codes
 
 | Error Code            | Description                                                 |
 | --------------------- | ----------------------------------------------------------- |
@@ -322,3 +330,28 @@ onError(({ error_code, status_code, message }) => {
 | `vad_not_initialized` | Voice activity detection engine was not initialized         |
 | `no_audio_capture`    | No audio was captured during the recording session          |
 | `txn_status_mismatch` | Invalid operation due to mismatched transaction status      |
+
+## Contribution Guidelines
+
+This is a continually updated, open source project.
+Contributions are welcome!
+
+---
+
+## Tips
+
+Helpful tricks and practices for smoother development and usage.
+
+---
+
+## Advanced Usage (for later use)
+
+---
+
+## Under Development
+
+Features and methods that are being worked on. Not stable or ready for use.
+
+---
+
+Refer [Ekascribe](https://github.com/eka-care/v2rx-extension) for SDK implementations.
