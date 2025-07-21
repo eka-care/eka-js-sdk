@@ -90,7 +90,6 @@ export default async function fetchWrapper(
           false
         );
       } else {
-        // TODO: return a separate status code for token expired in all apis response
         throw new Error('Unable to refresh user token');
       }
     }
@@ -101,8 +100,3 @@ export default async function fetchWrapper(
     throw error;
   }
 }
-
-/*
-client needs to handle:
-403, 500
-*/

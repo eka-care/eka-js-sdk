@@ -70,8 +70,8 @@ const retryUploadFailedFiles = async ({
   } catch (error) {
     console.error('Error retrying upload: ', error);
     return {
-      error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: SDK_STATUS_CODE.BAD_REQUEST,
+      error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `An error occurred while retrying failed upload: ${error}`,
     };
   }

@@ -1,3 +1,4 @@
+import { SDK_STATUS_CODE } from '../constants/constant';
 import {
   TPatchTransactionError,
   TPatchTransactionRequest,
@@ -52,7 +53,7 @@ const patchTransactionStatus = async ({
   } catch (error) {
     console.error('Patch transaction status api failed', error);
     return {
-      code: 520,
+      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     } as TPostTransactionResponse;
   }

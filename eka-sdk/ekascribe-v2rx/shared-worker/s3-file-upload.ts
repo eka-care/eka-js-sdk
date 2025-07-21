@@ -69,6 +69,7 @@ onconnect = function (event: MessageEvent) {
           fileName,
           txnID,
           businessID,
+          is_shared_worker: true,
         })
           .then((response) => {
             console.log('%c Line:68 🧀 response', 'color:#ed9ec7', response);

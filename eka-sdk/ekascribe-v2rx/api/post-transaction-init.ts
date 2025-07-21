@@ -1,3 +1,4 @@
+import { SDK_STATUS_CODE } from '../constants/constant';
 import { TPostTransactionInitRequest, TPostTransactionResponse } from '../constants/types';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
@@ -41,11 +42,10 @@ async function postTransactionInit({
     return res;
   } catch (error) {
     console.log('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
-    throw error;
-    // return {
-    //   code: 520, // web server error
-    //   message: `Something went wrong! ${error}`,
-    // } as TPostTransactionResponse;
+    return {
+      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong! ${error}`,
+    } as TPostTransactionResponse;
   }
 }
 

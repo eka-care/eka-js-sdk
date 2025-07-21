@@ -29,8 +29,8 @@ const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
     console.error('Error resuming recording:', error);
 
     return {
-      error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: SDK_STATUS_CODE.BAD_REQUEST,
+      error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Failed to resume recording: ${error}`,
     };
   }

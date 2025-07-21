@@ -1,5 +1,5 @@
 import postTransactionInit from '../api/post-transaction-init';
-import { S3_BUCKET_NAME } from '../constants/constant';
+import { S3_BUCKET_NAME, SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
@@ -15,7 +15,7 @@ const startVoiceRecording = async ({
     if (!mode || !input_language || !output_format_template || !txn_id) {
       return {
         error_code: ERROR_CODE.INVALID_REQUEST,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.BAD_REQUEST,
         message:
           'Invalid request parameters. Please provide mode, input_language, output_format_template, and txn_id.',
       };
@@ -34,7 +34,7 @@ const startVoiceRecording = async ({
     ) {
       return {
         error_code: ERROR_CODE.MICROPHONE,
-        status_code: 403,
+        status_code: SDK_STATUS_CODE.FORBIDDEN,
         message:
           'Microphone access not granted. Please go to your browser or site settings to provide access.',
       };
@@ -115,7 +115,7 @@ const startVoiceRecording = async ({
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
       return {
         error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
-        status_code: 400,
+        status_code: SDK_STATUS_CODE.FORBIDDEN,
         message: 'VAD instance is not initialized. Please try again later.',
       };
     }
@@ -130,7 +130,7 @@ const startVoiceRecording = async ({
 
     return {
       message: 'Recording started successfully.',
-      status_code: 200,
+      status_code: SDK_STATUS_CODE.SUCCESS,
       business_id: businessID,
       txn_id,
       txnInitResponse,
@@ -139,8 +139,8 @@ const startVoiceRecording = async ({
   } catch (err) {
     console.log('%c Line:102 🍇 startRecording err', 'color:#b03734', err);
     return {
-      error_code: ERROR_CODE.UNKNOWN_ERROR,
-      status_code: 520,
+      error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `An error occurred while starting the recording: ${err}`,
       txnInitResponse,
     };

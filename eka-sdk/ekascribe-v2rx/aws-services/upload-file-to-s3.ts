@@ -52,6 +52,8 @@ const pushFileToS3 = async ({
       is_shared_worker
     );
 
+    console.log('%c Line:55 🍣 result', 'color:#93c0a4', result, fileName);
+
     // Return success with the data
     return { success: result.ETag || 'Upload successful' };
   } catch (error) {

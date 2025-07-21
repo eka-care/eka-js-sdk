@@ -17,7 +17,7 @@ export enum ERROR_CODE {
   MICROPHONE = 'microphone',
   TXN_INIT_FAILED = 'txn_init_failed',
   TXN_LIMIT_EXCEEDED = 'txn_limit_exceeded',
-  UNKNOWN_ERROR = 'unknown_error',
+  INTERNAL_SERVER_ERROR = 'internal_server_error',
   TXN_STOP_FAILED = 'txn_stop_failed',
   AUDIO_UPLOAD_FAILED = 'audio_upload_failed',
   TXN_COMMIT_FAILED = 'txn_commit_failed',

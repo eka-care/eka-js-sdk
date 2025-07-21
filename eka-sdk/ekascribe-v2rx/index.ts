@@ -110,6 +110,7 @@ class EkaScribe {
       output_format_template,
       txn_id,
     });
+
     const startResponse = await startVoiceRecording({
       mode,
       input_language,
@@ -127,9 +128,6 @@ class EkaScribe {
 
     const vadInstane = this.vadInstance.getMicVad();
     console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
-
-    const frames = this.vadInstance.getFramesArray();
-    console.log('%c Line:122 🍎 frames', 'color:#ea7e5c', frames);
   }
 
   async pauseRecording() {
@@ -174,7 +172,7 @@ class EkaScribe {
     } catch (error) {
       console.error('Error cancelling recording session:', error);
       return {
-        code: 520,
+        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to cancel recording session, ${error}`,
       } as TPostTransactionResponse;
     }
@@ -205,8 +203,8 @@ class EkaScribe {
     } catch (error) {
       console.error('Error in transaction commit: ', error);
       return {
-        error_code: ERROR_CODE.UNKNOWN_ERROR,
-        status_code: SDK_STATUS_CODE.BAD_REQUEST,
+        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to cancel recording session, ${error}`,
       } as TEndRecordingResponse;
     }
@@ -228,7 +226,7 @@ class EkaScribe {
     } catch (error) {
       console.error('Error in fetching templates response: ', error);
       return {
-        code: 520,
+        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch output templates, ${error}`,
       } as TGetStatusResponse;
     }

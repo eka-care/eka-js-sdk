@@ -1,3 +1,4 @@
+import { SDK_STATUS_CODE } from '../constants/constant';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V3 } from '../fetch-client/helper';
 
@@ -78,7 +79,7 @@ export const getVoiceApiV2Status = async ({
     };
   } catch (error) {
     return {
-      code: 520, // web server error
+      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     };
   }
