@@ -336,22 +336,18 @@ onError(({ error_code, status_code, message }) => {
 This is a continually updated, open source project.
 Contributions are welcome!
 
----
-
 ## Tips
 
-Helpful tricks and practices for smoother development and usage.
-
----
+- The SDK internally handles shared worker logic to reduce load on the main thread. Try to execute these functions in the main thread to avoid unnecessary issues.
 
 ## Advanced Usage (for later use)
 
----
+- Maximum retries for file upload in case of failure.
+- Update VAD configurations
 
 ## Under Development
 
-Features and methods that are being worked on. Not stable or ready for use.
-
----
+- Opus compression of audio files
+- Test cases
 
 Refer [Ekascribe](https://github.com/eka-care/v2rx-extension) for SDK implementations.
