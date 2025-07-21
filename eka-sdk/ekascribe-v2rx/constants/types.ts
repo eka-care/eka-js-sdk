@@ -114,15 +114,25 @@ export type TEndV2RxResponse = {
 
 export type TAudioChunksInfo = {
   fileName: string;
-  fileBlob?: Blob;
-  audioFrames?: Float32Array[];
-  timestamp: {
-    st: string;
-    et: string;
-  };
-  status?: 'success' | 'failure';
+  timestamp: { st: string; et: string };
   response?: string;
-};
+} & (
+  | {
+      status: 'pending';
+      audioFrames: Float32Array;
+      fileBlob?: undefined;
+    }
+  | {
+      status: 'success';
+      audioFrames?: undefined;
+      fileBlob?: undefined;
+    }
+  | {
+      status: 'failure';
+      fileBlob: Blob;
+      audioFrames?: undefined;
+    }
+);
 
 export type UploadProgressCallback = (success: string[], total: number) => void;
 

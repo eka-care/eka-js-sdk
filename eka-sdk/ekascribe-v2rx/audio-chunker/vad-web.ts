@@ -9,6 +9,7 @@ import {
 } from '../constants/constant';
 import EkaScribeStore from '../store/store';
 import { ERROR_CODE } from '../constants/enums';
+import { TAudioChunksInfo } from '../constants/types';
 
 class VadWebClient {
   private vad_past: number[];
@@ -183,12 +184,14 @@ class VadWebClient {
     const chunkTimestamps = audioBuffer?.calculateChunkTimestamps(rawSampleDetails.totalRawSamples);
 
     try {
-      const chunkInfo = {
+      const chunkInfo: TAudioChunksInfo = {
+        fileName,
         timestamp: {
           st: chunkTimestamps.start,
           et: chunkTimestamps.end,
         },
-        fileName,
+        status: 'pending',
+        audioFrames,
       };
 
       const audioChunkLength = audioFileManager.updateAudioInfo(chunkInfo);
@@ -240,6 +243,8 @@ class VadWebClient {
   /**
    * monitor initial audio capture within starting 4 seconds
    */
+
+  // TODO: this event should be called after some periodic interval to monitor vad
   monitorInitialAudioCapture() {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     const errorCallback = EkaScribeStore.errorCallback;
