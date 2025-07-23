@@ -189,11 +189,12 @@ class AudioFileManager {
     }
   }
 
+  // TODO
   private async setupAWSConfiguration({ is_shared_worker }: { is_shared_worker: boolean }) {
     try {
       const response = await postCogInit();
-      console.log('%c Line:196 🍔 response', 'color:#93c0a4', response);
       const { credentials, is_session_expired } = response;
+
       if (is_session_expired || !credentials) {
         this.isAWSConfigured = false;
         return false;
@@ -232,6 +233,7 @@ class AudioFileManager {
   /**
    * Upload a chunk of audio data to S3 in main thread
    */
+  // TODO
   private async uploadAudioChunkInMain({
     audioFrames,
     fileName,
@@ -304,6 +306,7 @@ class AudioFileManager {
   /**
    * Upload audio chunks to S3 in shared worker
    */
+  // TODO
   private async uploadAudioChunkInWorker({
     audioFrames,
     fileName,
@@ -342,7 +345,7 @@ class AudioFileManager {
       // Shared Workers are not supported in this browser
       console.log('Shared Workers are NOT supported in this browser.');
 
-      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     } else {
       // Shared Workers are supported
       console.log('Shared Workers are supported in this browser.');
@@ -351,10 +354,11 @@ class AudioFileManager {
         this.createSharedWorkerInstance();
       }
 
-      this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }
   }
 
+  // TODO
   private async uploadAudioToS3WithWorker({
     audioFrames,
     fileName,
@@ -381,6 +385,7 @@ class AudioFileManager {
     }
   }
 
+  // TODO
   private async uploadAudioToS3WithoutWorker({
     audioFrames,
     fileName,
@@ -423,6 +428,7 @@ class AudioFileManager {
   /**
    * Wait for all upload promises to complete
    */
+  // TODO
   async waitForAllUploads(): Promise<void> {
     if (this.sharedWorkerInstance) {
       return new Promise((resolve, reject) => {
@@ -487,6 +493,7 @@ class AudioFileManager {
   /**
    * Retry uploading failed files
    */
+  // TODO
   async retryFailedUploads(): Promise<string[]> {
     const failedFiles = this.getFailedUploads();
     if (failedFiles.length === 0) {
