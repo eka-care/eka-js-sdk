@@ -3,6 +3,7 @@ import { TPostTransactionCommitRequest, TPostTransactionResponse } from '../cons
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
+// TODO: one change - commit can be called n timees
 async function postTransactionCommit({
   audioFiles,
   txnId,

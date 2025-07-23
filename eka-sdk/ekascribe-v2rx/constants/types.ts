@@ -11,15 +11,33 @@ export type TGetConfigV2Response = {
       output_formats: number;
       consultation_mode: number;
     };
+    selected_preferences?: TSelectedPreferences;
+    settings?: TSystemSettings;
   };
   message?: string;
   code?: number;
+};
+
+export type TSelectedPreferences = {
+  languages: TGetConfigItem[];
+  outputFormats: TGetConfigItem[];
+  consultationMode: TGetConfigItem[];
+  useAudioCues: boolean;
+  autoDownload: boolean;
+  consultation_mode: string;
 };
 
 export type TGetConfigItem = {
   id: string;
   name: string;
   desc?: string;
+};
+
+export type TSystemSettings = {
+  consentForModelTraining: {
+    value: boolean;
+    editable: boolean;
+  };
 };
 
 export type TStartRecordingRequest = {
@@ -60,6 +78,7 @@ export type TPostTransactionInitRequest = {
   txnId: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
+  transfer: string;
 };
 
 export type TPostTransactionCommitRequest = {

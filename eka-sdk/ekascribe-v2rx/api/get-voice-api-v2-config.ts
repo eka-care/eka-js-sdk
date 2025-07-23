@@ -20,7 +20,7 @@ export const getConfigV2 = async (): Promise<TGetConfigV2Response> => {
       code: response.status,
     };
   } catch (error) {
-    console.log('Returning hardcoded settings in getConfig api: ', error);
+    console.log('Error in getConfigV2 api: ', error);
 
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,

@@ -30,6 +30,7 @@ import resumeVoiceRecorfing from './main/resume-recording';
 import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
+import initialiseTransaction from './main/init-transaction';
 
 class EkaScribe {
   private vadInstance; // vadWebClient Instance
@@ -98,25 +99,27 @@ class EkaScribe {
     });
   }
 
-  async startRecording({
+  async initTransaction({
     mode,
     input_language,
     output_format_template,
     txn_id,
   }: TStartRecordingRequest) {
-    console.log('Starting recording with parameters:', {
-      mode,
-      input_language,
-      output_format_template,
-      txn_id,
-    });
+    console.log('Initializing transaction...');
 
-    const startResponse = await startVoiceRecording({
+    const initTransactionResponse = await initialiseTransaction({
       mode,
       input_language,
       output_format_template,
       txn_id,
     });
+    console.log('%c Line:115 🍓 initTransactionResponse', 'color:#465975', initTransactionResponse);
+    return initTransactionResponse;
+  }
+
+  async startRecording() {
+    console.log('Starting recording...');
+    const startResponse = await startVoiceRecording();
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
 
     return startResponse;
@@ -180,19 +183,41 @@ class EkaScribe {
 
   async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
-      const audioInfo = this.audioFileManagerInstance?.audioChunks;
-      const audioFiles = audioInfo.map((audio) => audio.fileName);
+      const txnID = EkaScribeStore.txnID;
+      let txnCommitMsg = '';
 
-      const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
-        audioFiles,
-        txnId: EkaScribeStore.txnID,
-      });
+      if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+        const audioInfo = this.audioFileManagerInstance?.audioChunks;
+        const audioFiles = audioInfo.map((audio) => audio.fileName);
 
-      if (txnCommitStatusCode != 200) {
+        const { message, code: txnCommitStatusCode } = await postTransactionCommit({
+          audioFiles,
+          txnId: EkaScribeStore.txnID,
+        });
+        txnCommitMsg = message;
+
+        if (txnCommitStatusCode != 200) {
+          return {
+            error_code: ERROR_CODE.TXN_COMMIT_FAILED,
+            status_code: txnCommitStatusCode,
+            message: txnCommitMsg || 'Transaction commit failed.',
+          };
+        }
+
+        EkaScribeStore.sessionStatus[txnID] = {
+          ...EkaScribeStore.sessionStatus[txnID],
+          api: {
+            status: 'commit',
+            code: txnCommitStatusCode,
+            response: txnCommitMsg,
+          },
+        };
+      } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+        // transaction is not stopped or committed
         return {
-          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
-          status_code: txnCommitStatusCode,
-          message: txnCommitMsg || 'Transaction stop failed.',
+          error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+          status_code: SDK_STATUS_CODE.TXN_ERROR,
+          message: 'Transaction is not initialised or stopped. Cannot end recording.',
         };
       }
 
@@ -255,6 +280,10 @@ class EkaScribe {
     EkaScribeStore.errorCallback = callback;
   }
 
+  onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
+    EkaScribeStore.userSpeechCallback = callback;
+  }
+
   configureVadConstants({
     pref_length,
     desp_length,
@@ -304,9 +333,13 @@ export const commitTransactionCall =
   ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
 export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
 export const getTemplateOutput = ekascribeInstance.getTemplateOutput.bind(ekascribeInstance);
+export const initTransaction = ekascribeInstance.initTransaction.bind(ekascribeInstance);
 
 export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
 export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
 export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
 export const getVADInfo = ekascribeInstance.getVADInfo.bind(ekascribeInstance);
+
+export const onError = ekascribeInstance.onError.bind(ekascribeInstance);
+export const onUserSpeechCallback = ekascribeInstance.onUserSpeechCallback.bind(ekascribeInstance);

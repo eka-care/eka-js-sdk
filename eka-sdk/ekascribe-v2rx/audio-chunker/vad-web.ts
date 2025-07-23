@@ -157,6 +157,14 @@ class VadWebClient {
           this.processAudioChunk({ audioFrames: activeAudioChunk });
         }
       },
+      onSpeechStart: () => {
+        console.log('%c Line:160 🍰 onSpeechStart');
+        EkaScribeStore.userSpeechCallback?.(true);
+      },
+      onSpeechEnd: () => {
+        console.log('%c Line:164 🍰 onSpeechEnd');
+        EkaScribeStore.userSpeechCallback?.(false);
+      },
     });
 
     this.is_vad_loading = false;
