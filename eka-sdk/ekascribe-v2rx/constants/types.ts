@@ -53,6 +53,8 @@ export type TStartRecordingResponse = {
   message: string;
   business_id?: string;
   txn_id?: string;
+  oid?: string;
+  uuid?: string;
   txnInitResponse?: TPostTransactionResponse;
   vadInstance?: VadWebClient | null;
 };
@@ -91,6 +93,8 @@ export type TPostTransactionResponse = {
   message: string;
   txn_id: string;
   b_id: string;
+  oid: string;
+  uuid: string;
   data: unknown;
   code: number;
   error?: { code: string; message: string; display_message: string };

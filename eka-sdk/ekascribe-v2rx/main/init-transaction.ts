@@ -23,6 +23,8 @@ const initialiseTransaction = async ({
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
     const sessionStatus = EkaScribeStore.sessionStatus;
     let businessID = '';
+    let userOID = '';
+    let userUUID = '';
 
     if (
       !sessionStatus[txn_id] ||
@@ -54,6 +56,8 @@ const initialiseTransaction = async ({
       const {
         code: txnInitStatusCode,
         b_id: businessId,
+        oid,
+        uuid,
         message: txnInitMessage,
         error: txnInitError,
       } = txnInitResponse;
@@ -63,7 +67,6 @@ const initialiseTransaction = async ({
           error_code: ERROR_CODE.TXN_LIMIT_EXCEEDED,
           status_code: txnInitStatusCode,
           message: txnInitMessage || 'Transaction limit exceeded.',
-          txnInitResponse,
         };
       }
 
@@ -72,7 +75,6 @@ const initialiseTransaction = async ({
           error_code: ERROR_CODE.TXN_INIT_FAILED,
           status_code: txnInitStatusCode,
           message: txnInitMessage || 'Transaction initialization failed.',
-          txnInitResponse,
         };
       }
 
@@ -84,6 +86,8 @@ const initialiseTransaction = async ({
         },
       };
       businessID = businessId;
+      userOID = oid;
+      userUUID = uuid;
 
       fileManagerInstance?.setSessionInfo({
         sessionId: txn_id,
@@ -96,6 +100,8 @@ const initialiseTransaction = async ({
       message: 'Transaction initialized successfully.',
       status_code: SDK_STATUS_CODE.SUCCESS,
       business_id: businessID,
+      oid: userOID,
+      uuid: userUUID,
       txn_id,
     };
   } catch (err) {
