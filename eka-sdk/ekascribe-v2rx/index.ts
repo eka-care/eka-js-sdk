@@ -134,6 +134,10 @@ class EkaScribe {
     console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
   }
 
+  reinitializeVad() {
+    this.vadInstance.reinitializeVad();
+  }
+
   async pauseRecording() {
     console.log('Pausing recording...');
     const pauseRecordingResponse = await pauseVoiceRecording();
@@ -341,6 +345,7 @@ export const getSuccessfullyUploadedFiles =
 export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
 export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
 export const getVADInfo = ekascribeInstance.getVADInfo.bind(ekascribeInstance);
+export const reinitializeVad = ekascribeInstance.reinitializeVad.bind(ekascribeInstance);
 
 export const onError = ekascribeInstance.onError.bind(ekascribeInstance);
 export const onUserSpeechCallback = ekascribeInstance.onUserSpeechCallback.bind(ekascribeInstance);
