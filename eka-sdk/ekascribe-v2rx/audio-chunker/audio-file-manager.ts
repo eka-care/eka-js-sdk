@@ -342,7 +342,7 @@ class AudioFileManager {
       // Shared Workers are not supported in this browser
       console.log('Shared Workers are NOT supported in this browser.');
 
-      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     } else {
       // Shared Workers are supported
       console.log('Shared Workers are supported in this browser.');
@@ -351,7 +351,7 @@ class AudioFileManager {
         this.createSharedWorkerInstance();
       }
 
-      this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }
   }
 

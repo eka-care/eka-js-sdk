@@ -3,7 +3,7 @@ import { ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo, TPauseRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
-const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
+const pauseVoiceRecording = (): TPauseRecordingResponse => {
   try {
     const audioBufferInstance = EkaScribeStore.audioBufferInstance;
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
@@ -51,7 +51,7 @@ const pauseVoiceRecording = async (): Promise<TPauseRecordingResponse> => {
       );
       audioBufferInstance.resetBufferState();
 
-      await fileManagerInstance.uploadAudioToS3({
+      fileManagerInstance.uploadAudioToS3({
         audioFrames,
         fileName,
         chunkIndex: audioChunkLength - 1,

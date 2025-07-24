@@ -172,6 +172,13 @@ class VadWebClient {
   }
 
   /**
+   * reinitialize the vad instance
+   */
+  reinitializeVad() {
+    this.initVad();
+  }
+
+  /**
    * process and upload audio chunk to s3
    */
   async processAudioChunk({ audioFrames }: { audioFrames?: Float32Array }) {

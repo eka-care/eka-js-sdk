@@ -3,7 +3,7 @@ import { ERROR_CODE } from '../constants/enums';
 import { TPauseRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
-const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
+const resumeVoiceRecording = (): TPauseRecordingResponse => {
   try {
     const vadInstance = EkaScribeStore.vadInstance;
 
@@ -36,4 +36,4 @@ const resumeVoiceRecorfing = (): TPauseRecordingResponse => {
   }
 };
 
-export default resumeVoiceRecorfing;
+export default resumeVoiceRecording;

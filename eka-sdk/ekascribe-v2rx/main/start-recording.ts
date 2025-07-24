@@ -15,12 +15,14 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
       return {
         error_code: ERROR_CODE.MICROPHONE,
         status_code: SDK_STATUS_CODE.FORBIDDEN,
-        message:
-          'Microphone access not granted. Please go to your browser or site settings to provide access.',
+        message: 'Microphone access is required to start recording. Please recheck access.',
       };
     }
 
+    console.log('%c Line:22 🍇 vadInstance', 'color:#fca650', vadInstance);
+
     const micVad = vadInstance?.getMicVad();
+    console.log('%c Line:23 🍇 micVad', 'color:#fca650', micVad);
     const isVadLoading = vadInstance?.isVadLoading();
 
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {

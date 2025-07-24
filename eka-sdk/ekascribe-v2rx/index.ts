@@ -26,7 +26,7 @@ import {
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
-import resumeVoiceRecorfing from './main/resume-recording';
+import resumeVoiceRecording from './main/resume-recording';
 import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
@@ -59,6 +59,7 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
+    console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
   }
 
   public initEkaScribe({
@@ -142,7 +143,7 @@ class EkaScribe {
 
   resumeRecording() {
     console.log('Resuming recording...');
-    const resumeRecordingResponse = resumeVoiceRecorfing();
+    const resumeRecordingResponse = resumeVoiceRecording();
     console.log('%c Line:124 🌶 resumeRecordingResponse', 'color:#33a5ff', resumeRecordingResponse);
     return resumeRecordingResponse;
   }
