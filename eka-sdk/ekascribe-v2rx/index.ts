@@ -2,7 +2,7 @@
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
 import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v2-status';
-import patchTransactionStatus, { processingError } from './api/patch-transaction-status';
+import patchTransactionStatus from './api/patch-transaction-status';
 import postTransactionCommit from './api/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
@@ -16,10 +16,11 @@ import {
   SAMPLING_RATE,
   SDK_STATUS_CODE,
 } from './constants/constant';
-import { ERROR_CODE, PROCESSING_STATUS } from './constants/enums';
+import { ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TErrorCallback,
+  TPatchTransactionRequest,
   TPostTransactionResponse,
   TStartRecordingRequest,
 } from './constants/types';
@@ -166,12 +167,16 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  async cancelRecordingSession({ txn_id }: { txn_id: string }): Promise<TPostTransactionResponse> {
+  async cancelRecordingSession({
+    sessionId,
+    processing_status,
+    processing_error,
+  }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const patchTransactionResponse = await patchTransactionStatus({
-        sessionId: txn_id,
-        processing_status: PROCESSING_STATUS.CANCELLED,
-        processing_error: processingError,
+        sessionId,
+        processing_status,
+        processing_error,
       });
 
       this.resetEkaScribe();

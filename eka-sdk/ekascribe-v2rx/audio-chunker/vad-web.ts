@@ -169,13 +169,16 @@ class VadWebClient {
 
     this.is_vad_loading = false;
     this.micVad = vad;
+
+    return this.is_vad_loading;
   }
 
   /**
    * reinitialize the vad instance
    */
-  reinitializeVad() {
-    this.initVad();
+  async reinitializeVad() {
+    const response = await this.initVad();
+    return response;
   }
 
   /**

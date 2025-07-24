@@ -26,11 +26,16 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
     const isVadLoading = vadInstance?.isVadLoading();
 
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
-      return {
-        error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
-        status_code: SDK_STATUS_CODE.FORBIDDEN,
-        message: 'VAD instance is not initialized. Please try again later.',
-      };
+      // retry initiating vad once and if still is in loading return error
+      const reinitializeVadResponse = await vadInstance?.reinitializeVad();
+      console.log(reinitializeVadResponse, 'reinitialize vad response');
+      if (reinitializeVadResponse) {
+        return {
+          error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
+          status_code: SDK_STATUS_CODE.FORBIDDEN,
+          message: 'VAD instance is not initialized. Please try again later.',
+        };
+      }
     }
 
     vadInstance?.startVad();
