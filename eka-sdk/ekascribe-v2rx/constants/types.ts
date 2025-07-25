@@ -197,3 +197,5 @@ export type TSessionStatus = {
     };
   };
 };
+
+export type TFileUploadProgressCallback = (success: number, total: number) => void;

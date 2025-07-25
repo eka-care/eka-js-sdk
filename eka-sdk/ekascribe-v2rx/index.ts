@@ -20,6 +20,7 @@ import { ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TErrorCallback,
+  TFileUploadProgressCallback,
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPostTransactionResponse,
@@ -312,6 +313,10 @@ class EkaScribe {
     EkaScribeStore.userSpeechCallback = callback;
   }
 
+  onFileUploadProgressCallback(callback: TFileUploadProgressCallback) {
+    this.audioFileManagerInstance.setProgressCallback(callback);
+  }
+
   configureVadConstants({
     pref_length,
     desp_length,
@@ -372,3 +377,5 @@ export const reinitializeVad = ekascribeInstance.reinitializeVad.bind(ekascribeI
 
 export const onError = ekascribeInstance.onError.bind(ekascribeInstance);
 export const onUserSpeechCallback = ekascribeInstance.onUserSpeechCallback.bind(ekascribeInstance);
+export const onFileUploadProgressCallback =
+  ekascribeInstance.onFileUploadProgressCallback.bind(ekascribeInstance);
