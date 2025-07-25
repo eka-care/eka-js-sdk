@@ -135,6 +135,25 @@ export type TEndV2RxResponse = {
   commit_txn_error?: string;
 };
 
+export type TGetTransactionHistoryResponse = {
+  data?: TSessionHistoryData[];
+  status?: string;
+  code: number;
+  message: string;
+  retrieved_count?: number;
+};
+
+export type TSessionHistoryData = {
+  created_at: string;
+  b_id: string;
+  user_status: string;
+  processing_status: string;
+  txn_id: string;
+  mode: string;
+  uuid: string;
+  oid: string;
+};
+
 export type TAudioChunksInfo = {
   fileName: string;
   timestamp: { st: string; et: string };

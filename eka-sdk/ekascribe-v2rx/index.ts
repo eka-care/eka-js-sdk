@@ -1,7 +1,7 @@
 // ekascribe main Class having all the methods - Entry point
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
-import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v2-status';
+import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v3-status';
 import patchTransactionStatus from './api/patch-transaction-status';
 import postTransactionCommit from './api/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
@@ -20,6 +20,7 @@ import { ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TErrorCallback,
+  TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPostTransactionResponse,
   TStartRecordingRequest,
@@ -32,6 +33,7 @@ import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
+import getTransactionHistory from './api/get-transaction-history';
 
 class EkaScribe {
   private vadInstance; // vadWebClient Instance
@@ -167,7 +169,7 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  async cancelRecordingSession({
+  async patchSessionStatus({
     sessionId,
     processing_status,
     processing_error,
@@ -267,6 +269,22 @@ class EkaScribe {
     }
   }
 
+  async getSessionHistory({ txn_count }: { txn_count: number }) {
+    try {
+      const transactionsResponse = await getTransactionHistory({
+        txn_count,
+      });
+
+      return transactionsResponse;
+    } catch (error) {
+      console.error('Error cancelling recording session:', error);
+      return {
+        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to fetch previous transactions, ${error}`,
+      } as TGetTransactionHistoryResponse;
+    }
+  }
+
   getSuccessFiles() {
     return this.audioFileManagerInstance.getSuccessfulUploads();
   }
@@ -337,8 +355,8 @@ export const pauseRecording = ekascribeInstance.pauseRecording.bind(ekascribeIns
 export const resumeRecording = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
 export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstance);
 export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
-export const cancelRecordingSession =
-  ekascribeInstance.cancelRecordingSession.bind(ekascribeInstance);
+export const patchSessionStatus = ekascribeInstance.patchSessionStatus.bind(ekascribeInstance);
+export const getSessionHistory = ekascribeInstance.getSessionHistory.bind(ekascribeInstance);
 export const commitTransactionCall =
   ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
 export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
