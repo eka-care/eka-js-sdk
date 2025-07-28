@@ -131,9 +131,6 @@ class EkaScribe {
   }
 
   getVADInfo() {
-    const x = this.audioFileManagerInstance.getRawSampleDetails();
-    console.log('%c Line:116 🍋 x', 'color:#6ec1c2', x);
-
     const vadInstane = this.vadInstance.getMicVad();
     console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
   }

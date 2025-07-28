@@ -55,8 +55,6 @@ export type TStartRecordingResponse = {
   txn_id?: string;
   oid?: string;
   uuid?: string;
-  txnInitResponse?: TPostTransactionResponse;
-  vadInstance?: VadWebClient | null;
 };
 
 export type TPauseRecordingResponse = {
