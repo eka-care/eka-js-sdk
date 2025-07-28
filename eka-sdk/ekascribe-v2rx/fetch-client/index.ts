@@ -5,20 +5,33 @@ async function refreshToken() {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
-    const access_token = GET_AUTH_TOKEN();
-    const refresh_token = GET_REFRESH_TOKEN();
+    let authToken = '';
+    let refreshToken = '';
+    const cookies = await chrome.cookies.getAll({ domain: '.eka.care' });
+
+    if (GET_AUTH_TOKEN()) {
+      authToken = GET_AUTH_TOKEN();
+    } else {
+      const sessCookie = cookies.find((cookie) => cookie.name === 'sess');
+      authToken = sessCookie?.value || '';
+    }
+
+    if (GET_REFRESH_TOKEN()) {
+      refreshToken = GET_REFRESH_TOKEN();
+    } else {
+      const refreshCookie = cookies.find((cookie) => cookie.name === 'refresh');
+      refreshToken = refreshCookie?.value || '';
+    }
 
     const raw = {
-      access_token,
-      refresh_token,
+      sess: authToken,
+      refresh: refreshToken,
     };
 
     const options = {
       method: 'POST',
       headers,
       body: JSON.stringify(raw),
-      // credentials: 'include',
-      // mode: 'cors',
     };
 
     const response = await fetchWrapper(
@@ -75,9 +88,7 @@ export default async function fetchWrapper(
       headers: newHeaders,
     });
 
-    const refresh_token = GET_REFRESH_TOKEN();
-
-    if (response.status === 401 && retry && refresh_token) {
+    if (response.status === 401 && retry) {
       const refreshSuccess = await refreshToken();
 
       if (refreshSuccess) {
@@ -90,7 +101,7 @@ export default async function fetchWrapper(
           false
         );
       } else {
-        throw new Error('Unable to refresh user token');
+        return response;
       }
     }
 
