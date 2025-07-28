@@ -138,7 +138,21 @@ class AudioFileManager {
 
           case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS: {
             console.log('File uploaded successfully in worker:', workerResponse.response);
-            const { fileCount: fileName, chunkIndex, fileBlob } = workerResponse.requestBody;
+            const {
+              fileCount: fileName,
+              chunkIndex,
+              fileBlob,
+              compressedAudioBuffer,
+            } = workerResponse.requestBody;
+
+            if (this.onProgressCallback && compressedAudioBuffer) {
+              this.onProgressCallback({
+                success: this.successfulUploads.length,
+                total: this.audioChunks.length,
+                fileName,
+                chunkData: compressedAudioBuffer,
+              });
+            }
 
             if (workerResponse.response.success) {
               this.successfulUploads.push(fileName);
@@ -155,7 +169,10 @@ class AudioFileManager {
               }
 
               if (this.onProgressCallback) {
-                this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+                this.onProgressCallback({
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
+                });
               }
             } else {
               // store that audioFrames in audioChunks
@@ -249,7 +266,12 @@ class AudioFileManager {
     });
 
     if (this.onProgressCallback) {
-      this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+      this.onProgressCallback({
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+        fileName,
+        chunkData: compressedAudioBuffer,
+      });
     }
 
     // Push upload promise to track status
@@ -276,7 +298,10 @@ class AudioFileManager {
         }
 
         if (this.onProgressCallback) {
-          this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+          this.onProgressCallback({
+            success: this.successfulUploads.length,
+            total: this.audioChunks.length,
+          });
         }
       } else {
         if (chunkIndex !== -1) {
@@ -316,7 +341,10 @@ class AudioFileManager {
     console.log('%c Line:309 🌶 s3FileName', 'color:#e41a6a', s3FileName);
 
     if (this.onProgressCallback) {
-      this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+      this.onProgressCallback({
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+      });
     }
 
     this.sharedWorkerInstance?.port.postMessage({
@@ -515,7 +543,10 @@ class AudioFileManager {
       this.uploadPromises = []; // Reset upload promises for retries
 
       if (this.onProgressCallback) {
-        this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+        this.onProgressCallback({
+          success: this.successfulUploads.length,
+          total: this.audioChunks.length,
+        });
       }
 
       this.audioChunks.forEach((chunk, index) => {
@@ -548,7 +579,10 @@ class AudioFileManager {
                 this.successfulUploads.push(fileName);
 
                 if (this.onProgressCallback) {
-                  this.onProgressCallback(this.successfulUploads.length, this.audioChunks.length);
+                  this.onProgressCallback({
+                    success: this.successfulUploads.length,
+                    total: this.audioChunks.length,
+                  });
                 }
 
                 this.audioChunks[index] = {

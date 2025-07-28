@@ -55,11 +55,19 @@ export type TGetStatusResponse = {
   message?: string;
 };
 
+const API_TIMEOUT_MS = 16000;
+
 export const getVoiceApiV2Status = async ({
   txnId,
 }: {
   txnId: string;
 }): Promise<TGetStatusResponse> => {
+  const controller = new AbortController();
+
+  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
+
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -82,5 +90,10 @@ export const getVoiceApiV2Status = async ({
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     };
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
   }
 };

@@ -53,11 +53,12 @@ onconnect = function (event: MessageEvent) {
         uploadRequestReceived++;
 
         let audioBlob: Blob;
+        let compressedAudioBuffer: Uint8Array<ArrayBufferLike>[];
 
         if (fileBlob) {
           audioBlob = fileBlob;
         } else {
-          const compressedAudioBuffer = compressAudioToMp3(audioFrames);
+          compressedAudioBuffer = compressAudioToMp3(audioFrames);
 
           audioBlob = new Blob(compressedAudioBuffer, {
             type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
@@ -81,6 +82,7 @@ onconnect = function (event: MessageEvent) {
               requestBody: {
                 ...workerData.payload,
                 fileBlob: audioBlob,
+                compressedAudioBuffer,
               },
             });
           })

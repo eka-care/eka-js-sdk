@@ -3,10 +3,18 @@ import { TPostTransactionCommitRequest, TPostTransactionResponse } from '../cons
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
+const API_TIMEOUT_MS = 5000;
+
 async function postTransactionStop({
   txnId,
   audioFiles,
 }: TPostTransactionCommitRequest): Promise<TPostTransactionResponse> {
+  const controller = new AbortController();
+
+  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
+
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -38,6 +46,11 @@ async function postTransactionStop({
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     } as TPostTransactionResponse;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
   }
 }
 

@@ -15,11 +15,19 @@ export const processingError: TPatchTransactionError = {
   },
 };
 
+const API_TIMEOUT_MS = 5000;
+
 const patchTransactionStatus = async ({
   sessionId,
   processing_status,
   processing_error,
 }: TPatchTransactionRequest): Promise<TPostTransactionResponse> => {
+  const controller = new AbortController();
+
+  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
+
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -56,6 +64,11 @@ const patchTransactionStatus = async ({
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     } as TPostTransactionResponse;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
   }
 };
 
