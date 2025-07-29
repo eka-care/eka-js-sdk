@@ -130,9 +130,9 @@ class EkaScribe {
     this.vadInstance.reinitializeVad();
   }
 
-  async pauseRecording() {
+  pauseRecording() {
     console.log('Pausing recording...');
-    const pauseRecordingResponse = await pauseVoiceRecording();
+    const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
     return pauseRecordingResponse;
   }
