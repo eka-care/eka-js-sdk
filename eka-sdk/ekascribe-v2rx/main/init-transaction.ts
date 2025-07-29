@@ -51,8 +51,6 @@ const initialiseTransaction = async ({
         transfer: 'vaded',
       });
 
-      console.log('%c Line:61 🍻 txnInitResponse', 'color:#3f7cff', txnInitResponse);
-
       const {
         code: txnInitStatusCode,
         b_id: businessId,

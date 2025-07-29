@@ -75,19 +75,16 @@ class EkaScribe {
   }) {
     // set access_token and refresh_token in env
     if (!access_token || !refresh_token) return;
-    console.log('%c Line:62 🍖 access_token', 'color:#2eafb0', access_token, refresh_token);
 
     setEnv({
       auth_token: access_token,
       refresh_token,
     });
-    console.log('init ekascribe called with access_token and refresh_token');
   }
 
   public async getEkascribeConfig() {
     console.log('Fetching EkaScribe configuration...');
     const response = await getConfigV2();
-    console.log('%c Line:74 🍭 response', 'color:#42b983', response);
     return response;
   }
 
@@ -118,7 +115,7 @@ class EkaScribe {
       output_format_template,
       txn_id,
     });
-    console.log('%c Line:115 🍓 initTransactionResponse', 'color:#465975', initTransactionResponse);
+    console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
   }
 
@@ -126,13 +123,7 @@ class EkaScribe {
     console.log('Starting recording...');
     const startResponse = await startVoiceRecording();
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
-
     return startResponse;
-  }
-
-  getVADInfo() {
-    const vadInstane = this.vadInstance.getMicVad();
-    console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
   }
 
   reinitializeVad() {
@@ -369,7 +360,6 @@ export const getSuccessfullyUploadedFiles =
   ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
 export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
 export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
-export const getVADInfo = ekascribeInstance.getVADInfo.bind(ekascribeInstance);
 export const reinitializeVad = ekascribeInstance.reinitializeVad.bind(ekascribeInstance);
 
 export const onError = ekascribeInstance.onError.bind(ekascribeInstance);

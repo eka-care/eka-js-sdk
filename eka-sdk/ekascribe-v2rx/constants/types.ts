@@ -1,4 +1,3 @@
-import VadWebClient from '../audio-chunker/vad-web';
 import { ERROR_CODE } from './enums';
 
 export type TGetConfigV2Response = {

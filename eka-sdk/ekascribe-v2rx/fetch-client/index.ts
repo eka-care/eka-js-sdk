@@ -4,6 +4,7 @@ async function refreshToken() {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
+    headers.set('client-id', GET_CLIENT_ID());
 
     let authToken = '';
     let refreshToken = '';
@@ -34,10 +35,9 @@ async function refreshToken() {
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchWrapper(
+    const response = await fetch(
       `${GET_EKA_HOST()}/connect-auth/v1/account/refresh-token`,
-      options,
-      false
+      options
     );
 
     if (response.status === 401) {
@@ -92,14 +92,7 @@ export default async function fetchWrapper(
       const refreshSuccess = await refreshToken();
 
       if (refreshSuccess) {
-        return await fetchWrapper(
-          url,
-          {
-            ...options,
-            headers: newHeaders,
-          },
-          false
-        );
+        return await fetchWrapper(url, options, false);
       } else {
         return response;
       }

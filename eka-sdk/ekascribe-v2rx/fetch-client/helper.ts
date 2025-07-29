@@ -1,7 +1,7 @@
 const DEV = {
   EKA_HOST: 'https://api.dev.eka.care',
-  EKA_V2RX_HOST_V2: 'https://api.eka.care/voice/api/v2',
-  EKA_V2RX_HOST_V3: 'https://api.eka.care/voice/api/v3',
+  EKA_V2RX_HOST_V2: 'https://v2rxbe.dev.eka.care/voice/api/v2',
+  EKA_V2RX_HOST_V3: 'https://api.dev.eka.care/voice/api/v3',
 };
 
 const PROD = {
@@ -11,7 +11,7 @@ const PROD = {
 };
 
 let envVar = PROD;
-let client_id = 'doctor-app-ios';
+let client_id = 'doc-web';
 let auth: string;
 let refresh: string;
 

@@ -22,7 +22,6 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
     console.log('%c Line:22 🍇 vadInstance', 'color:#fca650', vadInstance);
 
     const micVad = vadInstance?.getMicVad();
-    console.log('%c Line:23 🍇 micVad', 'color:#fca650', micVad);
     const isVadLoading = vadInstance?.isVadLoading();
 
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {

@@ -125,16 +125,13 @@ class VadWebClient {
    */
   async initVad() {
     const audioFileManager = EkaScribeStore.audioFileManagerInstance;
-    console.log('%c Line:128 🧀 audioFileManager', 'color:#93c0a4', audioFileManager);
     const audioBuffer = EkaScribeStore.audioBufferInstance;
-    console.log('%c Line:129 🥕 audioBuffer', 'color:#33a5ff', audioBuffer);
     this.is_vad_loading = true;
 
     const vad = await MicVAD.new({
       frameSamples: this.frame_size,
       preSpeechPadFrames: this.speech_pad_frames,
       onFrameProcessed: (prob, frames) => {
-        // console.log('%c Line:134 🥃 frames', 'color:#fca650', frames);
         audioFileManager?.incrementTotalRawSamples(frames);
 
         audioBuffer?.append(frames);
@@ -147,22 +144,18 @@ class VadWebClient {
         }
 
         const vadResponse = this.processVadFrame(vad_dec);
-        // console.log('%c Line:149 🍔 vadResponse', 'color:#2eafb0', vadResponse);
         const is_clip_point = vadResponse[0];
 
         if (is_clip_point) {
           // audio chunk is of float32 Array <ArrayBuffer>
           const activeAudioChunk = audioBuffer?.getAudioData();
-          console.log('%c Line:154 🍰 activeAudioChunk', 'color:#4fff4B', activeAudioChunk);
           this.processAudioChunk({ audioFrames: activeAudioChunk });
         }
       },
       onSpeechStart: () => {
-        console.log('%c Line:160 🍰 onSpeechStart');
         EkaScribeStore.userSpeechCallback?.(true);
       },
       onSpeechEnd: () => {
-        console.log('%c Line:164 🍰 onSpeechEnd');
         EkaScribeStore.userSpeechCallback?.(false);
       },
     });
@@ -191,11 +184,6 @@ class VadWebClient {
 
     // get the number of chunks already processed
     const filenumber = (audioFileManager.audioChunks.length || 0) + 1;
-    console.log(
-      '%c Line:184 🍣 audioFileManager.audioChunks',
-      'color:#93c0a4',
-      audioFileManager.audioChunks
-    );
     const fileName = `${filenumber}.${OUTPUT_FORMAT}`;
 
     const rawSampleDetails = audioFileManager.getRawSampleDetails();
@@ -220,8 +208,6 @@ class VadWebClient {
       );
       audioBuffer.resetBufferState();
 
-      console.log('%c Line:182 🍣 filename', 'color:#93c0a4', fileName);
-
       await audioFileManager.uploadAudioToS3({
         audioFrames,
         fileName,
@@ -238,7 +224,7 @@ class VadWebClient {
   startVad() {
     this.micVad.start();
 
-    // this.monitorInitialAudioCapture();
+    this.monitorAudioCapture();
   }
 
   /**
@@ -262,10 +248,10 @@ class VadWebClient {
    * monitor initial audio capture within starting 4 seconds
    */
 
-  // TODO: this event should be called after some periodic interval to monitor vad
-  monitorInitialAudioCapture() {
+  monitorAudioCapture() {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     const errorCallback = EkaScribeStore.errorCallback;
+
     setTimeout(() => {
       if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
         this.micVad.pause();
@@ -273,15 +259,14 @@ class VadWebClient {
           errorCallback({
             error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
             status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-            message:
-              'No audio captured within the initial 4 seconds. Please check your microphone.',
+            message: 'No audio is being captured. Please check your microphone.',
           });
         }
         return false;
       }
 
       return true;
-    }, 4000);
+    }, 5000);
   }
 
   /**

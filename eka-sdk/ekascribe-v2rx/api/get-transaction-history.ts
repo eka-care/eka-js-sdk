@@ -41,8 +41,6 @@ const getTransactionHistory = async ({
       message: `Past ${txn_count} transactions fetched successfully.`,
     };
   } catch (error) {
-    console.error('Error fetching session summary:', error);
-
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong in fetching transactions. ${error}`,

@@ -74,7 +74,6 @@ class AudioFileManager {
   }
 
   incrementTotalRawSamples(frames: Float32Array): void {
-    // console.log('%c Line:77 🥝 frames', 'color:#ea7e5c', frames);
     this.totalRawSamples += frames.length;
     this.totalRawFrames += 1;
   }
@@ -106,7 +105,6 @@ class AudioFileManager {
    * (+ the latest chunk , affects the length of chunks data struct)
    */
   updateAudioInfo(audioChunks: TAudioChunksInfo): number {
-    console.log('%c Line:110 🍣 audioChunks', 'color:#93c0a4', audioChunks);
     this.audioChunks.push(audioChunks);
     return this.audioChunks.length;
   }
@@ -117,8 +115,6 @@ class AudioFileManager {
       const worker = new SharedWorker(
         new URL('../shared-worker/s3-file-upload.js', import.meta.url)
       );
-
-      console.log('%c Line:118 🍯 worker', 'color:#4fff4B', worker);
 
       this.sharedWorkerInstance = worker;
 
@@ -209,7 +205,6 @@ class AudioFileManager {
   private async setupAWSConfiguration({ is_shared_worker }: { is_shared_worker: boolean }) {
     try {
       const response = await postCogInit();
-      console.log('%c Line:196 🍔 response', 'color:#93c0a4', response);
       const { credentials, is_session_expired } = response;
       if (is_session_expired || !credentials) {
         this.isAWSConfigured = false;
@@ -282,7 +277,6 @@ class AudioFileManager {
       businessID: this.businessID,
       is_shared_worker: false,
     }).then((response) => {
-      console.log('%c Line:265 🥝 response', 'color:#ea7e5c', response);
       if (response.success) {
         this.successfulUploads.push(fileName);
 
@@ -338,7 +332,6 @@ class AudioFileManager {
     fileName: string;
   }> {
     const s3FileName = `${this.filePath}/${fileName}`;
-    console.log('%c Line:309 🌶 s3FileName', 'color:#e41a6a', s3FileName);
 
     if (this.onProgressCallback) {
       this.onProgressCallback({
@@ -389,14 +382,10 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
-      console.log('%c Line:356 🍿 this.isAWSConfigured', 'color:#93c0a4', this.isAWSConfigured);
-
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: true,
         });
-
-        console.log('%c Line:359 🍯 awsConfigResponse', 'color:#465975', awsConfigResponse);
 
         if (!awsConfigResponse) {
           throw new Error('Failed to configure AWS');
@@ -415,8 +404,6 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
-      console.log('%c Line:390 🍆 this.isAWSConfigured', 'color:#e41a6a', this.isAWSConfigured);
-
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: false,
