@@ -26,7 +26,9 @@ const setEnv = ({
   auth_token: string;
   refresh_token: string;
 }) => {
-  envVar = env === 'PROD' ? PROD : DEV;
+  if (env) {
+    envVar = env === 'PROD' ? PROD : DEV;
+  }
   if (clientId) {
     client_id = clientId;
   }
