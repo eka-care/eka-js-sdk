@@ -198,6 +198,7 @@ export type TSessionStatus = {
 export type TFileUploadProgressCallback = (args: {
   success: number;
   total: number;
+  is_uploaded?: boolean;
   fileName?: string;
   chunkData?: Uint8Array<ArrayBufferLike>[];
 }) => void;

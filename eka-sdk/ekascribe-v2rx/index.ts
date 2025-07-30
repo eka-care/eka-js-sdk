@@ -366,3 +366,4 @@ export const onError = ekascribeInstance.onError.bind(ekascribeInstance);
 export const onUserSpeechCallback = ekascribeInstance.onUserSpeechCallback.bind(ekascribeInstance);
 export const onFileUploadProgressCallback =
   ekascribeInstance.onFileUploadProgressCallback.bind(ekascribeInstance);
+export const resetEkaScribe = ekascribeInstance.resetEkaScribe.bind(ekascribeInstance);

@@ -168,9 +168,19 @@ class AudioFileManager {
                 this.onProgressCallback({
                   success: this.successfulUploads.length,
                   total: this.audioChunks.length,
+                  is_uploaded: true,
                 });
               }
             } else {
+              if (this.onProgressCallback) {
+                this.onProgressCallback({
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
+                  fileName,
+                  is_uploaded: false,
+                });
+              }
+
               // store that audioFrames in audioChunks
               if (chunkIndex !== -1) {
                 this.audioChunks[chunkIndex] = {
@@ -295,6 +305,7 @@ class AudioFileManager {
           this.onProgressCallback({
             success: this.successfulUploads.length,
             total: this.audioChunks.length,
+            is_uploaded: true,
           });
         }
       } else {
@@ -306,6 +317,15 @@ class AudioFileManager {
             status: 'failure',
             response: response.error || 'Upload failed',
           };
+        }
+
+        if (this.onProgressCallback) {
+          this.onProgressCallback({
+            success: this.successfulUploads.length,
+            total: this.audioChunks.length,
+            fileName,
+            is_uploaded: false,
+          });
         }
       }
 
