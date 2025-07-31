@@ -4,7 +4,7 @@ import {
   TPatchTransactionRequest,
   TPostTransactionResponse,
 } from '../constants/types';
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
 export const processingError: TPatchTransactionError = {
@@ -15,19 +15,11 @@ export const processingError: TPatchTransactionError = {
   },
 };
 
-const API_TIMEOUT_MS = 5000;
-
 const patchTransactionStatus = async ({
   sessionId,
   processing_status,
   processing_error,
 }: TPatchTransactionRequest): Promise<TPostTransactionResponse> => {
-  const controller = new AbortController();
-
-  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
-    controller.abort();
-  }, API_TIMEOUT_MS);
-
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -43,7 +35,7 @@ const patchTransactionStatus = async ({
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchClient(
+    const response = await fetchWrapper(
       `${GET_EKA_V2RX_HOST_V2()}/transaction/${sessionId}`,
       options
     );
@@ -64,11 +56,6 @@ const patchTransactionStatus = async ({
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     } as TPostTransactionResponse;
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
   }
 };
 
