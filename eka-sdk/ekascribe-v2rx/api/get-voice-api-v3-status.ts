@@ -55,19 +55,11 @@ export type TGetStatusResponse = {
   message?: string;
 };
 
-const API_TIMEOUT_MS = 16000;
-
 export const getVoiceApiV3Status = async ({
   txnId,
 }: {
   txnId: string;
 }): Promise<TGetStatusResponse> => {
-  const controller = new AbortController();
-
-  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
-    controller.abort();
-  }, API_TIMEOUT_MS);
-
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -77,7 +69,8 @@ export const getVoiceApiV3Status = async ({
       headers,
     };
 
-    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options);
+    // Use custom timeout for this API (16 seconds instead of default 5 seconds)
+    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options, 16000);
 
     const response = await getResponse.json();
 
@@ -90,10 +83,5 @@ export const getVoiceApiV3Status = async ({
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     };
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
   }
 };

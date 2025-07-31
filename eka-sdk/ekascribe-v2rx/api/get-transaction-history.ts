@@ -5,19 +5,11 @@ import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
 // TODO: pagination changes
 
-const API_TIMEOUT_MS = 5000;
-
 const getTransactionHistory = async ({
   txn_count,
 }: {
   txn_count: number;
 }): Promise<TGetTransactionHistoryResponse> => {
-  const controller = new AbortController();
-
-  let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
-    controller.abort();
-  }, API_TIMEOUT_MS);
-
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -25,7 +17,6 @@ const getTransactionHistory = async ({
     const options = {
       method: 'GET',
       headers,
-      signal: controller.signal,
     };
 
     const responseJson = await fetchWrapper(
@@ -45,11 +36,6 @@ const getTransactionHistory = async ({
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong in fetching transactions. ${error}`,
     };
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
   }
 };
 
