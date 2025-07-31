@@ -37,11 +37,13 @@ import initialiseTransaction from './main/init-transaction';
 import getTransactionHistory from './api/get-transaction-history';
 
 class EkaScribe {
-  private vadInstance; // vadWebClient Instance
-  private audioFileManagerInstance; // AudioFileManager Instance
-  private audioBufferInstance;
+  private static instance: EkaScribe | null = null;
+  private vadInstance: VadWebClient; // vadWebClient Instance
+  private audioFileManagerInstance: AudioFileManager; // AudioFileManager Instance
+  private audioBufferInstance: AudioBufferManager;
 
-  constructor() {
+  // Private constructor to prevent direct instantiation
+  private constructor() {
     this.audioFileManagerInstance = new AudioFileManager();
     console.log(
       '%c Line:48 🥕 this.audioFileManagerInstance',
@@ -66,13 +68,24 @@ class EkaScribe {
     console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
   }
 
-  public initEkaScribe({ access_token }: { access_token?: string }) {
-    // set access_token and refresh_token in env
-    if (!access_token) return;
+  // Static method to get the singleton instance with optional initialization
+  public static getInstance( access_token?: string ): EkaScribe {
+    if (!EkaScribe.instance) {
+      EkaScribe.instance = new EkaScribe();
+       // Initialize if params are provided
+      if (access_token) {
+        setEnv({
+          auth_token: access_token,
+        });
+      }
+    }
+    
+    return EkaScribe.instance;
+  }
 
-    setEnv({
-      auth_token: access_token,
-    });
+  // Method to reset the singleton instance (useful for testing)
+  public static resetInstance(): void {
+    EkaScribe.instance = null;
   }
 
   public async getEkascribeConfig() {
@@ -323,33 +336,7 @@ class EkaScribe {
   }
 }
 
-export default EkaScribe;
 
-const ekascribeInstance = new EkaScribe();
-
-export const initEkascribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
-export const getEkascribeConfig = ekascribeInstance.getEkascribeConfig.bind(ekascribeInstance);
-export const startRecording = ekascribeInstance.startRecording.bind(ekascribeInstance);
-export const pauseRecording = ekascribeInstance.pauseRecording.bind(ekascribeInstance);
-export const resumeRecording = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
-export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstance);
-export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
-export const patchSessionStatus = ekascribeInstance.patchSessionStatus.bind(ekascribeInstance);
-export const getSessionHistory = ekascribeInstance.getSessionHistory.bind(ekascribeInstance);
-export const commitTransactionCall =
-  ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
-export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
-export const getTemplateOutput = ekascribeInstance.getTemplateOutput.bind(ekascribeInstance);
-export const initTransaction = ekascribeInstance.initTransaction.bind(ekascribeInstance);
-
-export const getSuccessfullyUploadedFiles =
-  ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
-export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
-export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
-export const reinitializeVad = ekascribeInstance.reinitializeVad.bind(ekascribeInstance);
-
-export const onError = ekascribeInstance.onError.bind(ekascribeInstance);
-export const onUserSpeechCallback = ekascribeInstance.onUserSpeechCallback.bind(ekascribeInstance);
-export const onFileUploadProgressCallback =
-  ekascribeInstance.onFileUploadProgressCallback.bind(ekascribeInstance);
-export const resetEkaScribe = ekascribeInstance.resetEkaScribe.bind(ekascribeInstance);
+// Export the singleton instance getter with optional initialization
+export const getEkaScribeInstance = (access_token?: string ) => 
+  EkaScribe.getInstance(access_token);

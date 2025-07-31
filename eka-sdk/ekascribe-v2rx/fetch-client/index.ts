@@ -11,17 +11,9 @@ export default async function fetchWrapper(
       newHeaders.set('client-id', GET_CLIENT_ID());
     }
 
-    if (!newHeaders.get('auth')) {
+    if (!newHeaders.get('auth') && GET_AUTH_TOKEN()) {
       // if token is provided in initEkaScribe
-      if (GET_AUTH_TOKEN()) {
-        newHeaders.set('auth', GET_AUTH_TOKEN());
-      } else {
-        // else read it from cookies
-        const cookies = await chrome.cookies.getAll({ domain: '.eka.care' });
-        const sessCookie = cookies.find((cookie) => cookie.name === 'sess');
-        const authToken = sessCookie?.value || '';
-        newHeaders.set('auth', authToken);
-      }
+      newHeaders.set('auth', GET_AUTH_TOKEN());
     }
 
     const response: Response = await fetch(url, {
