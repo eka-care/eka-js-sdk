@@ -135,7 +135,7 @@ export type TEndV2RxResponse = {
 export type TGetTransactionHistoryResponse = {
   data?: TSessionHistoryData[];
   status?: string;
-  code: number;
+  status_code: number;
   message: string;
   retrieved_count?: number;
 };
@@ -201,4 +201,8 @@ export type TFileUploadProgressCallback = (args: {
   is_uploaded?: boolean;
   fileName?: string;
   chunkData?: Uint8Array<ArrayBufferLike>[];
+  error?: {
+    code: number;
+    msg: string;
+  };
 }) => void;

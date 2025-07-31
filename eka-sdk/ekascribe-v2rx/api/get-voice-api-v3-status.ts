@@ -51,13 +51,13 @@ type TApiResponse = {
 
 export type TGetStatusResponse = {
   response?: TApiResponse | null;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
 const API_TIMEOUT_MS = 16000;
 
-export const getVoiceApiV2Status = async ({
+export const getVoiceApiV3Status = async ({
   txnId,
 }: {
   txnId: string;
@@ -83,11 +83,11 @@ export const getVoiceApiV2Status = async ({
 
     return {
       response,
-      code: getResponse.status,
+      status_code: getResponse.status,
     };
   } catch (error) {
     return {
-      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     };
   } finally {

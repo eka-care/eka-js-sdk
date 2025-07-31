@@ -37,12 +37,12 @@ const getTransactionHistory = async ({
 
     return {
       data: response.data,
-      code: responseJson.status,
+      status_code: responseJson.status,
       message: `Past ${txn_count} transactions fetched successfully.`,
     };
   } catch (error) {
     return {
-      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong in fetching transactions. ${error}`,
     };
   } finally {

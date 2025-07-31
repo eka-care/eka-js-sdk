@@ -178,6 +178,10 @@ class AudioFileManager {
                   total: this.audioChunks.length,
                   fileName,
                   is_uploaded: false,
+                  error: {
+                    code: workerResponse.response.code,
+                    msg: 'Tokens expired.',
+                  },
                 });
               }
 
@@ -325,6 +329,10 @@ class AudioFileManager {
             total: this.audioChunks.length,
             fileName,
             is_uploaded: false,
+            error: {
+              code: response.code || 500,
+              msg: 'Tokens expired.',
+            },
           });
         }
       }

@@ -1,7 +1,7 @@
 // ekascribe main Class having all the methods - Entry point
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
-import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v3-status';
+import { getVoiceApiV3Status, TGetStatusResponse } from './api/get-voice-api-v3-status';
 import patchTransactionStatus from './api/patch-transaction-status';
 import postTransactionCommit from './api/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
@@ -66,19 +66,12 @@ class EkaScribe {
     console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
   }
 
-  public initEkaScribe({
-    access_token,
-    refresh_token,
-  }: {
-    access_token?: string;
-    refresh_token?: string;
-  }) {
+  public initEkaScribe({ access_token }: { access_token?: string }) {
     // set access_token and refresh_token in env
-    if (!access_token || !refresh_token) return;
+    if (!access_token) return;
 
     setEnv({
       auth_token: access_token,
-      refresh_token,
     });
   }
 
@@ -88,16 +81,9 @@ class EkaScribe {
     return response;
   }
 
-  public updateAuthTokens({
-    access_token,
-    refresh_token,
-  }: {
-    access_token: string;
-    refresh_token: string;
-  }) {
+  public updateAuthTokens({ access_token }: { access_token: string }) {
     setEnv({
       auth_token: access_token,
-      refresh_token,
     });
   }
 
@@ -244,7 +230,7 @@ class EkaScribe {
 
   async getTemplateOutput({ txn_id }: { txn_id: string }) {
     try {
-      const getStatusResponse = await getVoiceApiV2Status({
+      const getStatusResponse = await getVoiceApiV3Status({
         txnId: txn_id,
       });
 
@@ -252,7 +238,7 @@ class EkaScribe {
     } catch (error) {
       console.error('Error in fetching templates response: ', error);
       return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch output templates, ${error}`,
       } as TGetStatusResponse;
     }
@@ -268,7 +254,7 @@ class EkaScribe {
     } catch (error) {
       console.error('Error cancelling recording session:', error);
       return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch previous transactions, ${error}`,
       } as TGetTransactionHistoryResponse;
     }
