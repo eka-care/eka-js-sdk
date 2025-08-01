@@ -25,6 +25,10 @@ class VadWebClient {
   private speech_pad_frames: number;
   private micVad: MicVAD; // MicVad Object
   private is_vad_loading: boolean = true;
+  private noSpeechStartTime: number | null = null;
+  private recording_started: boolean = false;
+  private lastWarningTime: number | null = null;
+  private warningCooldownPeriod: number = 2000; // 2 seconds cooldown after warning
 
   /**
    * Class that handle Vad functions and manages audio chunk
@@ -50,6 +54,57 @@ class VadWebClient {
 
     // instantiate MicVad
     this.initVad();
+  }
+
+  /**
+   * Check for continuous silence and trigger periodic warnings
+   * @param isSpeech - vad probability (0 or 1)
+   */
+  checkNoSpeech(isSpeech: number) {
+    if (!this.recording_started) return;
+
+    const now = Date.now();
+    const errorCallback = EkaScribeStore.errorCallback;
+    const silenceThreshold = 10000; // 10 seconds
+
+    if (isSpeech === 0) {
+      if (this.noSpeechStartTime === null) {
+        this.noSpeechStartTime = now;
+      } else {
+        const silenceDuration = now - this.noSpeechStartTime;
+
+        // Check if we should show a warning (every 10 seconds of silence)
+        if (silenceDuration >= silenceThreshold) {
+          // Check if enough time has passed since the last warning (cooldown period)
+          if (
+            this.lastWarningTime === null ||
+            now - this.lastWarningTime >= this.warningCooldownPeriod
+          ) {
+            if (errorCallback) {
+              errorCallback({
+                error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
+                status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+                message: "No audio detected. Please speak or end the recording when you're ready.",
+              });
+            }
+            this.lastWarningTime = now;
+            // Reset the silence timer to start counting the next 10 seconds
+            this.noSpeechStartTime = now;
+          }
+        }
+      }
+    } else {
+      // Reset timers when speech is detected
+      this.noSpeechStartTime = null;
+      this.lastWarningTime = null;
+      if (errorCallback) {
+        errorCallback({
+          error_code: ERROR_CODE.SPEECH_DETECTED,
+          status_code: SDK_STATUS_CODE.SUCCESS,
+          message: 'Audio captured. Recording continues.',
+        });
+      }
+    }
   }
 
   /**
@@ -143,6 +198,9 @@ class VadWebClient {
           vad_dec = 1;
         }
 
+        // Call the new checkNoSpeech function
+        this.checkNoSpeech(vad_dec);
+
         const vadResponse = this.processVadFrame(vad_dec);
         const is_clip_point = vadResponse[0];
 
@@ -223,8 +281,9 @@ class VadWebClient {
    */
   startVad() {
     this.micVad.start();
+    this.recording_started = true;
 
-    this.monitorAudioCapture();
+    // this.monitorAudioCapture();
   }
 
   /**
@@ -232,6 +291,7 @@ class VadWebClient {
    */
   pauseVad() {
     this.micVad.pause();
+    this.recording_started = false;
   }
 
   /**
@@ -242,6 +302,18 @@ class VadWebClient {
     this.last_clip_index = 0;
     this.clip_points = [0];
     this.sil_duration_acc = 0;
+    this.noSpeechStartTime = null;
+    this.lastWarningTime = null;
+    this.recording_started = false;
+
+    // TODO: will handle this - dont pass this callback - handle it properly - clear the error callback on client side on resetEkascribe
+    if (EkaScribeStore.errorCallback) {
+      EkaScribeStore.errorCallback({
+        error_code: ERROR_CODE.SPEECH_DETECTED,
+        status_code: SDK_STATUS_CODE.SUCCESS,
+        message: 'Audio captured. Recording continues.',
+      });
+    }
   }
 
   /**

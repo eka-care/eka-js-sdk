@@ -69,17 +69,17 @@ class EkaScribe {
   }
 
   // Static method to get the singleton instance with optional initialization
-  public static getInstance( access_token?: string ): EkaScribe {
+  public static getInstance(access_token?: string): EkaScribe {
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
-       // Initialize if params are provided
+      // Initialize if params are provided
       if (access_token) {
         setEnv({
           auth_token: access_token,
         });
       }
     }
-    
+
     return EkaScribe.instance;
   }
 
@@ -186,7 +186,10 @@ class EkaScribe {
       const txnID = EkaScribeStore.txnID;
       let txnCommitMsg = '';
 
-      if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+      if (
+        EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
+        EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+      ) {
         const audioInfo = this.audioFileManagerInstance?.audioChunks;
         const audioFiles = audioInfo.map((audio) => audio.fileName);
 
@@ -212,7 +215,7 @@ class EkaScribe {
             response: txnCommitMsg,
           },
         };
-      } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+      } else {
         // transaction is not stopped or committed
         return {
           error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
@@ -336,7 +339,5 @@ class EkaScribe {
   }
 }
 
-
 // Export the singleton instance getter with optional initialization
-export const getEkaScribeInstance = (access_token?: string ) => 
-  EkaScribe.getInstance(access_token);
+export const getEkaScribeInstance = (access_token?: string) => EkaScribe.getInstance(access_token);
