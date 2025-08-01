@@ -26,7 +26,7 @@ export const S3_BUCKET_NAME = 'm-prod-voice-record';
 
 export const SDK_STATUS_CODE = {
   AUDIO_ERROR: 1001,
-  SUCCESS: 1002,
+  SUCCESS: 200,
   TXN_ERROR: 1003,
   BAD_REQUEST: 1004,
   INTERNAL_SERVER_ERROR: 1005,

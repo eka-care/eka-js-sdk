@@ -53,11 +53,12 @@ onconnect = function (event: MessageEvent) {
         uploadRequestReceived++;
 
         let audioBlob: Blob;
+        let compressedAudioBuffer: Uint8Array<ArrayBufferLike>[];
 
         if (fileBlob) {
           audioBlob = fileBlob;
         } else {
-          const compressedAudioBuffer = compressAudioToMp3(audioFrames);
+          compressedAudioBuffer = compressAudioToMp3(audioFrames);
 
           audioBlob = new Blob(compressedAudioBuffer, {
             type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
@@ -72,7 +73,6 @@ onconnect = function (event: MessageEvent) {
           is_shared_worker: true,
         })
           .then((response) => {
-            console.log('%c Line:68 🧀 response', 'color:#ed9ec7', response);
             uploadRequestCompleted++;
             // postMessage - to send messages back to the main thread
             workerPort.postMessage({
@@ -81,11 +81,12 @@ onconnect = function (event: MessageEvent) {
               requestBody: {
                 ...workerData.payload,
                 fileBlob: audioBlob,
+                compressedAudioBuffer,
               },
             });
           })
           .catch((error) => {
-            console.log('%c Line:78 🥐 error', 'color:#93c0a4', error);
+            console.log(error, 'shared worker - file upload');
             uploadRequestCompleted++;
           });
 

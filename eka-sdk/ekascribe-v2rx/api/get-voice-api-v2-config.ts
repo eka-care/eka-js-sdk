@@ -20,11 +20,11 @@ export const getConfigV2 = async (): Promise<TGetConfigV2Response> => {
       code: response.status,
     };
   } catch (error) {
-    console.log('Returning hardcoded settings in getConfig api: ', error);
+    console.log('Error in getConfigV2 api: ', error);
 
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-      message: `Failed to fetch initisl configurations, ${error}`,
+      message: `Failed to fetch initial configurations, ${error}`,
     } as TGetConfigV2Response;
   }
 };

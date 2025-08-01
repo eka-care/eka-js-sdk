@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
 import { S3_BUCKET_NAME } from '../constants/constant';
@@ -18,6 +19,7 @@ const pushFileToS3 = async ({
   success?: string;
   error?: string;
   errorCode?: string;
+  code?: number;
 }> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
@@ -52,25 +54,23 @@ const pushFileToS3 = async ({
       is_shared_worker
     );
 
-    console.log('%c Line:55 🍣 result', 'color:#93c0a4', result, fileName);
-
     // Return success with the data
     return { success: result.ETag || 'Upload successful' };
   } catch (error) {
     const err = JSON.stringify(error, null, 2);
     console.error('pushFilesToS3V2 error =>', err);
 
-    // eslint-disable-next-line
-    // @ts-ignore
     if (error.statusCode && error.statusCode >= 400) {
       return {
         error: `Expired token. Please re-authenticate! ${err}`,
         errorCode: 'ExpiredToken',
+        code: error.statusCode,
       };
     }
 
     return {
       error: `Something went wrong! ${err}`,
+      code: error.statusCode,
     };
   }
 };

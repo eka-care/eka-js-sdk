@@ -32,7 +32,10 @@ const retryUploadFailedFiles = async ({
 
     // call commit transaction api
     const txnID = EkaScribeStore.txnID;
-    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+    if (
+      EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
+      EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+    ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: EkaScribeStore.txnID,
         audioFiles,
@@ -54,7 +57,7 @@ const retryUploadFailedFiles = async ({
           response: txnCommitMsg,
         },
       };
-    } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+    } else {
       // transaction is not stopped or committed
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,

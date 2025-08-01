@@ -1,4 +1,3 @@
-import VadWebClient from '../audio-chunker/vad-web';
 import { ERROR_CODE } from './enums';
 
 export type TGetConfigV2Response = {
@@ -11,9 +10,19 @@ export type TGetConfigV2Response = {
       output_formats: number;
       consultation_mode: number;
     };
+    selected_preferences?: TSelectedPreferences;
+    settings?: TConfigSettings;
   };
   message?: string;
   code?: number;
+};
+
+export type TSelectedPreferences = {
+  languages?: string[];
+  output_formats?: string[];
+  consultation_mode?: string;
+  use_audio_cues?: boolean;
+  auto_download?: boolean;
 };
 
 export type TGetConfigItem = {
@@ -22,11 +31,38 @@ export type TGetConfigItem = {
   desc?: string;
 };
 
+export type TConfigSettings = {
+  model_training_consent: {
+    value: boolean;
+    editable: boolean;
+  };
+};
+
 export type TStartRecordingRequest = {
   mode: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
   txn_id: string;
+  auto_download: boolean;
+  model_training_consent: boolean;
+  transfer: string;
+  system_info: TSystemInfo;
+};
+
+export type TSystemInfo = {
+  platform: string;
+  language: string;
+  hardware_concurrency?: number; // Optional, as support might vary
+  device_memory?: number; // Optional, as support might vary
+  time_zone: string;
+  network_info?: TNetworkInfo;
+};
+
+export type TNetworkInfo = {
+  effective_type: String;
+  latency: Number;
+  download_speed: Number;
+  connection_type: String;
 };
 
 export type TStartRecordingResponse = {
@@ -35,8 +71,8 @@ export type TStartRecordingResponse = {
   message: string;
   business_id?: string;
   txn_id?: string;
-  txnInitResponse?: TPostTransactionResponse;
-  vadInstance?: VadWebClient | null;
+  oid?: string;
+  uuid?: string;
 };
 
 export type TPauseRecordingResponse = {
@@ -60,6 +96,10 @@ export type TPostTransactionInitRequest = {
   txnId: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
+  transfer: string;
+  auto_download: boolean;
+  model_training_consent: boolean;
+  system_info: TSystemInfo;
 };
 
 export type TPostTransactionCommitRequest = {
@@ -72,6 +112,8 @@ export type TPostTransactionResponse = {
   message: string;
   txn_id: string;
   b_id: string;
+  oid: string;
+  uuid: string;
   data: unknown;
   code: number;
   error?: { code: string; message: string; display_message: string };
@@ -110,6 +152,25 @@ export type TEndV2RxResponse = {
   is_upload_failed?: boolean;
   stop_txn_error?: string;
   commit_txn_error?: string;
+};
+
+export type TGetTransactionHistoryResponse = {
+  data?: TSessionHistoryData[];
+  status?: string;
+  status_code: number;
+  message: string;
+  retrieved_count?: number;
+};
+
+export type TSessionHistoryData = {
+  created_at: string;
+  b_id: string;
+  user_status: string;
+  processing_status: string;
+  txn_id: string;
+  mode: string;
+  uuid: string;
+  oid: string;
 };
 
 export type TAudioChunksInfo = {
@@ -155,3 +216,15 @@ export type TSessionStatus = {
     };
   };
 };
+
+export type TFileUploadProgressCallback = (args: {
+  success: number;
+  total: number;
+  is_uploaded?: boolean;
+  fileName?: string;
+  chunkData?: Uint8Array<ArrayBufferLike>[];
+  error?: {
+    code: number;
+    msg: string;
+  };
+}) => void;

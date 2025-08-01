@@ -51,11 +51,11 @@ type TApiResponse = {
 
 export type TGetStatusResponse = {
   response?: TApiResponse | null;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
-export const getVoiceApiV2Status = async ({
+export const getVoiceApiV3Status = async ({
   txnId,
 }: {
   txnId: string;
@@ -69,17 +69,18 @@ export const getVoiceApiV2Status = async ({
       headers,
     };
 
-    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options);
+    // Use custom timeout for this API (16 seconds instead of default 5 seconds)
+    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options, 16000);
 
     const response = await getResponse.json();
 
     return {
       response,
-      code: getResponse.status,
+      status_code: getResponse.status,
     };
   } catch (error) {
     return {
-      code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
     };
   }

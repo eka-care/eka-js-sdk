@@ -4,7 +4,6 @@ import { BITRATE, SAMPLING_RATE } from '../constants/constant';
 const compressAudioToMp3 = (audio: Float32Array) => {
   try {
     const audioEncoder = new lamejs.Mp3Encoder(1, SAMPLING_RATE, BITRATE);
-    console.log("%c Line:7 🥒 audioEncoder", "color:#33a5ff", audioEncoder);
 
     // convert Float32Array to Int16Array
     const samples = new Int16Array(audio.length);

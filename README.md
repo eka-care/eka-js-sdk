@@ -87,12 +87,12 @@ getEkascribeConfig();
 }
 ```
 
-### 3. Start recording
+### 3. Init transaction
 
-Start recording with user-selected options.
+Use this method to init a transaction before starting recording.
 
 ```ts
-await startVoiceRecording({
+await initTransaction({
   mode: 'consultation',
   input_language: ['te', 'en'],
   output_format_template: [{ template_id: 'eka_emr_template' }],
@@ -109,10 +109,31 @@ await startVoiceRecording({
   message: string;
   business_id?: string;
   txn_id?: string;
+  oid?: string;
+  uuid?: string;
 };
 ```
 
-### 4. Pause recording
+### 4. Start recording
+
+Start recording with user-selected options.
+
+```ts
+await startRecording();
+```
+
+- #### Response type:
+
+```ts
+{
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+  txn_id?: string;
+};
+```
+
+### 5. Pause recording
 
 Use the method to pause voice recording
 
@@ -131,7 +152,7 @@ await pauseRecording();
 };
 ```
 
-### 5. Resume recording
+### 6. Resume recording
 
 Use the method to resume voice recording
 
@@ -150,7 +171,7 @@ await resumeRecording();
 };
 ```
 
-### 6. End recording
+### 7. End recording
 
 Use the method to end voice recording
 
@@ -170,7 +191,7 @@ await endRecording();
 };
 ```
 
-### 7. Retry upload recording
+### 8. Retry upload recording
 
 Use this method to retry uploading failed audio files.
 
@@ -196,12 +217,22 @@ await retryUploadRecording({ force_commit: true / false });
 
 -- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
 
-### 8. Cancel recording session
+### 9. Patch recording session status
 
 Use the method to cancel a recording session.
 
 ```ts
-await cancelRecordingSession({ txn_id: 'abc-123' });
+await patchSessionStatus({
+  sessionId: 'abc-123',
+  processing_status: 'cancelled',
+  processing_error: {
+    error: {
+      type: '',
+      code: 'cancelled_by_user',
+      msg: 'Cancelled_by_user',
+    },
+  },
+});
 ```
 
 - #### Response type:
@@ -219,7 +250,7 @@ await cancelRecordingSession({ txn_id: 'abc-123' });
 }
 ```
 
-### 9. Commit transaction
+### 10. Commit transaction
 
 Use this method to commit a transaction that is not yet committed or returned a "commit failed" error in a previous step.
 
@@ -237,7 +268,7 @@ await commitTransactionCall();
 };
 ```
 
-### 10. Stop transaction
+### 11. Stop transaction
 
 Use this method to stop a transaction that has not yet been stopped or returned a "stop failed" error in a previous step.
 
@@ -255,7 +286,7 @@ await stopTransactionCall();
 };
 ```
 
-### 11. Get output template prescriptions
+### 12. Get output template prescriptions
 
 Use this method to fetch the final generated prescription output for a session.
 
@@ -263,7 +294,38 @@ Use this method to fetch the final generated prescription output for a session.
 await getTemplateOutput({ txn_id: 'abc-123' });
 ```
 
-### 12. Get total uploaded files
+### 13. Get previous sessions
+
+Use this method to retrieve all the previous sessions for a specific doctor ID
+
+```ts
+const sessions = await getSessionHistory({ txn_count: 10 });
+```
+
+- #### Response type:
+
+```ts
+{
+  data: [
+    {
+      "created_at": "string",
+      "b_id": "string",
+      "user_status": "string",
+      "processing_status": "string",
+      "txn_id": "string",
+      "mode": "string",
+      "uuid": "string",
+      "oid": "string"
+    }
+  ],
+  status: "string",
+  code: "number",
+  message: "string",
+  retrieved_count: "number"
+}
+```
+
+### 14. Get total uploaded files
 
 Use this method to retrieve all the audio files generated for a specific session.
 
@@ -277,7 +339,7 @@ const files = await getTotalAudioFiles();
 ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
 ```
 
-### 13. Get successfully uploaded files
+### 15. Get successfully uploaded files
 
 Use this method to retrieve all the audio files that were uploaded successfully.
 
@@ -291,7 +353,7 @@ const successFiles = await getSuccessfullyUploadedFiles();
 ['3.mp3', '4.mp3'];
 ```
 
-### 14. Get failed audio files
+### 16. Get failed audio files
 
 Use this method to retrieve all the audio files that failed to upload.
 
@@ -305,13 +367,35 @@ const failedFiles = await getFailedFiles();
 ['1.mp3', '2.mp3'];
 ```
 
-### 15. Generic Error Callback
+## Generic Callbacks
+
+### 1. Error callback
 
 Whenever an error occurs in the SDK during voice recording, the following callback will be triggered. You can listen to this to handle errors globally.
 
 ```ts
 onError(({ error_code, status_code, message }) => {
   console.error('Ekascribe SDK Error:', { error_code, status_code, message });
+});
+```
+
+### 2. User speech callback
+
+This callback will return a boolean indicating whether the user is speaking or not.
+
+```ts
+onUserSpeechCallback((isSpeech) => {
+  console.error(isSpeech ? 'User is speaking' : 'User is not speaking');
+});
+```
+
+### 3. File upload progress callback
+
+This callback provides the number of successfully uploaded files, the total number of files, the filename, and the chunk data for a particular file.
+
+```ts
+onFileUploadProgressCallback(({ success, total, fileName, chunkData }) => {
+  console.error('Progress till now: ', { success, total, fileName, chunkData });
 });
 ```
 

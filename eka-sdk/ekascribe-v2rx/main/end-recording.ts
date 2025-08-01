@@ -117,7 +117,10 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     // call commit transaction api
-    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'stop') {
+    if (
+      EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
+      EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+    ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: txnID,
         audioFiles,
@@ -139,7 +142,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
           response: txnCommitMsg,
         },
       };
-    } else if (EkaScribeStore.sessionStatus[txnID].api?.status != 'commit') {
+    } else {
       // transaction is not stopped or committed
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,

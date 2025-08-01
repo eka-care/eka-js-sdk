@@ -9,6 +9,10 @@ async function postTransactionInit({
   s3Url,
   input_language,
   output_format_template,
+  model_training_consent,
+  auto_download,
+  transfer,
+  system_info,
 }: TPostTransactionInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -19,7 +23,10 @@ async function postTransactionInit({
       s3_url: s3Url,
       input_language,
       output_format_template,
-      transfer: 'vaded',
+      model_training_consent,
+      auto_download,
+      transfer,
+      system_info,
     };
 
     const options = {

@@ -4,7 +4,7 @@ import {
   TPatchTransactionRequest,
   TPostTransactionResponse,
 } from '../constants/types';
-import fetchClient from '../fetch-client';
+import fetchWrapper from '../fetch-client';
 import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
 
 export const processingError: TPatchTransactionError = {
@@ -35,7 +35,7 @@ const patchTransactionStatus = async ({
       body: JSON.stringify(raw),
     };
 
-    const response = await fetchClient(
+    const response = await fetchWrapper(
       `${GET_EKA_V2RX_HOST_V2()}/transaction/${sessionId}`,
       options
     );

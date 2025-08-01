@@ -1,4 +1,4 @@
-import { TAudioChunksInfo, UploadProgressCallback } from '../constants/types';
+import { TAudioChunksInfo, TFileUploadProgressCallback } from '../constants/types';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import postCogInit from '../api/post-cog-init';
@@ -23,7 +23,7 @@ class AudioFileManager {
   public audioChunks: TAudioChunksInfo[] = [];
   private uploadPromises: UploadPromise[] = [];
   private successfulUploads: string[] = [];
-  private onProgressCallback?: UploadProgressCallback;
+  private onProgressCallback?: TFileUploadProgressCallback;
   private totalRawSamples: number = 0;
   private totalRawFrames: number = 0;
   private totalInsertedSamples: number = 0;
@@ -74,7 +74,6 @@ class AudioFileManager {
   }
 
   incrementTotalRawSamples(frames: Float32Array): void {
-    // console.log('%c Line:77 🥝 frames', 'color:#ea7e5c', frames);
     this.totalRawSamples += frames.length;
     this.totalRawFrames += 1;
   }
@@ -97,7 +96,7 @@ class AudioFileManager {
   /**
    * Set callback for upload progress updates
    */
-  setProgressCallback(callback: UploadProgressCallback): void {
+  setProgressCallback(callback: TFileUploadProgressCallback): void {
     this.onProgressCallback = callback;
   }
 
@@ -106,7 +105,6 @@ class AudioFileManager {
    * (+ the latest chunk , affects the length of chunks data struct)
    */
   updateAudioInfo(audioChunks: TAudioChunksInfo): number {
-    console.log('%c Line:110 🍣 audioChunks', 'color:#93c0a4', audioChunks);
     this.audioChunks.push(audioChunks);
     return this.audioChunks.length;
   }
@@ -117,8 +115,6 @@ class AudioFileManager {
       const worker = new SharedWorker(
         new URL('../shared-worker/s3-file-upload.js', import.meta.url)
       );
-
-      console.log('%c Line:118 🍯 worker', 'color:#4fff4B', worker);
 
       this.sharedWorkerInstance = worker;
 
@@ -138,7 +134,21 @@ class AudioFileManager {
 
           case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS: {
             console.log('File uploaded successfully in worker:', workerResponse.response);
-            const { fileCount: fileName, chunkIndex, fileBlob } = workerResponse.requestBody;
+            const {
+              fileCount: fileName,
+              chunkIndex,
+              fileBlob,
+              compressedAudioBuffer,
+            } = workerResponse.requestBody;
+
+            if (this.onProgressCallback && compressedAudioBuffer) {
+              this.onProgressCallback({
+                success: this.successfulUploads.length,
+                total: this.audioChunks.length,
+                fileName,
+                chunkData: compressedAudioBuffer,
+              });
+            }
 
             if (workerResponse.response.success) {
               this.successfulUploads.push(fileName);
@@ -155,9 +165,26 @@ class AudioFileManager {
               }
 
               if (this.onProgressCallback) {
-                this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+                this.onProgressCallback({
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
+                  is_uploaded: true,
+                });
               }
             } else {
+              if (this.onProgressCallback) {
+                this.onProgressCallback({
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
+                  fileName,
+                  is_uploaded: false,
+                  error: {
+                    code: workerResponse.response.code,
+                    msg: 'Tokens expired.',
+                  },
+                });
+              }
+
               // store that audioFrames in audioChunks
               if (chunkIndex !== -1) {
                 this.audioChunks[chunkIndex] = {
@@ -192,7 +219,6 @@ class AudioFileManager {
   private async setupAWSConfiguration({ is_shared_worker }: { is_shared_worker: boolean }) {
     try {
       const response = await postCogInit();
-      console.log('%c Line:196 🍔 response', 'color:#93c0a4', response);
       const { credentials, is_session_expired } = response;
       if (is_session_expired || !credentials) {
         this.isAWSConfigured = false;
@@ -249,7 +275,12 @@ class AudioFileManager {
     });
 
     if (this.onProgressCallback) {
-      this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+      this.onProgressCallback({
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+        fileName,
+        chunkData: compressedAudioBuffer,
+      });
     }
 
     // Push upload promise to track status
@@ -260,7 +291,6 @@ class AudioFileManager {
       businessID: this.businessID,
       is_shared_worker: false,
     }).then((response) => {
-      console.log('%c Line:265 🥝 response', 'color:#ea7e5c', response);
       if (response.success) {
         this.successfulUploads.push(fileName);
 
@@ -276,7 +306,11 @@ class AudioFileManager {
         }
 
         if (this.onProgressCallback) {
-          this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+          this.onProgressCallback({
+            success: this.successfulUploads.length,
+            total: this.audioChunks.length,
+            is_uploaded: true,
+          });
         }
       } else {
         if (chunkIndex !== -1) {
@@ -287,6 +321,19 @@ class AudioFileManager {
             status: 'failure',
             response: response.error || 'Upload failed',
           };
+        }
+
+        if (this.onProgressCallback) {
+          this.onProgressCallback({
+            success: this.successfulUploads.length,
+            total: this.audioChunks.length,
+            fileName,
+            is_uploaded: false,
+            error: {
+              code: response.code || 500,
+              msg: 'Tokens expired.',
+            },
+          });
         }
       }
 
@@ -313,10 +360,12 @@ class AudioFileManager {
     fileName: string;
   }> {
     const s3FileName = `${this.filePath}/${fileName}`;
-    console.log('%c Line:309 🌶 s3FileName', 'color:#e41a6a', s3FileName);
 
     if (this.onProgressCallback) {
-      this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+      this.onProgressCallback({
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+      });
     }
 
     this.sharedWorkerInstance?.port.postMessage({
@@ -342,7 +391,7 @@ class AudioFileManager {
       // Shared Workers are not supported in this browser
       console.log('Shared Workers are NOT supported in this browser.');
 
-      this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     } else {
       // Shared Workers are supported
       console.log('Shared Workers are supported in this browser.');
@@ -351,7 +400,7 @@ class AudioFileManager {
         this.createSharedWorkerInstance();
       }
 
-      this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
+      await this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }
   }
 
@@ -361,14 +410,10 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
-      console.log('%c Line:356 🍿 this.isAWSConfigured', 'color:#93c0a4', this.isAWSConfigured);
-
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: true,
         });
-
-        console.log('%c Line:359 🍯 awsConfigResponse', 'color:#465975', awsConfigResponse);
 
         if (!awsConfigResponse) {
           throw new Error('Failed to configure AWS');
@@ -387,8 +432,6 @@ class AudioFileManager {
     chunkIndex,
   }: TUploadAudioChunkParams) {
     try {
-      console.log('%c Line:390 🍆 this.isAWSConfigured', 'color:#e41a6a', this.isAWSConfigured);
-
       if (!this.isAWSConfigured) {
         const awsConfigResponse = await this.setupAWSConfiguration({
           is_shared_worker: false,
@@ -514,6 +557,13 @@ class AudioFileManager {
     } else {
       this.uploadPromises = []; // Reset upload promises for retries
 
+      if (this.onProgressCallback) {
+        this.onProgressCallback({
+          success: this.successfulUploads.length,
+          total: this.audioChunks.length,
+        });
+      }
+
       this.audioChunks.forEach((chunk, index) => {
         const { fileName, fileBlob, status, audioFrames } = chunk;
 
@@ -544,7 +594,10 @@ class AudioFileManager {
                 this.successfulUploads.push(fileName);
 
                 if (this.onProgressCallback) {
-                  this.onProgressCallback(this.successfulUploads, this.audioChunks.length);
+                  this.onProgressCallback({
+                    success: this.successfulUploads.length,
+                    total: this.audioChunks.length,
+                  });
                 }
 
                 this.audioChunks[index] = {

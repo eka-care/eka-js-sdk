@@ -12,6 +12,7 @@ class EkaScribeStore {
   private _audioBufferInstance: AudioBufferManager | null = null; // AudioBuffer Instance
   private _sessionStatus: TSessionStatus = {};
   private _errorCallback: TErrorCallback | null = null;
+  private _userSpeechCallback: ((isSpeech: boolean) => void) | null = null;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -77,6 +78,14 @@ class EkaScribeStore {
   }
   set errorCallback(callback: TErrorCallback | null) {
     this._errorCallback = callback;
+  }
+
+  // User Speech Callback
+  get userSpeechCallback(): ((isSpeech: boolean) => void) | null {
+    return this._userSpeechCallback;
+  }
+  set userSpeechCallback(callback: ((isSpeech: boolean) => void) | null) {
+    this._userSpeechCallback = callback;
   }
 
   // Reset store to initial state

@@ -24,7 +24,9 @@ export enum ERROR_CODE {
   INVALID_REQUEST = 'invalid_request',
   VAD_NOT_INITIALIZED = 'vad_not_initialized',
   NO_AUDIO_CAPTURE = 'no_audio_capture',
+  SPEECH_DETECTED = 'speech_detected',
   TXN_STATUS_MISMATCH = 'txn_status_mismatch',
+  LONG_SILENCE = 'long_silence',
 }
 
 export enum PROCESSING_STATUS {

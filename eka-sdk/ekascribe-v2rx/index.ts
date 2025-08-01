@@ -1,8 +1,8 @@
 // ekascribe main Class having all the methods - Entry point
 
 import { getConfigV2 } from './api/get-voice-api-v2-config';
-import { getVoiceApiV2Status, TGetStatusResponse } from './api/get-voice-api-v2-status';
-import patchTransactionStatus, { processingError } from './api/patch-transaction-status';
+import { getVoiceApiV3Status, TGetStatusResponse } from './api/get-voice-api-v3-status';
+import patchTransactionStatus from './api/patch-transaction-status';
 import postTransactionCommit from './api/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
@@ -16,27 +16,34 @@ import {
   SAMPLING_RATE,
   SDK_STATUS_CODE,
 } from './constants/constant';
-import { ERROR_CODE, PROCESSING_STATUS } from './constants/enums';
+import { ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TErrorCallback,
+  TFileUploadProgressCallback,
+  TGetTransactionHistoryResponse,
+  TPatchTransactionRequest,
   TPostTransactionResponse,
   TStartRecordingRequest,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
-import resumeVoiceRecorfing from './main/resume-recording';
+import resumeVoiceRecording from './main/resume-recording';
 import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
+import initialiseTransaction from './main/init-transaction';
+import getTransactionHistory from './api/get-transaction-history';
 
 class EkaScribe {
-  private vadInstance; // vadWebClient Instance
-  private audioFileManagerInstance; // AudioFileManager Instance
-  private audioBufferInstance;
+  private static instance: EkaScribe | null = null;
+  private vadInstance: VadWebClient; // vadWebClient Instance
+  private audioFileManagerInstance: AudioFileManager; // AudioFileManager Instance
+  private audioBufferInstance: AudioBufferManager;
 
-  constructor() {
+  // Private constructor to prevent direct instantiation
+  private constructor() {
     this.audioFileManagerInstance = new AudioFileManager();
     console.log(
       '%c Line:48 🥕 this.audioFileManagerInstance',
@@ -58,88 +65,70 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
+    console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
   }
 
-  public initEkaScribe({
-    access_token,
-    refresh_token,
-  }: {
-    access_token?: string;
-    refresh_token?: string;
-  }) {
-    // set access_token and refresh_token in env
-    if (!access_token || !refresh_token) return;
-    console.log('%c Line:62 🍖 access_token', 'color:#2eafb0', access_token, refresh_token);
+  // Static method to get the singleton instance with optional initialization
+  public static getInstance(access_token?: string): EkaScribe {
+    if (!EkaScribe.instance) {
+      EkaScribe.instance = new EkaScribe();
+      // Initialize if params are provided
+      if (access_token) {
+        setEnv({
+          auth_token: access_token,
+        });
+      }
+    }
 
-    setEnv({
-      auth_token: access_token,
-      refresh_token,
-    });
-    console.log('init ekascribe called with access_token and refresh_token');
+    return EkaScribe.instance;
+  }
+
+  // Method to reset the singleton instance (useful for testing)
+  public static resetInstance(): void {
+    EkaScribe.instance = null;
   }
 
   public async getEkascribeConfig() {
     console.log('Fetching EkaScribe configuration...');
     const response = await getConfigV2();
-    console.log('%c Line:74 🍭 response', 'color:#42b983', response);
     return response;
   }
 
-  public updateAuthTokens({
-    access_token,
-    refresh_token,
-  }: {
-    access_token: string;
-    refresh_token: string;
-  }) {
+  public updateAuthTokens({ access_token }: { access_token: string }) {
     setEnv({
       auth_token: access_token,
-      refresh_token,
     });
   }
 
-  async startRecording({
-    mode,
-    input_language,
-    output_format_template,
-    txn_id,
-  }: TStartRecordingRequest) {
-    console.log('Starting recording with parameters:', {
-      mode,
-      input_language,
-      output_format_template,
-      txn_id,
-    });
+  async initTransaction(request: TStartRecordingRequest) {
+    console.log('Initializing transaction...');
 
-    const startResponse = await startVoiceRecording({
-      mode,
-      input_language,
-      output_format_template,
-      txn_id,
-    });
+    const initTransactionResponse = await initialiseTransaction(request);
+    console.log(initTransactionResponse, 'initTransactionResponse');
+    return initTransactionResponse;
+  }
+
+  async startRecording() {
+    console.log('Starting recording...');
+    const startResponse = await startVoiceRecording();
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
-
     return startResponse;
   }
 
-  getVADInfo() {
-    const x = this.audioFileManagerInstance.getRawSampleDetails();
-    console.log('%c Line:116 🍋 x', 'color:#6ec1c2', x);
-
-    const vadInstane = this.vadInstance.getMicVad();
-    console.log('%c Line:119 🍎 vadInstane', 'color:#93c0a4', vadInstane);
+  reinitializeVad() {
+    this.vadInstance.reinitializeVad();
   }
 
-  async pauseRecording() {
+  pauseRecording() {
     console.log('Pausing recording...');
-    const pauseRecordingResponse = await pauseVoiceRecording();
+    const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
     return pauseRecordingResponse;
   }
 
   resumeRecording() {
     console.log('Resuming recording...');
-    const resumeRecordingResponse = resumeVoiceRecorfing();
+    const resumeRecordingResponse = resumeVoiceRecording();
     console.log('%c Line:124 🌶 resumeRecordingResponse', 'color:#33a5ff', resumeRecordingResponse);
     return resumeRecordingResponse;
   }
@@ -158,12 +147,16 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  async cancelRecordingSession({ txn_id }: { txn_id: string }): Promise<TPostTransactionResponse> {
+  async patchSessionStatus({
+    sessionId,
+    processing_status,
+    processing_error,
+  }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const patchTransactionResponse = await patchTransactionStatus({
-        sessionId: txn_id,
-        processing_status: PROCESSING_STATUS.CANCELLED,
-        processing_error: processingError,
+        sessionId,
+        processing_status,
+        processing_error,
       });
 
       this.resetEkaScribe();
@@ -180,19 +173,44 @@ class EkaScribe {
 
   async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
-      const audioInfo = this.audioFileManagerInstance?.audioChunks;
-      const audioFiles = audioInfo.map((audio) => audio.fileName);
+      const txnID = EkaScribeStore.txnID;
+      let txnCommitMsg = '';
 
-      const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
-        audioFiles,
-        txnId: EkaScribeStore.txnID,
-      });
+      if (
+        EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
+        EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+      ) {
+        const audioInfo = this.audioFileManagerInstance?.audioChunks;
+        const audioFiles = audioInfo.map((audio) => audio.fileName);
 
-      if (txnCommitStatusCode != 200) {
+        const { message, code: txnCommitStatusCode } = await postTransactionCommit({
+          audioFiles,
+          txnId: EkaScribeStore.txnID,
+        });
+        txnCommitMsg = message;
+
+        if (txnCommitStatusCode != 200) {
+          return {
+            error_code: ERROR_CODE.TXN_COMMIT_FAILED,
+            status_code: txnCommitStatusCode,
+            message: txnCommitMsg || 'Transaction commit failed.',
+          };
+        }
+
+        EkaScribeStore.sessionStatus[txnID] = {
+          ...EkaScribeStore.sessionStatus[txnID],
+          api: {
+            status: 'commit',
+            code: txnCommitStatusCode,
+            response: txnCommitMsg,
+          },
+        };
+      } else {
+        // transaction is not stopped or committed
         return {
-          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
-          status_code: txnCommitStatusCode,
-          message: txnCommitMsg || 'Transaction stop failed.',
+          error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+          status_code: SDK_STATUS_CODE.TXN_ERROR,
+          message: 'Transaction is not initialised or stopped. Cannot end recording.',
         };
       }
 
@@ -218,7 +236,7 @@ class EkaScribe {
 
   async getTemplateOutput({ txn_id }: { txn_id: string }) {
     try {
-      const getStatusResponse = await getVoiceApiV2Status({
+      const getStatusResponse = await getVoiceApiV3Status({
         txnId: txn_id,
       });
 
@@ -226,9 +244,25 @@ class EkaScribe {
     } catch (error) {
       console.error('Error in fetching templates response: ', error);
       return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch output templates, ${error}`,
       } as TGetStatusResponse;
+    }
+  }
+
+  async getSessionHistory({ txn_count }: { txn_count: number }) {
+    try {
+      const transactionsResponse = await getTransactionHistory({
+        txn_count,
+      });
+
+      return transactionsResponse;
+    } catch (error) {
+      console.error('Error cancelling recording session:', error);
+      return {
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to fetch previous transactions, ${error}`,
+      } as TGetTransactionHistoryResponse;
     }
   }
 
@@ -253,6 +287,14 @@ class EkaScribe {
 
   onError(callback: TErrorCallback) {
     EkaScribeStore.errorCallback = callback;
+  }
+
+  onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
+    EkaScribeStore.userSpeechCallback = callback;
+  }
+
+  onFileUploadProgressCallback(callback: TFileUploadProgressCallback) {
+    this.audioFileManagerInstance.setProgressCallback(callback);
   }
 
   configureVadConstants({
@@ -287,26 +329,5 @@ class EkaScribe {
   }
 }
 
-export default EkaScribe;
-
-const ekascribeInstance = new EkaScribe();
-
-export const initEkascribe = ekascribeInstance.initEkaScribe.bind(ekascribeInstance);
-export const getEkascribeConfig = ekascribeInstance.getEkascribeConfig.bind(ekascribeInstance);
-export const startRecording = ekascribeInstance.startRecording.bind(ekascribeInstance);
-export const pauseRecording = ekascribeInstance.pauseRecording.bind(ekascribeInstance);
-export const resumeRecording = ekascribeInstance.resumeRecording.bind(ekascribeInstance);
-export const endRecording = ekascribeInstance.endRecording.bind(ekascribeInstance);
-export const retryUploadRecording = ekascribeInstance.retryUploadRecording.bind(ekascribeInstance);
-export const cancelRecordingSession =
-  ekascribeInstance.cancelRecordingSession.bind(ekascribeInstance);
-export const commitTransactionCall =
-  ekascribeInstance.commitTransactionCall.bind(ekascribeInstance);
-export const stopTransactionCall = ekascribeInstance.stopTransactionCall.bind(ekascribeInstance);
-export const getTemplateOutput = ekascribeInstance.getTemplateOutput.bind(ekascribeInstance);
-
-export const getSuccessfullyUploadedFiles =
-  ekascribeInstance.getSuccessFiles.bind(ekascribeInstance);
-export const getFailedFiles = ekascribeInstance.getFailedFiles.bind(ekascribeInstance);
-export const getTotalAudioFiles = ekascribeInstance.getTotalAudioFiles.bind(ekascribeInstance);
-export const getVADInfo = ekascribeInstance.getVADInfo.bind(ekascribeInstance);
+// Export the singleton instance getter with optional initialization
+export const getEkaScribeInstance = (access_token?: string) => EkaScribe.getInstance(access_token);
