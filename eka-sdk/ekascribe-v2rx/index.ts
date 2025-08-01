@@ -100,20 +100,10 @@ class EkaScribe {
     });
   }
 
-  async initTransaction({
-    mode,
-    input_language,
-    output_format_template,
-    txn_id,
-  }: TStartRecordingRequest) {
+  async initTransaction(request: TStartRecordingRequest) {
     console.log('Initializing transaction...');
 
-    const initTransactionResponse = await initialiseTransaction({
-      mode,
-      input_language,
-      output_format_template,
-      txn_id,
-    });
+    const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
   }

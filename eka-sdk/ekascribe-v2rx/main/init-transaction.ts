@@ -9,17 +9,12 @@ const initialiseTransaction = async ({
   input_language,
   output_format_template,
   txn_id,
+  auto_download,
+  model_training_consent,
+  transfer,
+  system_info,
 }: TStartRecordingRequest): Promise<TStartRecordingResponse> => {
   try {
-    if (!mode || !input_language || !output_format_template || !txn_id) {
-      return {
-        error_code: ERROR_CODE.INVALID_REQUEST,
-        status_code: SDK_STATUS_CODE.BAD_REQUEST,
-        message:
-          'Invalid request parameters. Please provide mode, input_language, output_format_template, and txn_id.',
-      };
-    }
-
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
     const sessionStatus = EkaScribeStore.sessionStatus;
     let businessID = '';
@@ -48,7 +43,10 @@ const initialiseTransaction = async ({
         s3Url: `s3://${S3_BUCKET_NAME}/${filePath}`,
         input_language,
         output_format_template,
-        transfer: 'vaded',
+        transfer,
+        auto_download,
+        model_training_consent,
+        system_info,
       });
 
       const {
