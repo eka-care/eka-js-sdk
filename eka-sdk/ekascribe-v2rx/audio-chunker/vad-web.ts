@@ -84,7 +84,8 @@ class VadWebClient {
               errorCallback({
                 error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
                 status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-                message: "No audio detected. Please speak or end the recording when you're ready.",
+                message:
+                  'No audio detected for a while. Please talk or stop the recording if done.',
               });
             }
             this.lastWarningTime = now;
