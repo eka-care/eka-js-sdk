@@ -1,4 +1,4 @@
-import { GET_AUTH_TOKEN, GET_CLIENT_ID } from './helper';
+import { GET_CLIENT_ID, GET_AUTH_TOKEN } from './helper';
 
 const API_TIMEOUT_MS = 5000;
 
@@ -23,7 +23,6 @@ export default async function fetchWrapper(
     }
 
     if (!newHeaders.get('auth') && GET_AUTH_TOKEN()) {
-      // if token is provided in initEkaScribe
       newHeaders.set('auth', GET_AUTH_TOKEN());
     }
 
@@ -31,6 +30,7 @@ export default async function fetchWrapper(
       ...options,
       headers: newHeaders,
       signal: controller.signal,
+      credentials: 'include',
     });
 
     return response;

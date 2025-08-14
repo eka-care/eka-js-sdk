@@ -13,6 +13,7 @@ const initialiseTransaction = async ({
   model_training_consent,
   transfer,
   system_info,
+  patient_details,
 }: TStartRecordingRequest): Promise<TStartRecordingResponse> => {
   try {
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
@@ -47,6 +48,7 @@ const initialiseTransaction = async ({
         auto_download,
         model_training_consent,
         system_info,
+        patient_details,
       });
 
       const {

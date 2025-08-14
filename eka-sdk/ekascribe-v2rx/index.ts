@@ -69,13 +69,23 @@ class EkaScribe {
   }
 
   // Static method to get the singleton instance with optional initialization
-  public static getInstance(access_token?: string): EkaScribe {
+  public static getInstance({
+    access_token,
+    env,
+    clientId,
+  }: {
+    access_token?: string;
+    env?: 'PROD' | 'DEV';
+    clientId?: string;
+  }): EkaScribe {
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
       // Initialize if params are provided
       if (access_token) {
         setEnv({
           auth_token: access_token,
+          env,
+          clientId,
         });
       }
     }
@@ -330,4 +340,12 @@ class EkaScribe {
 }
 
 // Export the singleton instance getter with optional initialization
-export const getEkaScribeInstance = (access_token?: string) => EkaScribe.getInstance(access_token);
+export const getEkaScribeInstance = ({
+  access_token,
+  env,
+  clientId,
+}: {
+  access_token?: string;
+  env?: 'PROD' | 'DEV';
+  clientId?: string;
+}) => EkaScribe.getInstance({ access_token, env, clientId });
