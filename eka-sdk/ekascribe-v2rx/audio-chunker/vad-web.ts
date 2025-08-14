@@ -53,7 +53,8 @@ class VadWebClient {
     this.micVad = {} as MicVAD;
 
     // instantiate MicVad
-    this.initVad();
+    // TODO: initialise this in start recording
+    // this.initVad();
   }
 
   /**

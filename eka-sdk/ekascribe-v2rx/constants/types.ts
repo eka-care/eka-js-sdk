@@ -6,12 +6,13 @@ export type TGetConfigV2Response = {
     supported_output_formats: TGetConfigItem[];
     consultation_modes: TGetConfigItem[];
     max_selection: {
-      languages: number;
-      output_formats: number;
-      consultation_mode: number;
+      supported_languages: number;
+      supported_output_formats: number;
+      consultation_modes: number;
     };
     selected_preferences?: TSelectedPreferences;
     settings?: TConfigSettings;
+    model?: string;
   };
   message?: string;
   code?: number;
@@ -47,6 +48,16 @@ export type TStartRecordingRequest = {
   model_training_consent: boolean;
   transfer: string;
   system_info: TSystemInfo;
+  patient_details: TPatientDetails;
+};
+
+export type TPatientDetails = {
+  username: string;
+  oid: string;
+  age: number;
+  biologicalSex: string;
+  mobile?: string;
+  email?: string;
 };
 
 export type TSystemInfo = {
@@ -100,6 +111,7 @@ export type TPostTransactionInitRequest = {
   auto_download: boolean;
   model_training_consent: boolean;
   system_info: TSystemInfo;
+  patient_details: TPatientDetails;
 };
 
 export type TPostTransactionCommitRequest = {
