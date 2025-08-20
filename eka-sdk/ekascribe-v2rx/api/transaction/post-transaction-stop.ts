@@ -1,11 +1,11 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
-import { TPostTransactionCommitRequest, TPostTransactionResponse } from '../constants/types';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
+import { SDK_STATUS_CODE } from '../../constants/constant';
+import { TPostTransactionCommitRequest, TPostTransactionResponse } from '../../constants/types';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
-async function postTransactionCommit({
-  audioFiles,
+async function postTransactionStop({
   txnId,
+  audioFiles,
 }: TPostTransactionCommitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -22,7 +22,7 @@ async function postTransactionCommit({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST_V2()}/transaction/commit/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/stop/${txnId}`,
       options
     );
 
@@ -41,4 +41,4 @@ async function postTransactionCommit({
   }
 }
 
-export default postTransactionCommit;
+export default postTransactionStop;

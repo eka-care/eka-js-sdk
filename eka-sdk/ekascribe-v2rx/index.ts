@@ -1,9 +1,9 @@
 // ekascribe main Class having all the methods - Entry point
 
-import { getConfigV2 } from './api/get-voice-api-v2-config';
-import { getVoiceApiV3Status, TGetStatusResponse } from './api/get-voice-api-v3-status';
-import patchTransactionStatus from './api/patch-transaction-status';
-import postTransactionCommit from './api/post-transaction-commit';
+import { getConfigV2 } from './api/transaction/get-voice-api-v2-config';
+import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
+import patchTransactionStatus from './api/transaction/patch-transaction-status';
+import postTransactionCommit from './api/transaction/post-transaction-commit';
 import AudioBufferManager from './audio-chunker/audio-buffer-manager';
 import AudioFileManager from './audio-chunker/audio-file-manager';
 import VadWebClient from './audio-chunker/vad-web';
@@ -34,7 +34,7 @@ import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
-import getTransactionHistory from './api/get-transaction-history';
+import getTransactionHistory from './api/transaction/get-transaction-history';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;

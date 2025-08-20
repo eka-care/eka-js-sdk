@@ -1,5 +1,5 @@
-import postTransactionCommit from '../api/post-transaction-commit';
-import postTransactionStop from '../api/post-transaction-stop';
+import postTransactionCommit from '../api/transaction/post-transaction-commit';
+import postTransactionStop from '../api/transaction/post-transaction-stop';
 import { OUTPUT_FORMAT, SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo, TEndRecordingResponse } from '../constants/types';

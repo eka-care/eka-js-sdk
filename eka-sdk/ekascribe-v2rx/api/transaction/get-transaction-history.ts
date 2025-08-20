@@ -1,7 +1,7 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
-import { TGetTransactionHistoryResponse } from '../constants/types';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
+import { SDK_STATUS_CODE } from '../../constants/constant';
+import { TGetTransactionHistoryResponse } from '../../constants/types';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 // TODO: pagination changes
 
@@ -20,7 +20,7 @@ const getTransactionHistory = async ({
     };
 
     const responseJson = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST_V2()}/transaction/history?count=${txn_count}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/history?count=${txn_count}`,
       options
     );
 

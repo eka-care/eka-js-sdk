@@ -1,6 +1,6 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V3 } from '../fetch-client/helper';
+import { SDK_STATUS_CODE } from '../../constants/constant';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
 
 export type TTemplateMessage = {
   type: 'warning' | 'error';
@@ -70,7 +70,11 @@ export const getVoiceApiV3Status = async ({
     };
 
     // Use custom timeout for this API (16 seconds instead of default 5 seconds)
-    const getResponse = await fetchWrapper(`${GET_EKA_V2RX_HOST_V3()}/status/${txnId}`, options, 16000);
+    const getResponse = await fetchWrapper(
+      `${GET_EKA_VOICE_HOST_V3()}/status/${txnId}`,
+      options,
+      16000
+    );
 
     const response = await getResponse.json();
 
