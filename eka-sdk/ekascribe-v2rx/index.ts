@@ -24,6 +24,8 @@ import {
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPostTransactionResponse,
+  TPostV1TemplateRequest,
+  TPostV1TemplateSectionRequest,
   TStartRecordingRequest,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
@@ -35,6 +37,14 @@ import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
 import getTransactionHistory from './api/transaction/get-transaction-history';
+import getV1Templates from './api/templates/get-v1-templates';
+import postV1Template from './api/templates/post-v1-template';
+import patchV1Template from './api/templates/patch-v1-template';
+import deleteV1Template from './api/templates/delete-v1-template';
+import getV1TemplateSections from './api/template-sections/get-v1-template-sections';
+import postV1TemplateSection from './api/template-sections/post-v1-template-section';
+import patchV1TemplateSection from './api/template-sections/patch-v1-template-section';
+import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -337,6 +347,48 @@ class EkaScribe {
       short_thsld,
       long_thsld,
     });
+  }
+
+  // Template SDK methods
+  async getAllTemplates() {
+    const templatesResponse = await getV1Templates();
+    return templatesResponse;
+  }
+
+  async createTemplate(template: TPostV1TemplateRequest) {
+    const templatesResponse = await postV1Template(template);
+    return templatesResponse;
+  }
+
+  async updateTemplate(template: TPostV1TemplateRequest) {
+    const templatesResponse = await patchV1Template(template);
+    return templatesResponse;
+  }
+
+  async deleteTemplate(template_id: string) {
+    const templatesResponse = await deleteV1Template(template_id);
+    return templatesResponse;
+  }
+
+  // Template Section SDK methods
+  async getAllTemplateSections() {
+    const templateSectionsResponse = await getV1TemplateSections();
+    return templateSectionsResponse;
+  }
+
+  async createTemplateSection(templateSection: TPostV1TemplateSectionRequest) {
+    const templateSectionsResponse = await postV1TemplateSection(templateSection);
+    return templateSectionsResponse;
+  }
+
+  async updateTemplateSection(templateSection: TPostV1TemplateSectionRequest) {
+    const templateSectionsResponse = await patchV1TemplateSection(templateSection);
+    return templateSectionsResponse;
+  }
+
+  async deleteTemplateSection(section_id: string) {
+    const templateSectionsResponse = await deleteV1TemplateSection(section_id);
+    return templateSectionsResponse;
   }
 }
 
