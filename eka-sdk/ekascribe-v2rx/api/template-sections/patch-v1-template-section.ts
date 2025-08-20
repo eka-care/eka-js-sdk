@@ -7,20 +7,19 @@ import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
 async function patchV1TemplateSection({
-  sectionId,
-  templateId,
+  section_id,
+  template_id,
   title,
   desc,
   format,
   example,
-}: TPostV1TemplateSectionRequest & {
-  sectionId: string;
-  templateId: string;
-}): Promise<TPostV1TemplateSectionResponse> {
+}: TPostV1TemplateSectionRequest): Promise<TPostV1TemplateSectionResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('template-id', templateId);
+    if (template_id) {
+      headers.append('template-id', template_id);
+    }
 
     const raw = {
       title,
@@ -36,7 +35,7 @@ async function patchV1TemplateSection({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/section/${sectionId}`,
+      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/section/${section_id}`,
       options
     );
     let res = await response.json();
@@ -57,3 +56,5 @@ async function patchV1TemplateSection({
     } as TPostV1TemplateSectionResponse;
   }
 }
+
+export default patchV1TemplateSection;

@@ -1,11 +1,9 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
-import { TPostV1TemplateSectionResponse } from '../../constants/types';
+import { TPostV1TemplateResponse } from '../../constants/types';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
-async function deleteV1TemplateSection(
-  section_id: string
-): Promise<TPostV1TemplateSectionResponse> {
+async function deleteV1Template(template_id: string): Promise<TPostV1TemplateResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -16,7 +14,7 @@ async function deleteV1TemplateSection(
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/section/${section_id}`,
+      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/${template_id}`,
       options
     );
     let res = await response.json();
@@ -28,12 +26,12 @@ async function deleteV1TemplateSection(
 
     return res;
   } catch (error) {
-    console.log('%c deleteV1TemplateSection -> error', 'color:#f5ce50', error);
+    console.log('%c deleteV1Template -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       msg: `Something went wrong! ${error}`,
-    } as TPostV1TemplateSectionResponse;
+    } as TPostV1TemplateResponse;
   }
 }
 
-export default deleteV1TemplateSection;
+export default deleteV1Template;

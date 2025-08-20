@@ -245,6 +245,7 @@ export interface TPostV1TemplateRequest {
   title: string;
   desc?: string;
   section_ids: string[];
+  template_id?: string;
 }
 
 export interface TPostV1TemplateResponse {
@@ -252,17 +253,30 @@ export interface TPostV1TemplateResponse {
   msg: string;
   template_id?: string;
   message?: string;
-  error?: { code: string; message: string };
+  error?: { code: string; msg: string };
 }
 
+export interface TTemplate {
+  id: string;
+  title: string;
+  desc: string;
+  section_ids: string[];
+  sections: TSection[];
+  is_editable: boolean;
+}
+
+export interface TGetV1TemplatesResponse {
+  items: TTemplate[];
+  code: number;
+  error?: { code: string; msg: string };
+}
 export interface TPostV1TemplateSectionRequest {
   title: string;
   desc?: string;
   format?: 'P' | 'B';
   example?: string;
-  template_id: string;
-  sectionId?: string;
-  templateId?: string;
+  template_id?: string;
+  section_id?: string;
 }
 
 export interface TPostV1TemplateSectionResponse {
@@ -270,7 +284,7 @@ export interface TPostV1TemplateSectionResponse {
   section_id: string;
   code: number;
   action: 'updated' | 'created_custom';
-  error?: { code: string; message: string };
+  error?: { code: string; msg: string };
 }
 
 export interface TSection {

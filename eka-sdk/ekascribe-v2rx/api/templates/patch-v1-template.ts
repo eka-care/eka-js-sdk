@@ -1,22 +1,32 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
-import { TPostV1TemplateSectionResponse } from '../../constants/types';
+import { TPostV1TemplateRequest, TPostV1TemplateResponse } from '../../constants/types';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
-async function deleteV1TemplateSection(
-  section_id: string
-): Promise<TPostV1TemplateSectionResponse> {
+export async function patchV1Template({
+  template_id,
+  title,
+  desc,
+  section_ids,
+}: TPostV1TemplateRequest): Promise<TPostV1TemplateResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
+    const raw = {
+      title,
+      desc,
+      section_ids,
+    };
+
     const options = {
-      method: 'DELETE',
+      method: 'PATCH',
       headers,
+      body: JSON.stringify(raw),
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/section/${section_id}`,
+      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/${template_id}`,
       options
     );
     let res = await response.json();
@@ -28,12 +38,12 @@ async function deleteV1TemplateSection(
 
     return res;
   } catch (error) {
-    console.log('%c deleteV1TemplateSection -> error', 'color:#f5ce50', error);
+    console.log('%c patchV1Template -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       msg: `Something went wrong! ${error}`,
-    } as TPostV1TemplateSectionResponse;
+    } as TPostV1TemplateResponse;
   }
 }
 
-export default deleteV1TemplateSection;
+export default patchV1Template;
