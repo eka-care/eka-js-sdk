@@ -13,6 +13,7 @@ async function postTransactionInit({
   auto_download,
   transfer,
   system_info,
+  patient_details,
 }: TPostTransactionInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -27,6 +28,7 @@ async function postTransactionInit({
       auto_download,
       transfer,
       system_info,
+      patient_details,
     };
 
     const options = {

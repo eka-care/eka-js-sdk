@@ -51,9 +51,6 @@ class VadWebClient {
     this.frame_size = FRAME_SIZE;
     this.speech_pad_frames = PRE_SPEECH_PAD_FRAMES;
     this.micVad = {} as MicVAD;
-
-    // instantiate MicVad
-    this.initVad();
   }
 
   /**

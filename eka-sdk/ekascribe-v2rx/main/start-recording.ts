@@ -19,7 +19,7 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
       };
     }
 
-    console.log('%c Line:22 🍇 vadInstance', 'color:#fca650', vadInstance);
+    await vadInstance?.initVad();
 
     const micVad = vadInstance?.getMicVad();
     const isVadLoading = vadInstance?.isVadLoading();
