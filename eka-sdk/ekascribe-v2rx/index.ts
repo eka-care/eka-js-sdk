@@ -78,13 +78,11 @@ class EkaScribe {
     env?: 'PROD' | 'DEV';
     clientId?: string;
   }): EkaScribe {
-    if (access_token) {
-      setEnv({
-        auth_token: access_token,
-        env,
-        clientId,
-      });
-    }
+    setEnv({
+      ...(access_token ? { auth_token: access_token } : {}),
+      ...(env ? { env } : {}),
+      ...(clientId ? { clientId } : {}),
+    });
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();

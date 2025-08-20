@@ -21,7 +21,7 @@ const setEnv = ({
 }: {
   env?: 'PROD' | 'DEV';
   clientId?: string;
-  auth_token: string;
+  auth_token?: string;
 }) => {
   if (env) {
     envVar = env === 'PROD' ? PROD : DEV;
@@ -29,7 +29,9 @@ const setEnv = ({
   if (clientId) {
     client_id = clientId;
   }
-  auth = auth_token;
+  if (auth_token) {
+    auth = auth_token;
+  }
 };
 
 export const GET_EKA_HOST = () => envVar.EKA_HOST;
