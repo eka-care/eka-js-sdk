@@ -253,7 +253,7 @@ export interface TPostV1TemplateResponse {
   msg: string;
   template_id?: string;
   message?: string;
-  error?: { code: string; msg: string };
+  error?: { code: string; message: string };
 }
 
 export interface TTemplate {
