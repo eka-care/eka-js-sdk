@@ -301,3 +301,16 @@ export interface TGetV1TemplateSectionsResponse {
   code: number;
   error?: { code: string; message: string };
 }
+
+export type TPatchVoiceApiV2ConfigRequest = {
+  auto_download?: boolean;
+  default_languages?: string[];
+  my_templates?: string[];
+  scribe_enabled?: boolean;
+};
+
+export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
+  msg: string;
+  code: number;
+  error?: { code: string; message: string };
+}

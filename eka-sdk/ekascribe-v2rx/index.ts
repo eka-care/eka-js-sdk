@@ -1,6 +1,6 @@
 // ekascribe main Class having all the methods - Entry point
 
-import { getConfigV2 } from './api/transaction/get-voice-api-v2-config';
+import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
 import postTransactionCommit from './api/transaction/post-transaction-commit';
@@ -23,6 +23,7 @@ import {
   TFileUploadProgressCallback,
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
+  TPatchVoiceApiV2ConfigRequest,
   TPostTransactionResponse,
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
@@ -45,6 +46,7 @@ import getV1TemplateSections from './api/template-sections/get-v1-template-secti
 import postV1TemplateSection from './api/template-sections/post-v1-template-section';
 import patchV1TemplateSection from './api/template-sections/patch-v1-template-section';
 import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
+import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -368,6 +370,11 @@ class EkaScribe {
   async deleteTemplate(template_id: string) {
     const templatesResponse = await deleteV1Template(template_id);
     return templatesResponse;
+  }
+
+  async updateConfig(request: TPatchVoiceApiV2ConfigRequest) {
+    const configResponse = await patchVoiceApiV2Config(request);
+    return configResponse;
   }
 
   // Template Section SDK methods
