@@ -261,7 +261,6 @@ export interface TTemplate {
   title: string;
   desc: string;
   section_ids: string[];
-  sections: TSection[];
   is_editable: boolean;
 }
 
@@ -293,13 +292,12 @@ export interface TSection {
   desc: string;
   format: 'P' | 'B';
   example: string;
-  custom: boolean;
+  default: boolean;
   parent_section_id?: string;
 }
 
 export interface TGetV1TemplateSectionsResponse {
-  default_sections: TSection[];
-  custom_sections: TSection[];
+  items: TSection[];
   code: number;
   error?: { code: string; message: string };
 }

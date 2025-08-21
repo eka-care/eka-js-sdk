@@ -29,8 +29,7 @@ async function getV1TemplateSections(): Promise<TGetV1TemplateSectionsResponse> 
     console.log('%c getV1TemplateSections -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-      default_sections: [],
-      custom_sections: [],
+      items: [],
     } as TGetV1TemplateSectionsResponse;
   }
 }
