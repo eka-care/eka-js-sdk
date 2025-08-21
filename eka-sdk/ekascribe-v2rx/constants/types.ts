@@ -268,7 +268,7 @@ export interface TTemplate {
 export interface TGetV1TemplatesResponse {
   items: TTemplate[];
   code: number;
-  error?: { code: string; msg: string };
+  error?: { code: string; message: string };
 }
 export interface TPostV1TemplateSectionRequest {
   title: string;
@@ -284,7 +284,7 @@ export interface TPostV1TemplateSectionResponse {
   section_id: string;
   code: number;
   action: 'updated' | 'created_custom';
-  error?: { code: string; msg: string };
+  error?: { code: string; message: string };
 }
 
 export interface TSection {
