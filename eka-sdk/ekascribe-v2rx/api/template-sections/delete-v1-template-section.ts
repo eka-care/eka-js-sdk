@@ -16,7 +16,7 @@ async function deleteV1TemplateSection(
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/section/${section_id}`,
+      `${GET_EKA_VOICE_HOST_V1()}/template/section/${section_id}`,
       options
     );
     let res = await response.json();

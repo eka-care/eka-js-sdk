@@ -26,7 +26,7 @@ export async function patchV1Template({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/api/v1/template/${template_id}`,
+      `${GET_EKA_VOICE_HOST_V1()}/template/${template_id}`,
       options
     );
     let res = await response.json();

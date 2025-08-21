@@ -13,7 +13,7 @@ async function getV1Templates(): Promise<TGetV1TemplatesResponse> {
       headers,
     };
 
-    const response = await fetchWrapper(`${GET_EKA_VOICE_HOST_V1()}/api/v1/template`, options);
+    const response = await fetchWrapper(`${GET_EKA_VOICE_HOST_V1()}/template`, options);
     let res = await response.json();
 
     res = {
