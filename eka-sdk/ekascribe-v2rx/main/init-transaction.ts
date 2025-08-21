@@ -1,4 +1,4 @@
-import postTransactionInit from '../api/post-transaction-init';
+import postTransactionInit from '../api/transaction/post-transaction-init';
 import { S3_BUCKET_NAME, SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';

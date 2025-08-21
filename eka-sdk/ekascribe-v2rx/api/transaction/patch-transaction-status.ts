@@ -1,11 +1,11 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
+import { SDK_STATUS_CODE } from '../../constants/constant';
 import {
   TPatchTransactionError,
   TPatchTransactionRequest,
   TPostTransactionResponse,
-} from '../constants/types';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
+} from '../../constants/types';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 export const processingError: TPatchTransactionError = {
   error: {
@@ -36,7 +36,7 @@ const patchTransactionStatus = async ({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST_V2()}/transaction/${sessionId}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/${sessionId}`,
       options
     );
 

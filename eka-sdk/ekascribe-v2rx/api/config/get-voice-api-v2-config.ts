@@ -1,7 +1,7 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
-import { TGetConfigV2Response } from '../constants/types';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
+import { SDK_STATUS_CODE } from '../../constants/constant';
+import { TGetConfigV2Response } from '../../constants/types';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 export const getConfigV2 = async (): Promise<TGetConfigV2Response> => {
   try {
@@ -12,7 +12,7 @@ export const getConfigV2 = async (): Promise<TGetConfigV2Response> => {
       },
     };
 
-    const response = await fetchWrapper(`${GET_EKA_V2RX_HOST_V2()}/config/`, options);
+    const response = await fetchWrapper(`${GET_EKA_VOICE_HOST_V2()}/config/`, options);
     const res = await response.json();
 
     return {

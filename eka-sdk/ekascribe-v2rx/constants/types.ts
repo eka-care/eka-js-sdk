@@ -240,3 +240,77 @@ export type TFileUploadProgressCallback = (args: {
     msg: string;
   };
 }) => void;
+
+export interface TPostV1TemplateRequest {
+  title: string;
+  desc?: string;
+  section_ids: string[];
+  template_id?: string;
+}
+
+export interface TPostV1TemplateResponse {
+  code: number;
+  msg: string;
+  template_id?: string;
+  message?: string;
+  error?: { code: string; message: string };
+}
+
+export interface TTemplate {
+  id: string;
+  title: string;
+  desc: string;
+  section_ids: string[];
+  is_editable: boolean;
+}
+
+export interface TGetV1TemplatesResponse {
+  items: TTemplate[];
+  code: number;
+  error?: { code: string; message: string };
+}
+export interface TPostV1TemplateSectionRequest {
+  title: string;
+  desc?: string;
+  format?: 'P' | 'B';
+  example?: string;
+  template_id?: string;
+  section_id?: string;
+}
+
+export interface TPostV1TemplateSectionResponse {
+  msg: string;
+  section_id: string;
+  code: number;
+  action: 'updated' | 'created_custom';
+  error?: { code: string; message: string };
+}
+
+export interface TSection {
+  id: string;
+  title: string;
+  desc: string;
+  format: 'P' | 'B';
+  example: string;
+  default: boolean;
+  parent_section_id?: string;
+}
+
+export interface TGetV1TemplateSectionsResponse {
+  items: TSection[];
+  code: number;
+  error?: { code: string; message: string };
+}
+
+export type TPatchVoiceApiV2ConfigRequest = {
+  auto_download?: boolean;
+  default_languages?: string[];
+  my_templates?: string[];
+  scribe_enabled?: boolean;
+};
+
+export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
+  msg: string;
+  code: number;
+  error?: { code: string; message: string };
+}

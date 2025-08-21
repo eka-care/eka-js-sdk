@@ -1,7 +1,7 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
-import { TPostTransactionInitRequest, TPostTransactionResponse } from '../constants/types';
-import fetchWrapper from '../fetch-client';
-import { GET_EKA_V2RX_HOST_V2 } from '../fetch-client/helper';
+import { SDK_STATUS_CODE } from '../../constants/constant';
+import { TPostTransactionInitRequest, TPostTransactionResponse } from '../../constants/types';
+import fetchWrapper from '../../fetch-client';
+import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 async function postTransactionInit({
   mode,
@@ -38,7 +38,7 @@ async function postTransactionInit({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_V2RX_HOST_V2()}/transaction/init/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/init/${txnId}`,
       options
     );
     let res = await response.json();

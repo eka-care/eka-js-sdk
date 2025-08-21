@@ -1,4 +1,4 @@
-import postTransactionCommit from '../api/post-transaction-commit';
+import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
