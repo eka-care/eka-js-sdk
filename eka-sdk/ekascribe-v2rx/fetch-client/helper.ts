@@ -1,6 +1,6 @@
 const DEV = {
   EKA_HOST: 'https://api.dev.eka.care',
-  EKA_VOICE_HOST_V1: 'https://api.dev.eka.care/api/v1',
+  EKA_VOICE_HOST_V1: 'https://api.dev.eka.care/voice/api/v1',
   EKA_VOICE_HOST_V2: 'https://v2rxbe.dev.eka.care/voice/api/v2',
   EKA_VOICE_HOST_V3: 'https://v2rxbe.dev.eka.care/voice/api/v3',
 };
