@@ -7,13 +7,9 @@ async function cookV1MediaAiCreateTemplate(
   formData: FormData
 ): Promise<TPostCookV1MediaAiCreateTemplateResponse> {
   try {
-    const headers = new Headers();
-    headers.append('Content-Type', 'application/json');
-
     const options = {
       method: 'POST',
-      headers,
-      body: JSON.stringify(formData),
+      body: formData,
     };
 
     const response = await fetchWrapper(`${GET_COOK_HOST_V1()}/medai/ai-create-template`, options);
