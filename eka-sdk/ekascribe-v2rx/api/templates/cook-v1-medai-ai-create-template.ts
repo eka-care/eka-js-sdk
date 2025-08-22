@@ -1,8 +1,5 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
-import {
-  TPostCookV1MediaAiCreateTemplateResponse,
-  TPostV1TemplateResponse,
-} from '../../constants/types';
+import { TPostCookV1MediaAiCreateTemplateResponse } from '../../constants/types';
 import fetchWrapper from '../../fetch-client';
 import { GET_COOK_HOST_V1 } from '../../fetch-client/helper';
 
