@@ -8,7 +8,6 @@ import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
 async function patchV1TemplateSection({
   section_id,
-  template_id,
   title,
   desc,
   format,
@@ -17,9 +16,6 @@ async function patchV1TemplateSection({
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    if (template_id) {
-      headers.append('template-id', template_id);
-    }
 
     const raw = {
       title,

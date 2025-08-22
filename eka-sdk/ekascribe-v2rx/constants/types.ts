@@ -283,7 +283,6 @@ export interface TPostV1TemplateSectionRequest {
   desc?: string;
   format?: 'P' | 'B';
   example?: string;
-  template_id?: string;
   section_id?: string;
 }
 
