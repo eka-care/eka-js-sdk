@@ -14,7 +14,7 @@ export type TGetConfigV2Response = {
     settings?: TConfigSettings;
     model?: string;
     my_templates?: string[];
-    wid?: string;
+    wid: string;
   };
   message?: string;
   code?: number;
