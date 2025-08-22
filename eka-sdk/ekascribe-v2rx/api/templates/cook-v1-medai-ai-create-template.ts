@@ -13,7 +13,7 @@ async function cookV1MediaAiCreateTemplate(
     const options = {
       method: 'POST',
       headers,
-      body: formData,
+      body: JSON.stringify(formData),
     };
 
     const response = await fetchWrapper(`${GET_COOK_HOST_V1()}/medai/ai-create-template`, options);
