@@ -275,6 +275,8 @@ export type TPostCookV1MediaAiCreateTemplateResponse = {
   title: string;
   desc: string;
   sections: TSection[];
+  code: number;
+  message: string;
 };
 export interface TPostV1TemplateSectionRequest {
   title: string;

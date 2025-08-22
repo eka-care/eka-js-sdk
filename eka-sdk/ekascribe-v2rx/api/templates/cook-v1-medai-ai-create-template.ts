@@ -1,9 +1,14 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
-import { TPostV1TemplateResponse } from '../../constants/types';
+import {
+  TPostCookV1MediaAiCreateTemplateResponse,
+  TPostV1TemplateResponse,
+} from '../../constants/types';
 import fetchWrapper from '../../fetch-client';
 import { GET_COOK_HOST_V1 } from '../../fetch-client/helper';
 
-async function cookV1MediaAiCreateTemplate(formData: FormData): Promise<TPostV1TemplateResponse> {
+async function cookV1MediaAiCreateTemplate(
+  formData: FormData
+): Promise<TPostCookV1MediaAiCreateTemplateResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -28,7 +33,7 @@ async function cookV1MediaAiCreateTemplate(formData: FormData): Promise<TPostV1T
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,
-    } as TPostV1TemplateResponse;
+    } as TPostCookV1MediaAiCreateTemplateResponse;
   }
 }
 
