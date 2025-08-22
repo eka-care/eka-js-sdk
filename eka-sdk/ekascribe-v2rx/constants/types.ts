@@ -13,6 +13,7 @@ export type TGetConfigV2Response = {
     selected_preferences?: TSelectedPreferences;
     settings?: TConfigSettings;
     model?: string;
+    my_templates?: string[];
   };
   message?: string;
   code?: number;
