@@ -270,6 +270,12 @@ export interface TGetV1TemplatesResponse {
   code: number;
   error?: { code: string; message: string };
 }
+
+export type TPostCookV1MediaAiCreateTemplateResponse = {
+  title: string;
+  desc: string;
+  sections: TSection[];
+};
 export interface TPostV1TemplateSectionRequest {
   title: string;
   desc?: string;
@@ -293,7 +299,7 @@ export interface TSection {
   desc: string;
   format: 'P' | 'B';
   example: string;
-  default: boolean;
+  default?: boolean;
   parent_section_id?: string;
 }
 

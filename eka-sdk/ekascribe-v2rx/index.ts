@@ -47,6 +47,7 @@ import postV1TemplateSection from './api/template-sections/post-v1-template-sect
 import patchV1TemplateSection from './api/template-sections/patch-v1-template-section';
 import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
 import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
+import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -369,6 +370,11 @@ class EkaScribe {
 
   async deleteTemplate(template_id: string) {
     const templatesResponse = await deleteV1Template(template_id);
+    return templatesResponse;
+  }
+
+  async aiGenerateTemplate(formData: FormData) {
+    const templatesResponse = await cookV1MediaAiCreateTemplate(formData);
     return templatesResponse;
   }
 
