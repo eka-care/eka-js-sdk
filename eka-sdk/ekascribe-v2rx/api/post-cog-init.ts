@@ -1,5 +1,6 @@
 import { TPostCogResponse } from '../constants/types';
 import fetchWrapper from '../fetch-client';
+import { GET_COG_HOST } from '../fetch-client/helper';
 
 async function postCogInit(): Promise<TPostCogResponse> {
   try {
@@ -7,7 +8,7 @@ async function postCogInit(): Promise<TPostCogResponse> {
       method: 'GET',
     };
 
-    const respJson = await fetchWrapper(`https://cog.eka.care/credentials`, options);
+    const respJson = await fetchWrapper(`${GET_COG_HOST()}/credentials`, options);
 
     const resp = await respJson.json();
     return resp;
