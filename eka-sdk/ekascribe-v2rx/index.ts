@@ -25,6 +25,7 @@ import {
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
   TPostTransactionResponse,
+  TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
   TStartRecordingRequest,
@@ -48,6 +49,7 @@ import patchV1TemplateSection from './api/template-sections/patch-v1-template-se
 import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
 import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
+import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to-template';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -402,6 +404,11 @@ class EkaScribe {
   async deleteTemplateSection(section_id: string) {
     const templateSectionsResponse = await deleteV1TemplateSection(section_id);
     return templateSectionsResponse;
+  }
+
+  async postTransactionConvertToTemplate({ txn_id, template_id }: TPostV1ConvertToTemplateRequest) {
+    const convertToTemplateResponse = await postV1ConvertToTemplate({ txn_id, template_id });
+    return convertToTemplateResponse;
   }
 }
 

@@ -323,3 +323,19 @@ export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRe
   code: number;
   error?: { code: string; message: string };
 }
+
+export type TPostV1ConvertToTemplateRequest = {
+  txn_id: string;
+  template_id: string;
+};
+
+export type TPostV1ConvertToTemplateResponse = {
+  status: 'success' | 'failed';
+  message: string;
+  txn_id: string;
+  template_id: string;
+  b_id: string;
+  code: number;
+  msg: string;
+  error?: { code: string; message: string; display_message: string };
+};
