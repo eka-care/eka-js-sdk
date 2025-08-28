@@ -22,7 +22,8 @@ async function postV1ConvertToTemplate({
 
     const response = await fetchWrapper(
       `${GET_EKA_VOICE_HOST_V1()}/transaction/${txn_id}/convert-to-template/${template_id}`,
-      options
+      options,
+      60000
     );
     let res = await response.json();
 
