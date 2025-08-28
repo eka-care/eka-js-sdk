@@ -113,7 +113,7 @@ export type TPostTransactionInitRequest = {
   auto_download: boolean;
   model_training_consent: boolean;
   system_info: TSystemInfo;
-  patient_details: TPatientDetails;
+  patient_details?: TPatientDetails;
 };
 
 export type TPostTransactionCommitRequest = {
