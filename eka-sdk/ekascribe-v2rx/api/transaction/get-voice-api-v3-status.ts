@@ -37,6 +37,9 @@ type TAdditionalData = {
 type TApiResponse = {
   data: {
     output?: TOutputSummary[];
+    audio_matrix?: {
+      quality: string;
+    };
     additional_data?: TAdditionalData;
     meta_data?: {
       total_resources?: number;
