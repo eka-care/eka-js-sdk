@@ -50,7 +50,7 @@ export type TStartRecordingRequest = {
   model_training_consent: boolean;
   transfer: string;
   system_info: TSystemInfo;
-  patient_details: TPatientDetails;
+  patient_details?: TPatientDetails;
 };
 
 export type TPatientDetails = {
