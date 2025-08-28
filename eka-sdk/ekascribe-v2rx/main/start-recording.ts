@@ -21,8 +21,12 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
 
     await vadInstance?.initVad();
 
+    console.log(vadInstance, 'vad in start recording');
+
     const micVad = vadInstance?.getMicVad();
+    console.log(micVad, 'mic vad in start recording');
     const isVadLoading = vadInstance?.isVadLoading();
+    console.log(isVadLoading, 'is vad loading in start recording');
 
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
       // retry initiating vad once and if still is in loading return error
