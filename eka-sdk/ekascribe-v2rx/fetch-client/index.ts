@@ -33,9 +33,15 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
+    console.log(response, 'response in fetch wrapper');
+
+    if (response.status === 401 || response.status === 403) {
+      console.log('unauthorized - fetch wrapper ', response.status);
+    }
+
     return response;
   } catch (error) {
-    console.error(error);
+    console.error(error, 'error in fetch wrapper');
     throw error;
   } finally {
     if (timeoutId) {

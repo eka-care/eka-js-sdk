@@ -14,6 +14,14 @@ export type TGetConfigV2Response = {
     settings?: TConfigSettings;
     model?: string;
     my_templates?: string[];
+    user_details: {
+      fn: string;
+      mn: string;
+      ln: string;
+      dob: string;
+      gen: 'F' | 'M' | 'O';
+      s: string;
+    };
     wid: string;
   };
   message?: string;

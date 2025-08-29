@@ -19,7 +19,7 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
       };
     }
 
-    await vadInstance?.initVad();
+    // await vadInstance?.initVad();
 
     console.log(vadInstance, 'vad in start recording');
 
