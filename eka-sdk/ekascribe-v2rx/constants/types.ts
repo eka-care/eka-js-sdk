@@ -61,11 +61,13 @@ export type TStartRecordingRequest = {
   patient_details?: TPatientDetails;
 };
 
+export type Gender = 'M' | 'F' | 'O';
+
 export type TPatientDetails = {
   username: string;
   oid: string;
   age: number;
-  biologicalSex: string;
+  biologicalSex: Gender;
   mobile?: string;
   email?: string;
 };
