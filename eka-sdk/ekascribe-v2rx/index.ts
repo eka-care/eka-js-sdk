@@ -50,6 +50,9 @@ import deleteV1TemplateSection from './api/template-sections/delete-v1-template-
 import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
 import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to-template';
+import searchSessionsByPatient, {
+  TSearchSessionsByPatientRequest,
+} from './utils/search-sessions-by-patient-name';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -409,6 +412,11 @@ class EkaScribe {
   async postTransactionConvertToTemplate({ txn_id, template_id }: TPostV1ConvertToTemplateRequest) {
     const convertToTemplateResponse = await postV1ConvertToTemplate({ txn_id, template_id });
     return convertToTemplateResponse;
+  }
+
+  async searchSessionsByPatientName(request: TSearchSessionsByPatientRequest) {
+    const searchSessionsByPatientNameResponse = await searchSessionsByPatient(request);
+    return searchSessionsByPatientNameResponse;
   }
 }
 

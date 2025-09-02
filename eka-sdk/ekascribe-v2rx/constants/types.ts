@@ -193,6 +193,7 @@ export type TSessionHistoryData = {
   mode: string;
   uuid: string;
   oid: string;
+  patient_details?: TPatientDetails;
 };
 
 export type TAudioChunksInfo = {
