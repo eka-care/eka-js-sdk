@@ -1,6 +1,6 @@
 import { GET_CLIENT_ID, GET_AUTH_TOKEN } from './helper';
 
-const API_TIMEOUT_MS = 5000;
+const API_TIMEOUT_MS = 10000;
 
 export default async function fetchWrapper(
   url: RequestInfo,
@@ -13,6 +13,7 @@ export default async function fetchWrapper(
   try {
     // Set up timeout
     timeoutId = setTimeout(() => {
+      console.log('request aborted due to timeout');
       controller.abort();
     }, timeoutMs);
 
@@ -33,9 +34,15 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
+    console.log(response, response.status, 'response in fetch wrapper - SDK');
+
+    if (response.status === 401 || response.status === 403) {
+      console.log('unauthorized - fetch wrapper - SDK', response.status);
+    }
+
     return response;
   } catch (error) {
-    console.error(error);
+    console.error(error, 'error in fetch wrapper - SDK');
     throw error;
   } finally {
     if (timeoutId) {

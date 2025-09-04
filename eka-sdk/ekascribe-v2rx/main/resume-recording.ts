@@ -11,6 +11,8 @@ const resumeVoiceRecording = (): TPauseRecordingResponse => {
       throw new Error('VAD instance is not initialized');
     }
 
+    console.log(vadInstance, 'vad in resume recording');
+
     vadInstance.startVad();
     const txn_id = EkaScribeStore.txnID;
     EkaScribeStore.sessionStatus[txn_id] = {
