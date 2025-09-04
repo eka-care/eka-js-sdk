@@ -59,6 +59,9 @@ export type TStartRecordingRequest = {
   transfer: string;
   system_info: TSystemInfo;
   patient_details?: TPatientDetails;
+  model_type: string;
+  version?: string;
+  flavour?: string;
 };
 
 export type Gender = 'M' | 'F' | 'O';
@@ -116,7 +119,7 @@ export type TEndRecordingResponse = {
 export type TPostTransactionInitRequest = {
   mode: string;
   s3Url: string;
-  txnId: string;
+  txn_id: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
   transfer: string;
@@ -124,6 +127,9 @@ export type TPostTransactionInitRequest = {
   model_training_consent: boolean;
   system_info: TSystemInfo;
   patient_details?: TPatientDetails;
+  model_type: string;
+  version?: string;
+  flavour?: string;
 };
 
 export type TPostTransactionCommitRequest = {
@@ -349,4 +355,26 @@ export type TPostV1ConvertToTemplateResponse = {
   code: number;
   msg: string;
   error?: { code: string; message: string; display_message: string };
+};
+
+export type TV1FileUploadFields = {
+  'x-amz-meta-mode': string;
+  key: string;
+  'x-amz-algorithm': string;
+  'x-amz-credential': string;
+  'x-amz-date': string;
+  policy: string;
+  'x-amz-signature': string;
+};
+
+export type TPostV1FileUploadResponse = {
+  uploadData: {
+    url: string;
+    fields: TV1FileUploadFields;
+  };
+  folderPath: string;
+  txn_id: string;
+  code?: number;
+  message?: string;
+  error?: { code: string; message: string };
 };

@@ -53,6 +53,10 @@ import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to
 import searchSessionsByPatient, {
   TSearchSessionsByPatientRequest,
 } from './utils/search-sessions-by-patient-name';
+import {
+  postV1UploadAudioFiles,
+  TFullAudioRequest,
+} from './main/upload-full-audio-with-presigned-url';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -417,6 +421,11 @@ class EkaScribe {
   async searchSessionsByPatientName(request: TSearchSessionsByPatientRequest) {
     const searchSessionsByPatientNameResponse = await searchSessionsByPatient(request);
     return searchSessionsByPatientNameResponse;
+  }
+
+  async uploadAudioWithPresignedUrl(request: TFullAudioRequest) {
+    const uploadAudioFilesResponse = await postV1UploadAudioFiles(request);
+    return uploadAudioFilesResponse;
   }
 }
 

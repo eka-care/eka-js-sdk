@@ -5,7 +5,7 @@ import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 async function postTransactionInit({
   mode,
-  txnId,
+  txn_id,
   s3Url,
   input_language,
   output_format_template,
@@ -14,6 +14,9 @@ async function postTransactionInit({
   transfer,
   system_info,
   patient_details,
+  model_type,
+  version,
+  flavour,
 }: TPostTransactionInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -29,6 +32,9 @@ async function postTransactionInit({
       transfer,
       system_info,
       patient_details,
+      model_type,
+      version,
+      flavour,
     };
 
     const options = {
@@ -38,7 +44,7 @@ async function postTransactionInit({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V2()}/transaction/init/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/init/${txn_id}`,
       options
     );
     let res = await response.json();

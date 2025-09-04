@@ -4,18 +4,11 @@ import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
-const initialiseTransaction = async ({
-  mode,
-  input_language,
-  output_format_template,
-  txn_id,
-  auto_download,
-  model_training_consent,
-  transfer,
-  system_info,
-  patient_details,
-}: TStartRecordingRequest): Promise<TStartRecordingResponse> => {
+const initialiseTransaction = async (
+  request: TStartRecordingRequest
+): Promise<TStartRecordingResponse> => {
   try {
+    const { txn_id } = request;
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
     const sessionStatus = EkaScribeStore.sessionStatus;
     let businessID = '';
@@ -39,16 +32,8 @@ const initialiseTransaction = async ({
       EkaScribeStore.sessionBucketPath = filePath;
 
       const txnInitResponse = await postTransactionInit({
-        mode,
-        txnId: txn_id,
+        ...request,
         s3Url: `s3://${S3_BUCKET_NAME}/${filePath}`,
-        input_language,
-        output_format_template,
-        transfer,
-        auto_download,
-        model_training_consent,
-        system_info,
-        patient_details,
       });
 
       const {

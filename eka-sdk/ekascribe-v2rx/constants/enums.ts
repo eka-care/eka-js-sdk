@@ -27,6 +27,7 @@ export enum ERROR_CODE {
   SPEECH_DETECTED = 'speech_detected',
   TXN_STATUS_MISMATCH = 'txn_status_mismatch',
   LONG_SILENCE = 'long_silence',
+  GET_PRESIGNED_URL_FAILED = 'get_presigned_url_failed',
 }
 
 export enum PROCESSING_STATUS {
