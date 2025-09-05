@@ -28,6 +28,7 @@ import {
   TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
+  TPostV1UploadAudioFilesRequest,
   TStartRecordingRequest,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
@@ -53,10 +54,7 @@ import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to
 import searchSessionsByPatient, {
   TSearchSessionsByPatientRequest,
 } from './utils/search-sessions-by-patient-name';
-import {
-  postV1UploadAudioFiles,
-  TFullAudioRequest,
-} from './main/upload-full-audio-with-presigned-url';
+import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -423,7 +421,7 @@ class EkaScribe {
     return searchSessionsByPatientNameResponse;
   }
 
-  async uploadAudioWithPresignedUrl(request: TFullAudioRequest) {
+  async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
     const uploadAudioFilesResponse = await postV1UploadAudioFiles(request);
     return uploadAudioFilesResponse;
   }

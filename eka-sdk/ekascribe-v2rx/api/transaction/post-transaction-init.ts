@@ -17,6 +17,7 @@ async function postTransactionInit({
   model_type,
   version,
   flavour,
+  batch_s3_url,
 }: TPostTransactionInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -35,6 +36,7 @@ async function postTransactionInit({
       model_type,
       version,
       flavour,
+      batch_s3_url,
     };
 
     const options = {
