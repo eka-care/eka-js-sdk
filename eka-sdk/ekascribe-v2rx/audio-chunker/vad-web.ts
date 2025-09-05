@@ -293,6 +293,14 @@ class VadWebClient {
   }
 
   /**
+   * End VAD
+   */
+  destroyVad() {
+    this.micVad.destroy();
+    this.recording_started = false;
+  }
+
+  /**
    * reset vadWeb instance
    */
   resetVadWebInstance() {

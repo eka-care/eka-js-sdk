@@ -150,6 +150,10 @@ class EkaScribe {
     this.vadInstance.reinitializeVad();
   }
 
+  destroyVad() {
+    this.vadInstance.destroyVad();
+  }
+
   pauseRecording() {
     console.log('Pausing recording...');
     const pauseRecordingResponse = pauseVoiceRecording();
