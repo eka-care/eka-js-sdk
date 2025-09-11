@@ -83,14 +83,14 @@ export async function postV1UploadAudioFiles({
 
     return {
       status_code: SDK_STATUS_CODE.SUCCESS,
-      message: 'Transaction initialized successfully.',
+      message: 'Recording uploaded successfully.',
     };
   } catch (error) {
     console.error('getPresignedUrlAndUploadFiles error:', error);
     return {
       error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-      message: `Complete upload workflow failed: ${error}`,
+      message: `Recording upload failed: ${error}`,
     };
   }
 }
