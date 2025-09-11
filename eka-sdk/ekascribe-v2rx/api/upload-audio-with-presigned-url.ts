@@ -32,6 +32,8 @@ async function uploadSingleFile(
       body: formData,
     });
 
+    console.log('upload single audio file response ', response);
+
     if (response.status === 204) {
       // S3 returns 204 No Content on successful upload
       return {

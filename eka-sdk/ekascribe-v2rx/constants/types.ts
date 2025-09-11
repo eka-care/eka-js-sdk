@@ -120,7 +120,7 @@ export type TEndRecordingResponse = {
 
 export type TPostTransactionInitRequest = {
   mode: string;
-  s3Url: string;
+  s3Url?: string;
   txn_id: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
