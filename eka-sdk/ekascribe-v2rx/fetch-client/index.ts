@@ -34,8 +34,6 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
-    console.log(response, response.status, 'response in fetch wrapper - SDK');
-
     if (response.status === 401 || response.status === 403) {
       console.log('unauthorized - fetch wrapper - SDK', response.status);
     }
