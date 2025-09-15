@@ -17,7 +17,6 @@ export default async function fetchWrapper(
   try {
     // Set up timeout
     timeoutId = setTimeout(() => {
-      console.log('request aborted due to timeout');
       controller.abort();
     }, timeoutMs);
 
@@ -45,10 +44,6 @@ export default async function fetchWrapper(
         success_message: 'Fetch wrapper response: ' + JSON.stringify(response),
         request: 'Request body: ' + JSON.stringify(options.body),
       });
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      console.log('unauthorized - fetch wrapper - SDK', response.status);
     }
 
     return response;

@@ -88,7 +88,7 @@ const initialiseTransaction = async (
       txn_id,
     };
   } catch (err) {
-    console.log('%c Line:102 🍇 initialiseTransaction err', 'color:#b03734', err);
+    console.error('%c Line:102 🍇 initialiseTransaction err', 'color:#b03734', err);
     return {
       error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,

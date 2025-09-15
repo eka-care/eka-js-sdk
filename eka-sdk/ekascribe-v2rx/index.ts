@@ -65,19 +65,11 @@ class EkaScribe {
   // Private constructor to prevent direct instantiation
   private constructor() {
     this.audioFileManagerInstance = new AudioFileManager();
-    console.log(
-      '%c Line:48 🥕 this.audioFileManagerInstance',
-      'color:#b03734',
-      this.audioFileManagerInstance
-    );
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    console.log(
-      '%c Line:50 🍇 this.audioBufferInstance',
-      'color:#fca650',
-      this.audioBufferInstance
-    );
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
     this.vadInstance = new VadWebClient(
       PREF_CHUNK_LENGTH,
       DESP_CHUNK_LENGTH,
@@ -85,7 +77,13 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
-    console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
+
+    console.log(
+      'Initialising SDK: ',
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance
+    );
   }
 
   // Static method to get the singleton instance with optional initialization
@@ -106,10 +104,9 @@ class EkaScribe {
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
-
-      console.log('EkaScribe.instance', EkaScribe.instance);
-      // Initialize if params are provided
     }
+
+    console.log('EkaScribe.instance', EkaScribe.instance);
 
     return EkaScribe.instance;
   }
@@ -120,7 +117,6 @@ class EkaScribe {
   }
 
   public async getEkascribeConfig() {
-    console.log('Fetching EkaScribe configuration...');
     const response = await getConfigV2();
     return response;
   }
@@ -132,15 +128,12 @@ class EkaScribe {
   }
 
   async initTransaction(request: TStartRecordingRequest) {
-    console.log('Initializing transaction...');
-
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
   }
 
   async startRecording() {
-    console.log('Starting recording...');
     const startResponse = await startVoiceRecording();
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
     return startResponse;
@@ -155,28 +148,24 @@ class EkaScribe {
   }
 
   pauseRecording() {
-    console.log('Pausing recording...');
     const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
     return pauseRecordingResponse;
   }
 
   resumeRecording() {
-    console.log('Resuming recording...');
     const resumeRecordingResponse = resumeVoiceRecording();
     console.log('%c Line:124 🌶 resumeRecordingResponse', 'color:#33a5ff', resumeRecordingResponse);
     return resumeRecordingResponse;
   }
 
   async endRecording() {
-    console.log('Ending recording...');
     const endRecordingResponse = await endVoiceRecording();
     console.log('%c Line:131 🍅 endRecordingResponse', 'color:#e41a6a', endRecordingResponse);
     return endRecordingResponse;
   }
 
   async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
-    console.log('Retrying upload for failed files...');
     const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
     console.log('%c Line:138 🍖 retryUploadResponse', 'color:#3f7cff', retryUploadResponse);
     return retryUploadResponse;
@@ -198,7 +187,6 @@ class EkaScribe {
 
       return patchTransactionResponse;
     } catch (error) {
-      console.error('Error cancelling recording session:', error);
       return {
         code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to cancel recording session, ${error}`,
@@ -254,7 +242,6 @@ class EkaScribe {
         message: txnCommitMsg || 'Transaction committed successfully.',
       };
     } catch (error) {
-      console.error('Error in transaction commit: ', error);
       return {
         error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
@@ -277,7 +264,6 @@ class EkaScribe {
 
       return getStatusResponse;
     } catch (error) {
-      console.error('Error in fetching templates response: ', error);
       return {
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch output templates, ${error}`,
@@ -293,7 +279,6 @@ class EkaScribe {
 
       return transactionsResponse;
     } catch (error) {
-      console.error('Error cancelling recording session:', error);
       return {
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch previous transactions, ${error}`,

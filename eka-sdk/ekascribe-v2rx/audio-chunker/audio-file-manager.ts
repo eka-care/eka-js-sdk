@@ -40,8 +40,6 @@ class AudioFileManager {
     this.totalInsertedSamples = 0;
     this.totalRawSamples = 0;
     this.totalRawFrames = 0;
-
-    console.log(this.audioChunks, '35');
   }
 
   constructor() {
@@ -107,7 +105,6 @@ class AudioFileManager {
    * (+ the latest chunk , affects the length of chunks data struct)
    */
   updateAudioInfo(audioChunks: TAudioChunksInfo): number {
-    console.log(audioChunks, 'update audio info');
     this.audioChunks.push(audioChunks);
     return this.audioChunks.length;
   }
@@ -126,12 +123,10 @@ class AudioFileManager {
 
         switch (workerResponse.action) {
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
-            console.log('AWS configured successfully in worker');
             return;
           }
 
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR: {
-            console.error('Error configuring AWS in worker:', workerResponse.error);
             return;
           }
 

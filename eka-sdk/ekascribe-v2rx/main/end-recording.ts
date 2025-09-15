@@ -118,8 +118,6 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
       };
     }
 
-    console.log(audioFiles, 'audio files in commit api call, end recording - SDK');
-
     // call commit transaction api
     if (
       EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||

@@ -32,8 +32,6 @@ export async function postV1UploadAudioFiles({
     // Step 1: Get presigned URL
     const presignedUrlResponse = await postV1FileUpload({ txn_id, action });
 
-    console.log('upload full audio -> presignedUrlResponse ', presignedUrlResponse);
-
     if (presignedUrlResponse.code !== 200) {
       return {
         error_code: ERROR_CODE.GET_PRESIGNED_URL_FAILED,
@@ -48,8 +46,6 @@ export async function postV1UploadAudioFiles({
       audioFileNames,
       presignedUrlResponse,
     });
-
-    console.log('upload full audio -> uploadResponse ', uploadResponse);
 
     if (uploadResponse.code !== 200) {
       return {
@@ -77,8 +73,6 @@ export async function postV1UploadAudioFiles({
       batch_s3_url,
       audio_file_names: audioFileNames,
     });
-
-    console.log('upload full audio -> initTransactionResponse ', initTransactionResponse);
 
     if (initTransactionResponse.code >= 400) {
       return {

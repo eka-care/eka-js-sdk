@@ -20,8 +20,6 @@ const retryUploadFailedFiles = async ({
     const audioInfo = fileManagerInstance?.audioChunks;
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
-    console.log(failedFiles, 'failed files in retry upload recording - SDK');
-
     if (failedFiles.length > 0 && !force_commit) {
       return {
         error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
