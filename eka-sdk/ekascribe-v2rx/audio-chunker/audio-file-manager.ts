@@ -40,6 +40,8 @@ class AudioFileManager {
     this.totalInsertedSamples = 0;
     this.totalRawSamples = 0;
     this.totalRawFrames = 0;
+
+    console.log(this.audioChunks, '35');
   }
 
   constructor() {
@@ -105,6 +107,7 @@ class AudioFileManager {
    * (+ the latest chunk , affects the length of chunks data struct)
    */
   updateAudioInfo(audioChunks: TAudioChunksInfo): number {
+    console.log(audioChunks, 'update audio info');
     this.audioChunks.push(audioChunks);
     return this.audioChunks.length;
   }

@@ -314,10 +314,24 @@ class EkaScribe {
   }
 
   resetEkaScribe() {
+    console.log(
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance,
+      EkaScribeStore,
+      'before reset ekascribe'
+    );
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();
     EkaScribeStore.resetStore();
+    console.log(
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance,
+      EkaScribeStore,
+      'after reset ekascribe'
+    );
   }
 
   onError(callback: TErrorCallback) {
