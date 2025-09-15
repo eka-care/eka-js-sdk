@@ -81,7 +81,7 @@ class VadWebClient {
               errorCallback({
                 error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
                 status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-                message:
+                error_message:
                   'No audio detected for a while. Please talk or stop the recording if done.',
               });
             }
@@ -99,7 +99,7 @@ class VadWebClient {
         errorCallback({
           error_code: ERROR_CODE.SPEECH_DETECTED,
           status_code: SDK_STATUS_CODE.SUCCESS,
-          message: 'Audio captured. Recording continues.',
+          success_message: 'Audio captured. Recording continues.',
         });
       }
     }
@@ -317,7 +317,7 @@ class VadWebClient {
       EkaScribeStore.errorCallback({
         error_code: ERROR_CODE.SPEECH_DETECTED,
         status_code: SDK_STATUS_CODE.SUCCESS,
-        message: 'Audio captured. Recording continues.',
+        success_message: 'Audio captured. Recording continues.',
       });
     }
   }
@@ -337,7 +337,7 @@ class VadWebClient {
           errorCallback({
             error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
             status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-            message: 'No audio is being captured. Please check your microphone.',
+            error_message: 'No audio is being captured. Please check your microphone.',
           });
         }
         return false;

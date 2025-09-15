@@ -239,7 +239,9 @@ export type UploadProgressCallback = (success: string[], total: number) => void;
 export type TErrorCallback = (args: {
   error_code?: ERROR_CODE;
   status_code: number;
-  message: string;
+  success_message?: string;
+  error_message?: string;
+  request?: string;
 }) => void;
 
 export type TSessionStatus = {
