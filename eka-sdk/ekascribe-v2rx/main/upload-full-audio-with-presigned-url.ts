@@ -13,6 +13,7 @@ export type TFullAudioUploadResponse = {
 
 export async function postV1UploadAudioFiles({
   audioFiles,
+  audioFileNames,
   txn_id,
   action,
   transfer,
@@ -44,6 +45,7 @@ export async function postV1UploadAudioFiles({
     // Step 2: Upload files using the presigned URL
     const uploadResponse = await uploadFilesWithPresignedUrl({
       audioFiles,
+      audioFileNames,
       presignedUrlResponse,
     });
 
@@ -73,6 +75,7 @@ export async function postV1UploadAudioFiles({
       version,
       flavour,
       batch_s3_url,
+      audio_file_names: audioFileNames,
     });
 
     console.log('upload full audio -> initTransactionResponse ', initTransactionResponse);

@@ -133,11 +133,13 @@ export type TPostTransactionInitRequest = {
   version?: string;
   flavour?: string;
   batch_s3_url?: string;
+  audio_file_names?: string[];
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
   action: string;
   audioFiles: File[] | Blob[];
+  audioFileNames: string[];
 }
 
 export type TPostTransactionCommitRequest = {

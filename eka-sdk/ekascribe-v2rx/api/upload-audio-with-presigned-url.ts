@@ -60,14 +60,16 @@ type TUploadFilesResponse = {
 
 async function uploadFilesWithPresignedUrl({
   audioFiles,
+  audioFileNames,
   presignedUrlResponse,
 }: {
   audioFiles: File[] | Blob[];
+  audioFileNames: string[];
   presignedUrlResponse: TPostV1FileUploadResponse;
 }): Promise<TUploadFilesResponse> {
   try {
     const uploadPromises = audioFiles.map((file, index) => {
-      const fileName = `audio_${index + 1}`;
+      const fileName = audioFileNames[index];
 
       return uploadSingleFile(
         { ...presignedUrlResponse.uploadData },
