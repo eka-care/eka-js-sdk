@@ -70,7 +70,7 @@ export type Gender = 'M' | 'F' | 'O';
 
 export type TPatientDetails = {
   username: string;
-  oid: string;
+  oid?: string;
   age: number;
   biologicalSex: Gender;
   mobile?: string;
