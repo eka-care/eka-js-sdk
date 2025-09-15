@@ -22,6 +22,9 @@ async function postTransactionInit({
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
+    if (flavour) {
+      headers.set('flavour', flavour);
+    }
 
     const raw = {
       mode,
@@ -35,7 +38,6 @@ async function postTransactionInit({
       patient_details,
       model_type,
       version,
-      flavour,
       batch_s3_url,
     };
 
