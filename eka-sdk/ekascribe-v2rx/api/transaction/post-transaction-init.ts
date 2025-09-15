@@ -40,7 +40,7 @@ async function postTransactionInit({
       model_type,
       version,
       batch_s3_url,
-      client_generated_files: audio_file_names,
+      ...(audio_file_names ? { client_generated_files: audio_file_names } : {}),
     };
 
     const options = {
