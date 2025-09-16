@@ -21,6 +21,8 @@ export type TGetConfigV2Response = {
       dob: string;
       gen: 'F' | 'M' | 'O';
       s: string;
+      is_paid_doc: boolean;
+      uuid: string;
     };
     wid: string;
   };
@@ -59,13 +61,16 @@ export type TStartRecordingRequest = {
   transfer: string;
   system_info: TSystemInfo;
   patient_details?: TPatientDetails;
+  model_type: string;
+  version?: string;
+  flavour?: string;
 };
 
 export type Gender = 'M' | 'F' | 'O';
 
 export type TPatientDetails = {
   username: string;
-  oid: string;
+  oid?: string;
   age: number;
   biologicalSex: Gender;
   mobile?: string;
@@ -115,8 +120,8 @@ export type TEndRecordingResponse = {
 
 export type TPostTransactionInitRequest = {
   mode: string;
-  s3Url: string;
-  txnId: string;
+  s3Url?: string;
+  txn_id: string;
   input_language: string[];
   output_format_template: { template_id: string }[];
   transfer: string;
@@ -124,7 +129,18 @@ export type TPostTransactionInitRequest = {
   model_training_consent: boolean;
   system_info: TSystemInfo;
   patient_details?: TPatientDetails;
+  model_type: string;
+  version?: string;
+  flavour?: string;
+  batch_s3_url?: string;
+  audio_file_names?: string[];
 };
+
+export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
+  action: string;
+  audioFiles: File[] | Blob[];
+  audioFileNames: string[];
+}
 
 export type TPostTransactionCommitRequest = {
   audioFiles: string[];
@@ -225,7 +241,9 @@ export type UploadProgressCallback = (success: string[], total: number) => void;
 export type TErrorCallback = (args: {
   error_code?: ERROR_CODE;
   status_code: number;
-  message: string;
+  success_message?: string;
+  error_message?: string;
+  request?: string;
 }) => void;
 
 export type TSessionStatus = {
@@ -349,4 +367,26 @@ export type TPostV1ConvertToTemplateResponse = {
   code: number;
   msg: string;
   error?: { code: string; message: string; display_message: string };
+};
+
+export type TV1FileUploadFields = {
+  'x-amz-meta-mode': string;
+  key: string;
+  'x-amz-algorithm': string;
+  'x-amz-credential': string;
+  'x-amz-date': string;
+  policy: string;
+  'x-amz-signature': string;
+};
+
+export type TPostV1FileUploadResponse = {
+  uploadData: {
+    url: string;
+    fields: TV1FileUploadFields;
+  };
+  folderPath: string;
+  txn_id: string;
+  code?: number;
+  message?: string;
+  error?: { code: string; message: string };
 };

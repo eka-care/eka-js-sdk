@@ -65,6 +65,8 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     const audioInfo = fileManagerInstance?.audioChunks;
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
+    console.log(audioInfo, 'audio files in end recording - SDK');
+
     // call stop txn api
     if (EkaScribeStore.sessionStatus[txnID].api?.status === 'init') {
       const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({

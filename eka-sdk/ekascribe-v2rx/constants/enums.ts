@@ -27,6 +27,10 @@ export enum ERROR_CODE {
   SPEECH_DETECTED = 'speech_detected',
   TXN_STATUS_MISMATCH = 'txn_status_mismatch',
   LONG_SILENCE = 'long_silence',
+  GET_PRESIGNED_URL_FAILED = 'get_presigned_url_failed',
+  UPLOAD_FULL_AUDIO = 'upload_full_audio',
+  FETCH_WRAPPER_RESPONSE = 'fetch_wrapper_response',
+  FETCH_WRAPPER_ERROR = 'fetch_wrapper_error',
 }
 
 export enum PROCESSING_STATUS {

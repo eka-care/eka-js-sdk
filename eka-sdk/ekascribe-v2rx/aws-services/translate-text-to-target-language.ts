@@ -19,7 +19,6 @@ async function awsTranslateText({
 
   try {
     const result = await translateClient.send(command);
-    console.log(result, 'result');
     console.log('Translated text:', result.TranslatedText);
   } catch (error) {
     console.error('Translation error:', error);

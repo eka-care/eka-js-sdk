@@ -28,6 +28,7 @@ import {
   TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
+  TPostV1UploadAudioFilesRequest,
   TStartRecordingRequest,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
@@ -53,6 +54,7 @@ import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to
 import searchSessionsByPatient, {
   TSearchSessionsByPatientRequest,
 } from './utils/search-sessions-by-patient-name';
+import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -63,19 +65,11 @@ class EkaScribe {
   // Private constructor to prevent direct instantiation
   private constructor() {
     this.audioFileManagerInstance = new AudioFileManager();
-    console.log(
-      '%c Line:48 🥕 this.audioFileManagerInstance',
-      'color:#b03734',
-      this.audioFileManagerInstance
-    );
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    console.log(
-      '%c Line:50 🍇 this.audioBufferInstance',
-      'color:#fca650',
-      this.audioBufferInstance
-    );
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
     this.vadInstance = new VadWebClient(
       PREF_CHUNK_LENGTH,
       DESP_CHUNK_LENGTH,
@@ -83,7 +77,13 @@ class EkaScribe {
       FRAME_RATE
     );
     EkaScribeStore.vadInstance = this.vadInstance;
-    console.log('%c Line:62 🍖 this.vadInstance', 'color:#2eafb0', this.vadInstance);
+
+    console.log(
+      'Initialising SDK: ',
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance
+    );
   }
 
   // Static method to get the singleton instance with optional initialization
@@ -104,10 +104,9 @@ class EkaScribe {
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
-
-      console.log('EkaScribe.instance', EkaScribe.instance);
-      // Initialize if params are provided
     }
+
+    console.log('EkaScribe.instance', EkaScribe.instance);
 
     return EkaScribe.instance;
   }
@@ -118,7 +117,6 @@ class EkaScribe {
   }
 
   public async getEkascribeConfig() {
-    console.log('Fetching EkaScribe configuration...');
     const response = await getConfigV2();
     return response;
   }
@@ -130,15 +128,12 @@ class EkaScribe {
   }
 
   async initTransaction(request: TStartRecordingRequest) {
-    console.log('Initializing transaction...');
-
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
   }
 
   async startRecording() {
-    console.log('Starting recording...');
     const startResponse = await startVoiceRecording();
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
     return startResponse;
@@ -148,29 +143,29 @@ class EkaScribe {
     this.vadInstance.reinitializeVad();
   }
 
+  destroyVad() {
+    this.vadInstance.destroyVad();
+  }
+
   pauseRecording() {
-    console.log('Pausing recording...');
     const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
     return pauseRecordingResponse;
   }
 
   resumeRecording() {
-    console.log('Resuming recording...');
     const resumeRecordingResponse = resumeVoiceRecording();
     console.log('%c Line:124 🌶 resumeRecordingResponse', 'color:#33a5ff', resumeRecordingResponse);
     return resumeRecordingResponse;
   }
 
   async endRecording() {
-    console.log('Ending recording...');
     const endRecordingResponse = await endVoiceRecording();
     console.log('%c Line:131 🍅 endRecordingResponse', 'color:#e41a6a', endRecordingResponse);
     return endRecordingResponse;
   }
 
   async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
-    console.log('Retrying upload for failed files...');
     const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
     console.log('%c Line:138 🍖 retryUploadResponse', 'color:#3f7cff', retryUploadResponse);
     return retryUploadResponse;
@@ -192,7 +187,6 @@ class EkaScribe {
 
       return patchTransactionResponse;
     } catch (error) {
-      console.error('Error cancelling recording session:', error);
       return {
         code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to cancel recording session, ${error}`,
@@ -248,7 +242,6 @@ class EkaScribe {
         message: txnCommitMsg || 'Transaction committed successfully.',
       };
     } catch (error) {
-      console.error('Error in transaction commit: ', error);
       return {
         error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
@@ -271,7 +264,6 @@ class EkaScribe {
 
       return getStatusResponse;
     } catch (error) {
-      console.error('Error in fetching templates response: ', error);
       return {
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch output templates, ${error}`,
@@ -287,7 +279,6 @@ class EkaScribe {
 
       return transactionsResponse;
     } catch (error) {
-      console.error('Error cancelling recording session:', error);
       return {
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch previous transactions, ${error}`,
@@ -308,10 +299,24 @@ class EkaScribe {
   }
 
   resetEkaScribe() {
+    console.log(
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance,
+      EkaScribeStore,
+      'before reset ekascribe'
+    );
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();
     EkaScribeStore.resetStore();
+    console.log(
+      this.audioFileManagerInstance,
+      this.audioBufferInstance,
+      this.vadInstance,
+      EkaScribeStore,
+      'after reset ekascribe'
+    );
   }
 
   onError(callback: TErrorCallback) {
@@ -417,6 +422,11 @@ class EkaScribe {
   async searchSessionsByPatientName(request: TSearchSessionsByPatientRequest) {
     const searchSessionsByPatientNameResponse = await searchSessionsByPatient(request);
     return searchSessionsByPatientNameResponse;
+  }
+
+  async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
+    const uploadAudioFilesResponse = await postV1UploadAudioFiles(request);
+    return uploadAudioFilesResponse;
   }
 }
 

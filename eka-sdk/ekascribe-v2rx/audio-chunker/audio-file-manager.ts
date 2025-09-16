@@ -123,12 +123,10 @@ class AudioFileManager {
 
         switch (workerResponse.action) {
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
-            console.log('AWS configured successfully in worker');
             return;
           }
 
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR: {
-            console.error('Error configuring AWS in worker:', workerResponse.error);
             return;
           }
 

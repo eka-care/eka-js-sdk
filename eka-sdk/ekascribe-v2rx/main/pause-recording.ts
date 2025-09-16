@@ -13,7 +13,6 @@ const pauseVoiceRecording = (): TPauseRecordingResponse => {
       throw new Error('Class instances are not initialized');
     }
 
-    console.log(vadInstance, 'vad in pause recording');
     vadInstance.pauseVad();
 
     const txn_id = EkaScribeStore.txnID;

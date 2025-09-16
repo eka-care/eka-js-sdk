@@ -4,6 +4,7 @@ const DEV = {
   EKA_VOICE_HOST_V2: 'https://v2rxbe.dev.eka.care/voice/api/v2',
   EKA_VOICE_HOST_V3: 'https://v2rxbe.dev.eka.care/voice/api/v3',
   COOK_V1: ' https://deepthought-genai.dev.eka.care/api/v1',
+  EKA_HOST: 'https://api.dev.eka.care',
 };
 
 const PROD = {
@@ -12,6 +13,7 @@ const PROD = {
   EKA_VOICE_HOST_V2: 'https://api.eka.care/voice/api/v2',
   EKA_VOICE_HOST_V3: 'https://api.eka.care/voice/api/v3',
   COOK_V1: ' https://cook.eka.care/api/v1',
+  EKA_HOST: 'https://api.eka.care',
 };
 
 let envVar = PROD;
@@ -45,5 +47,6 @@ export const GET_EKA_VOICE_HOST_V2 = () => envVar.EKA_VOICE_HOST_V2;
 export const GET_EKA_VOICE_HOST_V3 = () => envVar.EKA_VOICE_HOST_V3;
 export const GET_COOK_HOST_V1 = () => envVar.COOK_V1;
 export const GET_COG_HOST = () => envVar.COG_HOST;
+export const GET_EKA_HOST = () => envVar.EKA_HOST;
 
 export default setEnv;
