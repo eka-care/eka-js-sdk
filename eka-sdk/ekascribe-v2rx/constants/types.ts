@@ -54,7 +54,7 @@ export type TConfigSettings = {
 export type TStartRecordingRequest = {
   mode: string;
   input_language: string[];
-  output_format_template: { template_id: string }[];
+  output_format_template: { template_id: string; template_name: string; template_type?: string }[];
   txn_id: string;
   auto_download: boolean;
   model_training_consent: boolean;
@@ -123,7 +123,7 @@ export type TPostTransactionInitRequest = {
   s3Url?: string;
   txn_id: string;
   input_language: string[];
-  output_format_template: { template_id: string }[];
+  output_format_template: { template_id: string; template_name: string; template_type?: string }[];
   transfer: string;
   auto_download: boolean;
   model_training_consent: boolean;
