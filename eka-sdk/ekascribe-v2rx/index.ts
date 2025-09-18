@@ -307,11 +307,6 @@ class EkaScribe {
       'before reset ekascribe'
     );
 
-    // First, stop any ongoing operations
-    if (this.vadInstance) {
-      this.vadInstance.pauseVad(); // Stop recording first
-    }
-
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();
