@@ -54,7 +54,7 @@ export type TConfigSettings = {
 export type TStartRecordingRequest = {
   mode: string;
   input_language: string[];
-  output_format_template: { template_id: string; template_name: string; template_type?: string }[];
+  output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
   txn_id: string;
   auto_download: boolean;
   model_training_consent: boolean;
@@ -123,7 +123,7 @@ export type TPostTransactionInitRequest = {
   s3Url?: string;
   txn_id: string;
   input_language: string[];
-  output_format_template: { template_id: string; template_name: string; template_type?: string }[];
+  output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
   transfer: string;
   auto_download: boolean;
   model_training_consent: boolean;
@@ -389,4 +389,21 @@ export type TPostV1FileUploadResponse = {
   code?: number;
   message?: string;
   error?: { code: string; message: string };
+};
+
+export type TPatchVoiceApiV3StatusResponse = {
+  status: string;
+  message: string;
+  txn_id: string;
+  b_id: string;
+  code: number;
+  error?: { code: string; message: string; display_message: string };
+};
+
+export type TPatchVoiceApiV3StatusRequest = {
+  txnId: string;
+  data: {
+    'template-id': string;
+    data: string;
+  }[];
 };

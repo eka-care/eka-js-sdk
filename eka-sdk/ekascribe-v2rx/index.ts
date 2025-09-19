@@ -55,6 +55,7 @@ import searchSessionsByPatient, {
   TSearchSessionsByPatientRequest,
 } from './utils/search-sessions-by-patient-name';
 import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
+import { patchVoiceApiV3Status } from './api/transaction/patch-voice-api-v3-status';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -147,6 +148,10 @@ class EkaScribe {
     this.vadInstance.destroyVad();
   }
 
+  pauseVad() {
+    this.vadInstance.pauseVad();
+  }
+
   pauseRecording() {
     const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
@@ -177,6 +182,7 @@ class EkaScribe {
     processing_error,
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
+      this.vadInstance.pauseVad();
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
         processing_status,
@@ -429,6 +435,11 @@ class EkaScribe {
   async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
     const uploadAudioFilesResponse = await postV1UploadAudioFiles(request);
     return uploadAudioFilesResponse;
+  }
+
+  async updateResultSummary(request: TPatchVoiceApiV3StatusRequest) {
+    const updateResultSummaryResponse = await patchVoiceApiV3Status(request);
+    return updateResultSummaryResponse;
   }
 }
 

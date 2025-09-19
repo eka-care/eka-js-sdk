@@ -296,7 +296,10 @@ class VadWebClient {
    * End VAD
    */
   destroyVad() {
-    this.micVad.destroy();
+    // Properly destroy MicVAD instance
+    if (this.micVad && typeof this.micVad.destroy === 'function') {
+      this.micVad.destroy();
+    }
     this.recording_started = false;
   }
 
@@ -304,6 +307,11 @@ class VadWebClient {
    * reset vadWeb instance
    */
   resetVadWebInstance() {
+    // First, stop any ongoing operations
+    // if (this.micVad && typeof this.micVad.pause === 'function') {
+    //   this.micVad.pause(); // Stop recording first
+    // }
+
     // Properly destroy MicVAD instance
     if (this.micVad && typeof this.micVad.destroy === 'function') {
       this.micVad.destroy();
@@ -318,7 +326,7 @@ class VadWebClient {
     this.lastWarningTime = null;
     this.recording_started = false;
     this.is_vad_loading = true; // Reset to initial state
-    this.micVad = {} as MicVAD; // Clear the instance
+    // this.micVad = {} as MicVAD; // Clear the instance
 
     if (EkaScribeStore.errorCallback) {
       EkaScribeStore.errorCallback({
