@@ -24,6 +24,7 @@ import {
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
+  TPatchVoiceApiV3StatusRequest,
   TPostTransactionResponse,
   TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
