@@ -24,6 +24,7 @@ import {
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
+  TPatchVoiceApiV3StatusRequest,
   TPostTransactionResponse,
   TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
@@ -55,6 +56,7 @@ import searchSessionsByPatient, {
   TSearchSessionsByPatientRequest,
 } from './utils/search-sessions-by-patient-name';
 import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
+import { patchVoiceApiV3Status } from './api/transaction/patch-voice-api-v3-status';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -106,8 +108,6 @@ class EkaScribe {
       EkaScribe.instance = new EkaScribe();
     }
 
-    console.log('EkaScribe.instance', EkaScribe.instance);
-
     return EkaScribe.instance;
   }
 
@@ -147,6 +147,10 @@ class EkaScribe {
     this.vadInstance.destroyVad();
   }
 
+  pauseVad() {
+    this.vadInstance.pauseVad();
+  }
+
   pauseRecording() {
     const pauseRecordingResponse = pauseVoiceRecording();
     console.log('%c Line:117 🍌 pauseRecordingResponse', 'color:#6ec1c2', pauseRecordingResponse);
@@ -177,6 +181,7 @@ class EkaScribe {
     processing_error,
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
+      this.vadInstance.pauseVad();
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
         processing_status,
@@ -306,9 +311,11 @@ class EkaScribe {
       EkaScribeStore,
       'before reset ekascribe'
     );
+
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();
+
     EkaScribeStore.resetStore();
     console.log(
       this.audioFileManagerInstance,
@@ -427,6 +434,11 @@ class EkaScribe {
   async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
     const uploadAudioFilesResponse = await postV1UploadAudioFiles(request);
     return uploadAudioFilesResponse;
+  }
+
+  async updateResultSummary(request: TPatchVoiceApiV3StatusRequest) {
+    const updateResultSummaryResponse = await patchVoiceApiV3Status(request);
+    return updateResultSummaryResponse;
   }
 }
 

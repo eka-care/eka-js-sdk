@@ -123,15 +123,17 @@ class AudioFileManager {
 
         switch (workerResponse.action) {
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
+            // Callback
             return;
           }
 
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR: {
+            // Callback
             return;
           }
 
           case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS: {
-            console.log('File uploaded successfully in worker:', workerResponse.response);
+            // Callback
             const {
               fileCount: fileName,
               chunkIndex,
@@ -289,6 +291,7 @@ class AudioFileManager {
       businessID: this.businessID,
       is_shared_worker: false,
     }).then((response) => {
+      // callback
       if (response.success) {
         this.successfulUploads.push(fileName);
 
@@ -538,6 +541,7 @@ class AudioFileManager {
       this.audioChunks.forEach((chunk, index) => {
         const { fileName, fileBlob, status, audioFrames } = chunk;
         if (status != 'success') {
+          // callback
           this.sharedWorkerInstance?.port.postMessage({
             action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
             payload: {
@@ -566,6 +570,7 @@ class AudioFileManager {
         const { fileName, fileBlob, status, audioFrames } = chunk;
 
         if (status != 'success') {
+          // callback
           let failedFileBlob: Blob | undefined;
 
           if (status === 'failure') {
@@ -626,7 +631,27 @@ class AudioFileManager {
    * Reset the upload state
    */
   resetFileManagerInstance(): void {
+    // Cancel all pending uploads
+    this.uploadPromises.forEach((promise) => {
+      // Note: Promises can't be cancelled, but we can ignore their results
+      promise.catch(() => {}); // Prevent unhandled rejections
+    });
+
+    // Terminate SharedWorker
+    if (this.sharedWorkerInstance) {
+      this.sharedWorkerInstance.port.close();
+      this.sharedWorkerInstance = null;
+    }
+
+    // Clear all state
     this.initialiseClassInstance();
+
+    // Reset additional properties not covered by initialiseClassInstance
+    this.txnID = '';
+    this.filePath = '';
+    this.businessID = '';
+    this.isAWSConfigured = false;
+    this.onProgressCallback = undefined;
   }
 }
 

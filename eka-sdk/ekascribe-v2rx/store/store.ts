@@ -93,6 +93,9 @@ class EkaScribeStore {
     this._txnID = '';
     this._sessionBucketPath = '';
     this._sessionStatus = {};
+    // Clear callbacks
+    this._errorCallback = null;
+    this._userSpeechCallback = null;
   }
 }
 

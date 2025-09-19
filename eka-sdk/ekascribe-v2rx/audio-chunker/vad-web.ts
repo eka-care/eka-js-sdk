@@ -296,7 +296,10 @@ class VadWebClient {
    * End VAD
    */
   destroyVad() {
-    this.micVad.destroy();
+    // Properly destroy MicVAD instance
+    if (this.micVad && typeof this.micVad.destroy === 'function') {
+      this.micVad.destroy();
+    }
     this.recording_started = false;
   }
 
@@ -304,6 +307,17 @@ class VadWebClient {
    * reset vadWeb instance
    */
   resetVadWebInstance() {
+    // First, stop any ongoing operations
+    // if (this.micVad && typeof this.micVad.pause === 'function') {
+    //   this.micVad.pause(); // Stop recording first
+    // }
+
+    // Properly destroy MicVAD instance
+    if (this.micVad && typeof this.micVad.destroy === 'function') {
+      this.micVad.destroy();
+    }
+
+    // Reset VAD state
     this.vad_past = [];
     this.last_clip_index = 0;
     this.clip_points = [0];
@@ -311,8 +325,9 @@ class VadWebClient {
     this.noSpeechStartTime = null;
     this.lastWarningTime = null;
     this.recording_started = false;
+    this.is_vad_loading = true; // Reset to initial state
+    // this.micVad = {} as MicVAD; // Clear the instance
 
-    // TODO: will handle this - dont pass this callback - handle it properly - clear the error callback on client side on resetEkascribe
     if (EkaScribeStore.errorCallback) {
       EkaScribeStore.errorCallback({
         error_code: ERROR_CODE.SPEECH_DETECTED,
