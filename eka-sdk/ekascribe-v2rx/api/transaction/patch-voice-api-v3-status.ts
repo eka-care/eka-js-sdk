@@ -31,7 +31,7 @@ export const patchVoiceApiV3Status = async ({
 
     return {
       ...response,
-      status_code: getResponse.status,
+      code: getResponse.status,
     };
   } catch (error) {
     return {

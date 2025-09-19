@@ -108,8 +108,6 @@ class EkaScribe {
       EkaScribe.instance = new EkaScribe();
     }
 
-    console.log('EkaScribe.instance', EkaScribe.instance);
-
     return EkaScribe.instance;
   }
 
