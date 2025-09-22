@@ -1,7 +1,7 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
-import { TErrorCallback, TSessionStatus } from '../constants/types';
+import { TErrorCallback, TEventCallback, TSessionStatus } from '../constants/types';
 
 class EkaScribeStore {
   private static instance: EkaScribeStore;
@@ -13,6 +13,7 @@ class EkaScribeStore {
   private _sessionStatus: TSessionStatus = {};
   private _errorCallback: TErrorCallback | null = null;
   private _userSpeechCallback: ((isSpeech: boolean) => void) | null = null;
+  private _eventCallback: TEventCallback | null = null;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -88,6 +89,14 @@ class EkaScribeStore {
     this._userSpeechCallback = callback;
   }
 
+  // Event Callback
+  get eventCallback(): TEventCallback | null {
+    return this._eventCallback;
+  }
+  set eventCallback(callback: TEventCallback | null) {
+    this._eventCallback = callback;
+  }
+
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
@@ -96,6 +105,7 @@ class EkaScribeStore {
     // Clear callbacks
     this._errorCallback = null;
     this._userSpeechCallback = null;
+    this._eventCallback = null;
   }
 }
 

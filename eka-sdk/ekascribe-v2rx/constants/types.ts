@@ -1,4 +1,4 @@
-import { ERROR_CODE } from './enums';
+import { ERROR_CODE, CALLBACK_TYPE } from './enums';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -260,17 +260,28 @@ export type TSessionStatus = {
   };
 };
 
-export type TFileUploadProgressCallback = (args: {
-  success: number;
-  total: number;
-  is_uploaded?: boolean;
-  fileName?: string;
-  chunkData?: Uint8Array<ArrayBufferLike>[];
+// Generic callback type that can handle any data structure
+export type TEventCallback = (args: {
+  callback_type: CALLBACK_TYPE;
+  status: 'success' | 'error' | 'progress' | 'info';
+  message: string;
   error?: {
     code: number;
     msg: string;
+    details?: unknown;
   };
+  data?: TFileUploadCallbackData;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
 }) => void;
+
+export type TFileUploadCallbackData = {
+  success?: number;
+  total?: number;
+  is_uploaded?: boolean;
+  fileName?: string;
+  chunkData?: Uint8Array<ArrayBufferLike>[];
+};
 
 export interface TPostV1TemplateRequest {
   title: string;

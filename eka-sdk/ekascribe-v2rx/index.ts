@@ -20,7 +20,7 @@ import { ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TErrorCallback,
-  TFileUploadProgressCallback,
+  TEventCallback,
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
@@ -334,8 +334,9 @@ class EkaScribe {
     EkaScribeStore.userSpeechCallback = callback;
   }
 
-  onFileUploadProgressCallback(callback: TFileUploadProgressCallback) {
-    this.audioFileManagerInstance.setProgressCallback(callback);
+  onEventCallback(callback: TEventCallback) {
+    EkaScribeStore.eventCallback = callback;
+    // this.audioFileManagerInstance.setProgressCallback(callback);
   }
 
   configureVadConstants({
