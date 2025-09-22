@@ -1,7 +1,7 @@
 import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import postTransactionStop from '../api/transaction/post-transaction-stop';
 import { OUTPUT_FORMAT, SDK_STATUS_CODE } from '../constants/constant';
-import { ERROR_CODE } from '../constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo, TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -11,6 +11,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
     const vadInstance = EkaScribeStore.vadInstance;
     const txnID = EkaScribeStore.txnID;
+    const onEventCallback = EkaScribeStore.eventCallback;
 
     if (!fileManagerInstance || !audioBufferInstance || !vadInstance) {
       throw new Error('Class instances are not initialized');
@@ -74,6 +75,18 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         txnId: txnID,
       });
 
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+          status: 'info',
+          message: `Transaction stop status: ${txnStopStatusCode}`,
+          timestamp: new Date().toISOString(),
+          data: {
+            request: audioFiles,
+          },
+        });
+      }
+
       if (txnStopStatusCode != 200) {
         return {
           error_code: ERROR_CODE.TXN_STOP_FAILED,
@@ -127,6 +140,18 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         txnId: txnID,
         audioFiles,
       });
+
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+          status: 'info',
+          message: `Transaction commit status: ${txnCommitStatusCode}`,
+          timestamp: new Date().toISOString(),
+          data: {
+            request: audioFiles,
+          },
+        });
+      }
 
       if (txnCommitStatusCode != 200) {
         return {

@@ -1,6 +1,6 @@
 import postTransactionInit from '../api/transaction/post-transaction-init';
 import { S3_BUCKET_NAME, SDK_STATUS_CODE } from '../constants/constant';
-import { ERROR_CODE } from '../constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TStartRecordingRequest, TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -11,6 +11,7 @@ const initialiseTransaction = async (
     const { txn_id } = request;
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
     const sessionStatus = EkaScribeStore.sessionStatus;
+    const onEventCallback = EkaScribeStore.eventCallback;
     let businessID = '';
     let userOID = '';
     let userUUID = '';
@@ -44,6 +45,15 @@ const initialiseTransaction = async (
         message: txnInitMessage,
         error: txnInitError,
       } = txnInitResponse;
+
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+          status: 'info',
+          message: `Transaction init status: ${txnInitStatusCode}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
       if (txnInitStatusCode === 400 && txnInitError?.code === ERROR_CODE.TXN_LIMIT_EXCEEDED) {
         return {
