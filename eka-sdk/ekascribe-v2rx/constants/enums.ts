@@ -61,5 +61,4 @@ export enum CALLBACK_TYPE {
   AUTHENTICATION_STATUS = 'authentication_status',
   NETWORK_STATUS = 'network_status',
   STORAGE_STATUS = 'storage_status',
-  VAD_AUDIO_STATUS = 'vad_audio_status',
 }

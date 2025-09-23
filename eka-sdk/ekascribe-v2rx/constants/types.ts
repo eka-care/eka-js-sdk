@@ -238,11 +238,10 @@ export type TAudioChunksInfo = {
 
 export type UploadProgressCallback = (success: string[], total: number) => void;
 
-export type TErrorCallback = (args: {
+export type TVadFramesCallback = (args: {
   error_code?: ERROR_CODE;
   status_code: number;
-  success_message?: string;
-  error_message?: string;
+  message?: string;
   request?: string;
 }) => void;
 
@@ -270,12 +269,12 @@ export type TEventCallback = (args: {
     msg: string;
     details?: unknown;
   };
-  data?: TFileUploadCallbackData;
+  data?: TEventCallbackData;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }) => void;
 
-export type TFileUploadCallbackData = {
+export type TEventCallbackData = {
   success?: number;
   total?: number;
   is_uploaded?: boolean;

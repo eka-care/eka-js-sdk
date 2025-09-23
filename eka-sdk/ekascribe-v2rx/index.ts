@@ -30,6 +30,7 @@ import {
   TPostV1TemplateSectionRequest,
   TPostV1UploadAudioFilesRequest,
   TStartRecordingRequest,
+  TVadFramesCallback,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
@@ -356,6 +357,10 @@ class EkaScribe {
   onEventCallback(callback: TEventCallback) {
     EkaScribeStore.eventCallback = callback;
     // this.audioFileManagerInstance.setProgressCallback(callback);
+  }
+
+  onVadFramesCallback(callback: TVadFramesCallback) {
+    EkaScribeStore.vadFramesCallback = callback;
   }
 
   configureVadConstants({
