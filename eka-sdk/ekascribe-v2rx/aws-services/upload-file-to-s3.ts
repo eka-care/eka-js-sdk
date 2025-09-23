@@ -62,7 +62,7 @@ const pushFileToS3 = async ({
 
     if (error.statusCode && error.statusCode >= 400) {
       return {
-        error: `Expired token. Please re-authenticate! ${err}`,
+        error: `Expired token! ${err}`,
         errorCode: 'ExpiredToken',
         code: error.statusCode,
       };

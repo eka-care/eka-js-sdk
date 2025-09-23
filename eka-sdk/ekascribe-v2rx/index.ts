@@ -19,7 +19,6 @@ import {
 import { CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
-  TErrorCallback,
   TEventCallback,
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
