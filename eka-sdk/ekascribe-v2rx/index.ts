@@ -350,10 +350,6 @@ class EkaScribe {
     );
   }
 
-  onError(callback: TErrorCallback) {
-    EkaScribeStore.errorCallback = callback;
-  }
-
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
     EkaScribeStore.userSpeechCallback = callback;
   }

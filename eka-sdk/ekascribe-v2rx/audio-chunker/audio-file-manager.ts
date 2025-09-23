@@ -156,6 +156,8 @@ class AudioFileManager {
                 message: 'Audioframes of chunk to store in IDB',
                 timestamp: new Date().toISOString(),
                 data: {
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
                   fileName,
                   chunkData: compressedAudioBuffer,
                 },
@@ -200,6 +202,10 @@ class AudioFileManager {
                     code: workerResponse.response.code,
                     msg: workerResponse.response.error,
                     details: workerResponse.response.errorCode,
+                  },
+                  data: {
+                    fileName,
+                    is_uploaded: false,
                   },
                 });
               }
@@ -368,6 +374,10 @@ class AudioFileManager {
               code: response.code || 500,
               msg: response.error || 'Upload failed',
               details: response.errorCode,
+            },
+            data: {
+              fileName,
+              is_uploaded: false,
             },
           });
         }

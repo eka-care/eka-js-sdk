@@ -287,6 +287,8 @@ export type TTransactionCallbackData = {
   txn_id?: string;
   request?: unknown;
   response?: unknown;
+  status_code?: number;
+  error_code?: ERROR_CODE;
 };
 
 export interface TPostV1TemplateRequest {

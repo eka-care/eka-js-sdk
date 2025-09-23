@@ -1,7 +1,6 @@
 import { GET_CLIENT_ID, GET_AUTH_TOKEN } from './helper';
 import EkaScribeStore from '../store/store';
-import { ERROR_CODE } from '../constants/enums';
-import { SDK_STATUS_CODE } from '../constants/constant';
+import { CALLBACK_TYPE } from '../constants/enums';
 
 const API_TIMEOUT_MS = 10000;
 
@@ -10,7 +9,7 @@ export default async function fetchWrapper(
   options: RequestInit | undefined = {},
   timeoutMs: number = API_TIMEOUT_MS
 ): Promise<Response> {
-  const errorCallback = EkaScribeStore.errorCallback;
+  const onEventCallback = EkaScribeStore.eventCallback;
   const controller = new AbortController();
   let timeoutId: NodeJS.Timeout | null = null;
 
@@ -37,12 +36,16 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
-    if (errorCallback) {
-      errorCallback({
-        error_code: ERROR_CODE.FETCH_WRAPPER_RESPONSE,
-        status_code: response.status,
-        success_message: 'Fetch wrapper response: ' + JSON.stringify(response),
-        request: 'Request body: ' + JSON.stringify(options.body),
+    if (onEventCallback) {
+      onEventCallback({
+        callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
+        status: 'success',
+        message: 'Fetch wrapper response: ' + response.status,
+        timestamp: new Date().toISOString(),
+        data: {
+          request: 'Request body: ' + JSON.stringify(options.body),
+          response: 'Response body: ' + JSON.stringify(response),
+        },
       });
     }
 
@@ -50,12 +53,16 @@ export default async function fetchWrapper(
   } catch (error) {
     console.error(error, 'error in fetch wrapper - SDK');
 
-    if (errorCallback) {
-      errorCallback({
-        error_code: ERROR_CODE.FETCH_WRAPPER_ERROR,
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        error_message: 'Fetch wrapper response: ' + JSON.stringify(error),
-        request: 'Request body: ' + JSON.stringify(options.body),
+    if (onEventCallback) {
+      onEventCallback({
+        callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
+        status: 'error',
+        message: 'Fetch wrapper response: ' + error,
+        timestamp: new Date().toISOString(),
+        data: {
+          request: 'Request body: ' + JSON.stringify(options.body),
+          response: 'Error body: ' + JSON.stringify(error),
+        },
       });
     }
     throw error;

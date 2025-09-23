@@ -1,7 +1,7 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
-import { TErrorCallback, TEventCallback, TSessionStatus } from '../constants/types';
+import { TEventCallback, TSessionStatus } from '../constants/types';
 
 class EkaScribeStore {
   private static instance: EkaScribeStore;
@@ -11,7 +11,6 @@ class EkaScribeStore {
   private _audioFileManagerInstance: AudioFileManager | null = null; // AudioFileManager Instance
   private _audioBufferInstance: AudioBufferManager | null = null; // AudioBuffer Instance
   private _sessionStatus: TSessionStatus = {};
-  private _errorCallback: TErrorCallback | null = null;
   private _userSpeechCallback: ((isSpeech: boolean) => void) | null = null;
   private _eventCallback: TEventCallback | null = null;
 
@@ -73,14 +72,6 @@ class EkaScribeStore {
     this._sessionStatus = value;
   }
 
-  // Error Callback
-  get errorCallback(): TErrorCallback | null {
-    return this._errorCallback;
-  }
-  set errorCallback(callback: TErrorCallback | null) {
-    this._errorCallback = callback;
-  }
-
   // User Speech Callback
   get userSpeechCallback(): ((isSpeech: boolean) => void) | null {
     return this._userSpeechCallback;
@@ -103,7 +94,6 @@ class EkaScribeStore {
     this._sessionBucketPath = '';
     this._sessionStatus = {};
     // Clear callbacks
-    this._errorCallback = null;
     this._userSpeechCallback = null;
     this._eventCallback = null;
   }
