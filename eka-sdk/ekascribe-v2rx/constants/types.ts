@@ -270,7 +270,7 @@ export type TEventCallback = (args: {
     msg: string;
     details?: unknown;
   };
-  data?: TFileUploadCallbackData | TTransactionCallbackData;
+  data?: TFileUploadCallbackData;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }) => void;
@@ -281,10 +281,6 @@ export type TFileUploadCallbackData = {
   is_uploaded?: boolean;
   fileName?: string;
   chunkData?: Uint8Array<ArrayBufferLike>[];
-};
-
-export type TTransactionCallbackData = {
-  txn_id?: string;
   request?: unknown;
   response?: unknown;
   status_code?: number;
