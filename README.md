@@ -825,23 +825,6 @@ Use this method to update the access token without reinitializing the entire SDK
 ekaScribe.updateAuthTokens({ access_token: 'new_token' });
 ```
 
-### 9. Configure VAD Constants
-
-Use this method to configure Voice Activity Detection parameters for fine-tuning audio processing.
-
-```ts
-ekaScribe.configureVadConstants({
-  pref_length: 1000,
-  desp_length: 500,
-  max_length: 2000,
-  sr: 16000,
-  frame_size: 512,
-  pre_speech_pad_frames: 10,
-  short_thsld: 0.5,
-  long_thsld: 0.8,
-});
-```
-
 ## Generic Callbacks
 
 ```ts
