@@ -41,7 +41,7 @@ export default async function fetchWrapper(
         onEventCallback({
           callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
           status: 'error',
-          message: 'Fetch wrapper response: ' + response.ok + response.status,
+          message: 'Fetch wrapper error: ' + response.ok + response.status,
           timestamp: new Date().toISOString(),
           data: {
             request: 'Request body: ' + JSON.stringify(options.body),
