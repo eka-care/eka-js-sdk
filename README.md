@@ -32,10 +32,6 @@ yarn add @eka-care/ekascribe-ts-sdk
 
 ## Usage
 
-```ts
-const ekaScribe = getEkaScribeInstance({ access_token: 'old_token' });
-```
-
 ### 1. Get Ekascribe Instance
 
 It will give you the main class instance, use this instance to access all methods
@@ -44,6 +40,10 @@ It will give you the main class instance, use this instance to access all method
 getEkaScribeInstance({
   access_token: '<your_access_token>',
 });
+```
+
+```ts
+const ekaScribe = getEkaScribeInstance({ access_token: 'old_token' });
 ```
 
 ### 2. Fetch configurations list
