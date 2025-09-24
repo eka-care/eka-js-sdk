@@ -56,7 +56,7 @@ ekascribe.getEkascribeConfig();
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "data": {
     "supported_languages": [
@@ -124,7 +124,7 @@ await ekascribe.initTransaction({
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "Transaction initialized successfully",
@@ -145,7 +145,7 @@ await ekascribe.startRecording();
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "Recording started successfully",
@@ -164,7 +164,7 @@ await ekascribe.pauseRecording();
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "Recording paused successfully",
@@ -183,7 +183,7 @@ await ekascribe.resumeRecording();
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "Recording resumed successfully",
@@ -202,7 +202,7 @@ await ekascribe.endRecording();
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "Recording ended and files uploaded successfully",
@@ -222,7 +222,7 @@ await ekascribe.retryUploadRecording({ force_commit: true });
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status_code": 200,
   "message": "All files uploaded successfully after retry",
@@ -258,7 +258,7 @@ await ekascribe.patchSessionStatus({
 
 - #### Sample Response:
 
-```json
+```ts
 {
   "status": "success",
   "message": "Session status updated successfully",
