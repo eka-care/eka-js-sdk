@@ -36,11 +36,11 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
-    if (onEventCallback) {
+    if (onEventCallback && !response.ok) {
       onEventCallback({
         callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
         status: 'success',
-        message: 'Fetch wrapper response: ' + response.status,
+        message: 'Fetch wrapper response: ' + response.ok + response.status,
         timestamp: new Date().toISOString(),
         data: {
           request: 'Request body: ' + JSON.stringify(options.body),
