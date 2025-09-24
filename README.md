@@ -476,16 +476,13 @@ const aiTemplate = await ekascribe.aiGenerateTemplate(formData);
 }
 ```
 
-### 19. Add templates to list - EDIT
+### 19. Add templates to list
 
-Use this method to update user preferences and configuration settings.
+Use this method to mark templates as favourite templates.
 
 ```ts
 const configUpdate = await ekascribe.updateConfig({
-  auto_download: true,
-  default_languages: ['en', 'hi'],
   my_templates: ['template1', 'template2'],
-  scribe_enabled: true,
 });
 ```
 
@@ -847,12 +844,46 @@ ekaScribe.configureVadConstants({
 
 ## Generic Callbacks
 
+```ts
+const ekaScribe = getEkaScribeInstance({ access_token: 'your_token' });
+```
+
 ### 1. Event callback
 
-Whenever an error occurs in the SDK during voice recording, the following callback will be triggered. You can listen to this to handle errors globally.
+This is a comprehensive callback that provides information about SDK operations, including success events, errors, progress updates, and system status. Use this callback to monitor all SDK activities and handle events globally in your application.
 
 ```ts
-onEventCallback;
+ekaScribe.onEventCallback((eventData) => {
+  console.log('Event callback triggered:', eventData);
+});
+```
+
+- #### Sample Callback Data:
+
+```ts
+{
+  callback_type: 'AUDIO_UPLOAD' | 'TRANSACTION_STATUS' | 'VAD_STATUS' | 'RECORDING_STATUS',
+  status: 'success' | 'error' | 'progress' | 'info',
+  message: 'Audio file uploaded successfully',
+  error?: {
+    code: 500,
+    msg: 'Upload failed',
+    details: { fileName: 'audio_chunk_1.mp3' }
+  },
+  data?: {
+    success: 3,
+    total: 4,
+    is_uploaded: true,
+    fileName: 'audio_chunk_1.mp3',
+    request: { txn_id: 'abc-123' },
+    response: { status: 'uploaded' }
+  },
+  timestamp: '2024-01-15T10:30:45.123Z',
+  metadata?: {
+    txn_id: 'abc-123',
+    chunk_index: 1
+  }
+}
 ```
 
 ### 2. User speech callback
@@ -860,17 +891,29 @@ onEventCallback;
 This callback will return a boolean indicating whether the user is speaking or not.
 
 ```ts
-onUserSpeechCallback((isSpeech) => {
-  console.error(isSpeech ? 'User is speaking' : 'User is not speaking');
+ekaScribe.onUserSpeechCallback((isSpeech) => {
+  console.log(isSpeech ? 'User is speaking' : 'User is not speaking');
 });
 ```
 
-### 3. VAD Callback to check speech or not for a frame
+### 3. VAD Callback to check if a frame is valid speech or not
 
-This callback provides the number of successfully uploaded files, the total number of files, the filename, and the chunk data for a particular file.
+This callback provides information about voice activity detection frames and audio processing status.
 
 ```ts
-onVadFramesCallback;
+ekaScribe.onVadFramesCallback((vadData) => {
+  console.log('VAD frame processed:', vadData);
+});
+```
+
+- #### Sample Callback Data:
+
+```ts
+{
+  status_code: 200,
+  message: 'Audio captured. | No audio captured.',
+  error_code?: 'speech_detected' | 'no_audio_capture'
+}
 ```
 
 ### Error codes
