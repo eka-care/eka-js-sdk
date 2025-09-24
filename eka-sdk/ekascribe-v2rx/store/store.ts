@@ -1,7 +1,7 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
-import { TErrorCallback, TSessionStatus } from '../constants/types';
+import { TEventCallback, TSessionStatus, TVadFramesCallback } from '../constants/types';
 
 class EkaScribeStore {
   private static instance: EkaScribeStore;
@@ -11,8 +11,9 @@ class EkaScribeStore {
   private _audioFileManagerInstance: AudioFileManager | null = null; // AudioFileManager Instance
   private _audioBufferInstance: AudioBufferManager | null = null; // AudioBuffer Instance
   private _sessionStatus: TSessionStatus = {};
-  private _errorCallback: TErrorCallback | null = null;
   private _userSpeechCallback: ((isSpeech: boolean) => void) | null = null;
+  private _eventCallback: TEventCallback | null = null;
+  private _vadFramesCallback: TVadFramesCallback | null = null;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -72,14 +73,6 @@ class EkaScribeStore {
     this._sessionStatus = value;
   }
 
-  // Error Callback
-  get errorCallback(): TErrorCallback | null {
-    return this._errorCallback;
-  }
-  set errorCallback(callback: TErrorCallback | null) {
-    this._errorCallback = callback;
-  }
-
   // User Speech Callback
   get userSpeechCallback(): ((isSpeech: boolean) => void) | null {
     return this._userSpeechCallback;
@@ -88,14 +81,31 @@ class EkaScribeStore {
     this._userSpeechCallback = callback;
   }
 
+  // Event Callback
+  get eventCallback(): TEventCallback | null {
+    return this._eventCallback;
+  }
+  set eventCallback(callback: TEventCallback | null) {
+    this._eventCallback = callback;
+  }
+
+  // Vad Frames Callback
+  get vadFramesCallback(): TVadFramesCallback | null {
+    return this._vadFramesCallback;
+  }
+  set vadFramesCallback(callback: TVadFramesCallback | null) {
+    this._vadFramesCallback = callback;
+  }
+
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
     this._sessionBucketPath = '';
     this._sessionStatus = {};
     // Clear callbacks
-    this._errorCallback = null;
     this._userSpeechCallback = null;
+    this._eventCallback = null;
+    this._vadFramesCallback = null;
   }
 }
 

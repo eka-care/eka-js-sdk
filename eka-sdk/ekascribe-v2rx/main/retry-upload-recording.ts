@@ -1,6 +1,6 @@
 import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { ERROR_CODE } from '../constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -11,6 +11,7 @@ const retryUploadFailedFiles = async ({
 }): Promise<TEndRecordingResponse> => {
   try {
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;
+    const onEventCallback = EkaScribeStore.eventCallback;
 
     if (!fileManagerInstance) {
       throw new Error('Class instances are not initialized');
@@ -40,6 +41,18 @@ const retryUploadFailedFiles = async ({
         txnId: EkaScribeStore.txnID,
         audioFiles,
       });
+
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+          status: 'info',
+          message: `Transaction commit status: ${txnCommitStatusCode}`,
+          timestamp: new Date().toISOString(),
+          data: {
+            request: audioFiles,
+          },
+        });
+      }
 
       if (txnCommitStatusCode != 200) {
         return {

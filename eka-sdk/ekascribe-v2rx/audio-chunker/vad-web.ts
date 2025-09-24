@@ -61,7 +61,7 @@ class VadWebClient {
     if (!this.recording_started) return;
 
     const now = Date.now();
-    const errorCallback = EkaScribeStore.errorCallback;
+    const onVadCallback = EkaScribeStore.vadFramesCallback;
     const silenceThreshold = 10000; // 10 seconds
 
     if (isSpeech === 0) {
@@ -77,12 +77,12 @@ class VadWebClient {
             this.lastWarningTime === null ||
             now - this.lastWarningTime >= this.warningCooldownPeriod
           ) {
-            if (errorCallback) {
-              errorCallback({
+            if (onVadCallback) {
+              onVadCallback({
+                message:
+                  'No audio detected for a while. Please talk or stop the recording if done.',
                 error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
                 status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-                error_message:
-                  'No audio detected for a while. Please talk or stop the recording if done.',
               });
             }
             this.lastWarningTime = now;
@@ -95,11 +95,11 @@ class VadWebClient {
       // Reset timers when speech is detected
       this.noSpeechStartTime = null;
       this.lastWarningTime = null;
-      if (errorCallback) {
-        errorCallback({
+      if (onVadCallback) {
+        onVadCallback({
+          message: 'Audio captured. Recording continues.',
           error_code: ERROR_CODE.SPEECH_DETECTED,
           status_code: SDK_STATUS_CODE.SUCCESS,
-          success_message: 'Audio captured. Recording continues.',
         });
       }
     }
@@ -327,14 +327,6 @@ class VadWebClient {
     this.recording_started = false;
     this.is_vad_loading = true; // Reset to initial state
     // this.micVad = {} as MicVAD; // Clear the instance
-
-    if (EkaScribeStore.errorCallback) {
-      EkaScribeStore.errorCallback({
-        error_code: ERROR_CODE.SPEECH_DETECTED,
-        status_code: SDK_STATUS_CODE.SUCCESS,
-        success_message: 'Audio captured. Recording continues.',
-      });
-    }
   }
 
   /**
@@ -343,16 +335,16 @@ class VadWebClient {
 
   monitorAudioCapture() {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
-    const errorCallback = EkaScribeStore.errorCallback;
+    const onVadCallback = EkaScribeStore.vadFramesCallback;
 
     setTimeout(() => {
       if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
         this.micVad.pause();
-        if (errorCallback) {
-          errorCallback({
+        if (onVadCallback) {
+          onVadCallback({
+            message: 'No audio is being captured. Please check your microphone.',
             error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
             status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-            error_message: 'No audio is being captured. Please check your microphone.',
           });
         }
         return false;

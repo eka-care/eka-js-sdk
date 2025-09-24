@@ -16,11 +16,10 @@ import {
   SAMPLING_RATE,
   SDK_STATUS_CODE,
 } from './constants/constant';
-import { ERROR_CODE } from './constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
-  TErrorCallback,
-  TFileUploadProgressCallback,
+  TEventCallback,
   TGetTransactionHistoryResponse,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
@@ -31,6 +30,7 @@ import {
   TPostV1TemplateSectionRequest,
   TPostV1UploadAudioFilesRequest,
   TStartRecordingRequest,
+  TVadFramesCallback,
 } from './constants/types';
 import setEnv from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
@@ -181,12 +181,23 @@ class EkaScribe {
     processing_error,
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
+      const onEventCallback = EkaScribeStore.eventCallback;
       this.vadInstance.pauseVad();
+
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
         processing_status,
         processing_error,
       });
+
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+          status: 'info',
+          message: `Transaction cancel status: ${patchTransactionResponse.code}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
       this.resetEkaScribe();
 
@@ -202,6 +213,7 @@ class EkaScribe {
   async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
       const txnID = EkaScribeStore.txnID;
+      const onEventCallback = EkaScribeStore.eventCallback;
       let txnCommitMsg = '';
 
       if (
@@ -216,6 +228,18 @@ class EkaScribe {
           txnId: EkaScribeStore.txnID,
         });
         txnCommitMsg = message;
+
+        if (onEventCallback) {
+          onEventCallback({
+            callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+            status: 'info',
+            message: `Transaction commit status: ${txnCommitStatusCode}`,
+            timestamp: new Date().toISOString(),
+            data: {
+              request: audioFiles,
+            },
+          });
+        }
 
         if (txnCommitStatusCode != 200) {
           return {
@@ -326,16 +350,17 @@ class EkaScribe {
     );
   }
 
-  onError(callback: TErrorCallback) {
-    EkaScribeStore.errorCallback = callback;
-  }
-
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
     EkaScribeStore.userSpeechCallback = callback;
   }
 
-  onFileUploadProgressCallback(callback: TFileUploadProgressCallback) {
-    this.audioFileManagerInstance.setProgressCallback(callback);
+  onEventCallback(callback: TEventCallback) {
+    EkaScribeStore.eventCallback = callback;
+    // this.audioFileManagerInstance.setProgressCallback(callback);
+  }
+
+  onVadFramesCallback(callback: TVadFramesCallback) {
+    EkaScribeStore.vadFramesCallback = callback;
   }
 
   configureVadConstants({

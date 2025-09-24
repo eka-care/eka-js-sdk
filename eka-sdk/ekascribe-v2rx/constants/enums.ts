@@ -52,3 +52,13 @@ export enum SHARED_WORKER_ACTION {
   WAIT_FOR_ALL_UPLOADS_SUCCESS = 'wait_for_all_uploads_success',
   WAIT_FOR_ALL_UPLOADS_ERROR = 'wait_for_all_uploads_error',
 }
+
+export enum CALLBACK_TYPE {
+  AWS_CONFIGURE_STATUS = 'aws_configure_status',
+  FILE_UPLOAD_STATUS = 'file_upload_status',
+  TRANSACTION_STATUS = 'transaction_status',
+  TEMPLATE_OPERATION_STATUS = 'template_operation_status',
+  AUTHENTICATION_STATUS = 'authentication_status',
+  NETWORK_STATUS = 'network_status',
+  STORAGE_STATUS = 'storage_status',
+}
