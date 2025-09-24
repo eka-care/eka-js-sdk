@@ -8,7 +8,7 @@ The Eka Care Ekascribe SDK allows you to capture and process audio, generating s
 
 ## Documentation
 
-[Visit the documentation site](https://developer.eka.care/api-reference/general-tools/medical/voice/SDKs/TS-sdk)
+[Visit the documentation site](https://developer.eka.care/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
 
 ## Prerequisites
 
@@ -25,21 +25,20 @@ Before getting started, ensure you have:
 Install the SDK using `npm` or `yarn`:
 
 ```bash
-npm install ekascribe-ts-sdk
+npm install @eka-care/ekascribe-ts-sdk
 # or
-yarn add ekascribe-ts-sdk
+yarn add @eka-care/ekascribe-ts-sdk
 ```
 
 ## Usage
 
-### 1. Initialize Ekascribe
+### 1. Get Ekascribe Instance
 
-Before using any other method, initialize the SDK with access and refresh tokens.
+It will give you the main class instance, use this instance to access all methods
 
 ```ts
-initEkascribe({
+getEkaScribeInstance({
   access_token: '<your_access_token>',
-  refresh_token: '<your_refresh_token>',
 });
 ```
 
@@ -97,6 +96,14 @@ await initTransaction({
   input_language: ['te', 'en'],
   output_format_template: [{ template_id: 'eka_emr_template' }],
   txn_id: 'abc-123',
+  auto_download: false,
+  model_training_consent: false,
+  transfer: 'vaded' | 'non-vaded',
+  model: 'pro' | 'lite',
+  system_info: {},
+  patient_details: {},
+  version: '1.0.0',
+  flavour: 'web' | 'extension',
 });
 ```
 
@@ -325,7 +332,37 @@ const sessions = await getSessionHistory({ txn_count: 10 });
 }
 ```
 
-### 14. Get total uploaded files
+### 14. Get All Templates
+
+### 15. Create Template
+
+### 16. Edit Template
+
+### 17. Delete Template
+
+### 18. Generate Template with AI by giving a prompt
+
+### 19. Add/Remove templates to list
+
+### 20. Get All Sections
+
+### 21. Create Section in a template
+
+### 22. Edit Section in a template
+
+### 23. Delete Section from a template
+
+### 24. Convert a template into another template after prescription generation
+
+### 25. Search past sessions by a patient name
+
+### 26. Upload audio file to get output summary
+
+### 27. Edit output summary
+
+## Utility Methods
+
+### 1. Get total uploaded files
 
 Use this method to retrieve all the audio files generated for a specific session.
 
@@ -339,7 +376,7 @@ const files = await getTotalAudioFiles();
 ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
 ```
 
-### 15. Get successfully uploaded files
+### 2. Get successfully uploaded files
 
 Use this method to retrieve all the audio files that were uploaded successfully.
 
@@ -353,7 +390,7 @@ const successFiles = await getSuccessfullyUploadedFiles();
 ['3.mp3', '4.mp3'];
 ```
 
-### 16. Get failed audio files
+### 3. Get failed audio files
 
 Use this method to retrieve all the audio files that failed to upload.
 
@@ -367,16 +404,22 @@ const failedFiles = await getFailedFiles();
 ['1.mp3', '2.mp3'];
 ```
 
+### 4. Reset Class Instance
+
+### 5. Reinitialise VAD Instance
+
+### 6. Pause VAD Instance
+
+### 7. Destroy VAD Instance
+
 ## Generic Callbacks
 
-### 1. Error callback
+### 1. Event callback
 
 Whenever an error occurs in the SDK during voice recording, the following callback will be triggered. You can listen to this to handle errors globally.
 
 ```ts
-onError(({ error_code, status_code, message }) => {
-  console.error('Ekascribe SDK Error:', { error_code, status_code, message });
-});
+onEventCallback;
 ```
 
 ### 2. User speech callback
@@ -389,14 +432,12 @@ onUserSpeechCallback((isSpeech) => {
 });
 ```
 
-### 3. File upload progress callback
+### 3. VAD Callback to check speech or not for a frame
 
 This callback provides the number of successfully uploaded files, the total number of files, the filename, and the chunk data for a particular file.
 
 ```ts
-onFileUploadProgressCallback(({ success, total, fileName, chunkData }) => {
-  console.error('Progress till now: ', { success, total, fileName, chunkData });
-});
+onVadFramesCallback;
 ```
 
 ### Error codes
