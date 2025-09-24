@@ -36,17 +36,21 @@ export default async function fetchWrapper(
       credentials: 'include',
     });
 
-    if (onEventCallback && !response.ok) {
-      onEventCallback({
-        callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
-        status: 'success',
-        message: 'Fetch wrapper response: ' + response.ok + response.status,
-        timestamp: new Date().toISOString(),
-        data: {
-          request: 'Request body: ' + JSON.stringify(options.body),
-          response: 'Response body: ' + JSON.stringify(response),
-        },
-      });
+    if (!response.ok) {
+      if (onEventCallback) {
+        onEventCallback({
+          callback_type: CALLBACK_TYPE.AUTHENTICATION_STATUS,
+          status: 'error',
+          message: 'Fetch wrapper response: ' + response.ok + response.status,
+          timestamp: new Date().toISOString(),
+          data: {
+            request: 'Request body: ' + JSON.stringify(options.body),
+            response: 'Response body: ' + JSON.stringify(response),
+          },
+        });
+      }
+
+      throw new Error('Fetch wrapper error: ' + response.ok + response.status);
     }
 
     return response;
