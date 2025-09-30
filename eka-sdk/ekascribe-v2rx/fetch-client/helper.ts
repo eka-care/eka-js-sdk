@@ -1,10 +1,10 @@
 const DEV = {
-  COG_HOST: 'https://app.dev.ekascribe.ai/',
-  EKA_VOICE_HOST_V1: 'https://app.dev.ekascribe.ai/voice/api/v1',
-  EKA_VOICE_HOST_V2: 'https://app.dev.ekascribe.ai/voice/api/v2',
-  EKA_VOICE_HOST_V3: 'https://app.dev.ekascribe.ai/voice/api/v3',
-  COOK_V1: ' https://app.dev.ekascribe.ai/api/v1',
-  EKA_HOST: 'https://app.dev.ekascribe.ai',
+  COG_HOST: 'https://cog.dev.eka.care',
+  EKA_VOICE_HOST_V1: 'https://v2rxbe.dev.eka.care/voice/api/v1',
+  EKA_VOICE_HOST_V2: 'https://v2rxbe.dev.eka.care/voice/api/v2',
+  EKA_VOICE_HOST_V3: 'https://v2rxbe.dev.eka.care/voice/api/v3',
+  COOK_V1: ' https://deepthought-genai.dev.eka.care/api/v1',
+  EKA_HOST: 'https://api.dev.eka.care',
 };
 
 const PROD = {
