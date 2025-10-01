@@ -74,6 +74,17 @@ export async function postV1UploadAudioFiles({
       audio_file_names: audioFileNames,
     });
 
+    if (
+      initTransactionResponse.code === 400 &&
+      initTransactionResponse.error?.code === ERROR_CODE.TXN_LIMIT_EXCEEDED
+    ) {
+      return {
+        error_code: ERROR_CODE.TXN_LIMIT_EXCEEDED,
+        status_code: initTransactionResponse.code,
+        message: initTransactionResponse.message || 'Transaction limit exceeded.',
+      };
+    }
+
     if (initTransactionResponse.code >= 400) {
       return {
         error_code: ERROR_CODE.TXN_INIT_FAILED,
