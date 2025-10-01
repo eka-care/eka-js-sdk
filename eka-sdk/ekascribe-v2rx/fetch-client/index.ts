@@ -50,7 +50,7 @@ export default async function fetchWrapper(
         });
       }
 
-      throw new Error('Fetch wrapper error: ' + response.ok + response.status);
+      // throw new Error('Fetch wrapper error: ' + response.ok + response.status);
     }
 
     return response;
