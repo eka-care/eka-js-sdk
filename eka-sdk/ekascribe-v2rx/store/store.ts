@@ -1,7 +1,12 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
-import { TEventCallback, TSessionStatus, TVadFramesCallback } from '../constants/types';
+import {
+  TEventCallback,
+  TSessionStatus,
+  TVadFrameProcessedCallback,
+  TVadFramesCallback,
+} from '../constants/types';
 
 class EkaScribeStore {
   private static instance: EkaScribeStore;
@@ -14,6 +19,7 @@ class EkaScribeStore {
   private _userSpeechCallback: ((isSpeech: boolean) => void) | null = null;
   private _eventCallback: TEventCallback | null = null;
   private _vadFramesCallback: TVadFramesCallback | null = null;
+  private _vadFrameProcessedCallback: TVadFrameProcessedCallback | null = null;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -97,6 +103,14 @@ class EkaScribeStore {
     this._vadFramesCallback = callback;
   }
 
+  // Vad Frame Processed Callback
+  get vadFrameProcessedCallback(): TVadFrameProcessedCallback | null {
+    return this._vadFrameProcessedCallback;
+  }
+  set vadFrameProcessedCallback(callback: TVadFrameProcessedCallback | null) {
+    this._vadFrameProcessedCallback = callback;
+  }
+
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
@@ -106,6 +120,7 @@ class EkaScribeStore {
     this._userSpeechCallback = null;
     this._eventCallback = null;
     this._vadFramesCallback = null;
+    this._vadFrameProcessedCallback = null;
   }
 }
 
