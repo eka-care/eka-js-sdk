@@ -1,8 +1,8 @@
 const DEV = {
   COG_HOST: 'https://cog.dev.eka.care',
-  EKA_VOICE_HOST_V1: 'https://v2rxbe.dev.eka.care/voice/api/v1',
-  EKA_VOICE_HOST_V2: 'https://v2rxbe.dev.eka.care/voice/api/v2',
-  EKA_VOICE_HOST_V3: 'https://v2rxbe.dev.eka.care/voice/api/v3',
+  EKA_VOICE_HOST_V1: 'https://api.dev.eka.care/voice/api/v1',
+  EKA_VOICE_HOST_V2: 'https://api.dev.eka.care/voice/api/v2',
+  EKA_VOICE_HOST_V3: 'https://api.dev.eka.care/voice/api/v3',
   COOK_V1: ' https://deepthought-genai.dev.eka.care/api/v1',
   EKA_HOST: 'https://api.dev.eka.care',
 };
