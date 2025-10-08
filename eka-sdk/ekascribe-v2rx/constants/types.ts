@@ -421,3 +421,11 @@ export type TPatchVoiceApiV3StatusRequest = {
     data: string;
   }[];
 };
+
+export type TVadFrameProcessedCallback = (args: {
+  probabilities: {
+    notSpeech: number;
+    isSpeech: number;
+  };
+  frame: Float32Array;
+}) => void;

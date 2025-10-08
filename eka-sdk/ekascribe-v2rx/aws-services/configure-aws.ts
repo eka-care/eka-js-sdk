@@ -17,5 +17,6 @@ export function configureAWS({
     });
   } catch (err) {
     console.log(err, 'AWS config error');
+    throw err;
   }
 }

@@ -185,6 +185,17 @@ class VadWebClient {
       frameSamples: this.frame_size,
       preSpeechPadFrames: this.speech_pad_frames,
       onFrameProcessed: (prob, frames) => {
+        // Get callback dynamically to ensure it's always up to date
+        const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
+        if (vadFrameProcessedCallback) {
+          vadFrameProcessedCallback({ probabilities: prob, frame: frames });
+        }
+
+        // Only process frames internally when recording is active
+        if (!this.recording_started) {
+          return;
+        }
+
         audioFileManager?.incrementTotalRawSamples(frames);
 
         audioBuffer?.append(frames);
