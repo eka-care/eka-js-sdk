@@ -22,7 +22,6 @@ export const AUDIO_EXTENSION_TYPE_MAP: Record<string, string> = {
   wav: 'audio/wav',
   mp3: 'audio/mpeg',
 };
-export const S3_BUCKET_NAME = 'm-prod-voice-record';
 
 export const SDK_STATUS_CODE = {
   AUDIO_ERROR: 1001,

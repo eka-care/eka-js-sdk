@@ -6,6 +6,7 @@ import { configureAWS } from '../aws-services/configure-aws';
 import { CALLBACK_TYPE, SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
 import EkaScribeStore from '../store/store';
+import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -317,8 +318,10 @@ class AudioFileManager {
       });
     }
 
+    const s3BucketName = GET_S3_BUCKET_NAME();
     // Push upload promise to track status
     const uploadPromise = pushFileToS3({
+      s3BucketName,
       fileBlob: audioBlob,
       fileName: s3FileName,
       txnID: this.txnID,
@@ -421,9 +424,12 @@ class AudioFileManager {
       });
     }
 
+    const s3BucketName = GET_S3_BUCKET_NAME();
+
     this.sharedWorkerInstance?.port.postMessage({
       action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
       payload: {
+        s3BucketName,
         audioFrames,
         fileName: s3FileName,
         txnID: this.txnID,
@@ -590,6 +596,7 @@ class AudioFileManager {
     }
 
     const onEventCallback = EkaScribeStore.eventCallback;
+    const s3BucketName = GET_S3_BUCKET_NAME();
 
     if (this.sharedWorkerInstance) {
       this.audioChunks.forEach((chunk, index) => {
@@ -599,6 +606,7 @@ class AudioFileManager {
           this.sharedWorkerInstance?.port.postMessage({
             action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
             payload: {
+              s3BucketName,
               audioFrames,
               fileBlob,
               fileName: `${this.filePath}/${fileName}`,
@@ -626,6 +634,8 @@ class AudioFileManager {
         });
       }
 
+      const s3BucketName = GET_S3_BUCKET_NAME();
+
       this.audioChunks.forEach((chunk, index) => {
         const { fileName, fileBlob, status, audioFrames } = chunk;
 
@@ -647,6 +657,7 @@ class AudioFileManager {
 
           if (failedFileBlob) {
             const uploadPromise = pushFileToS3({
+              s3BucketName,
               fileBlob: failedFileBlob,
               fileName: `${this.filePath}/${fileName}`,
               txnID: this.txnID,

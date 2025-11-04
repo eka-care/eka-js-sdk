@@ -1,15 +1,16 @@
 // @ts-nocheck
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
-import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 
 const pushFileToS3 = async ({
+  s3BucketName,
   fileBlob,
   fileName,
   txnID,
   businessID,
   is_shared_worker = false,
 }: {
+  s3BucketName: string;
   fileBlob: Blob;
   fileName: string;
   txnID: string;
@@ -23,7 +24,7 @@ const pushFileToS3 = async ({
 }> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
-      Bucket: GET_S3_BUCKET_NAME(),
+      Bucket: s3BucketName,
       Key: fileName,
       Body: fileBlob,
       Metadata: {

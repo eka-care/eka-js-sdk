@@ -5,6 +5,7 @@ const DEV = {
   EKA_VOICE_HOST_V3: 'https://api.dev.eka.care/voice/api/v3',
   COOK_V1: ' https://deepthought-genai.dev.eka.care/api/v1',
   EKA_HOST: 'https://api.dev.eka.care',
+  S3_BUCKET_NAME: 'm-pp-voice2rx',
 };
 
 const PROD = {
@@ -14,13 +15,12 @@ const PROD = {
   EKA_VOICE_HOST_V3: 'https://api.eka.care/voice/api/v3',
   COOK_V1: ' https://cook.eka.care/api/v1',
   EKA_HOST: 'https://api.eka.care',
+  S3_BUCKET_NAME: 'm-prod-voice-record',
 };
 
 let envVar = PROD;
 let client_id = 'doc-web';
 let auth: string;
-const s3_prod_bucket_name: string = 'm-prod-voice-record';
-const s3_dev_bucket_name: string = 'm-pp-voice2rx';
 
 const setEnv = ({
   env,
@@ -42,8 +42,9 @@ const setEnv = ({
   }
 };
 
-export const GET_S3_BUCKET_NAME = () =>
-  envVar === PROD ? s3_prod_bucket_name : s3_dev_bucket_name;
+console.log(envVar, 'dev');
+
+export const GET_S3_BUCKET_NAME = () => envVar.S3_BUCKET_NAME;
 export const GET_CLIENT_ID = () => client_id;
 export const GET_AUTH_TOKEN = () => auth;
 export const GET_EKA_VOICE_HOST_V1 = () => envVar.EKA_VOICE_HOST_V1;
@@ -52,5 +53,6 @@ export const GET_EKA_VOICE_HOST_V3 = () => envVar.EKA_VOICE_HOST_V3;
 export const GET_COOK_HOST_V1 = () => envVar.COOK_V1;
 export const GET_COG_HOST = () => envVar.COG_HOST;
 export const GET_EKA_HOST = () => envVar.EKA_HOST;
+export const GET_CURRENT_ENV = (): 'PROD' | 'DEV' => (envVar === PROD ? 'PROD' : 'DEV');
 
 export default setEnv;
