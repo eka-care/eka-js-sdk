@@ -19,6 +19,8 @@ const PROD = {
 let envVar = PROD;
 let client_id = 'doc-web';
 let auth: string;
+const s3_prod_bucket_name: string = 'm-prod-voice-record';
+const s3_dev_bucket_name: string = 'm-pp-voice2rx';
 
 const setEnv = ({
   env,
@@ -40,6 +42,8 @@ const setEnv = ({
   }
 };
 
+export const GET_S3_BUCKET_NAME = () =>
+  envVar === PROD ? s3_prod_bucket_name : s3_dev_bucket_name;
 export const GET_CLIENT_ID = () => client_id;
 export const GET_AUTH_TOKEN = () => auth;
 export const GET_EKA_VOICE_HOST_V1 = () => envVar.EKA_VOICE_HOST_V1;

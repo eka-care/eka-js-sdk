@@ -323,10 +323,14 @@ class VadWebClient {
     //   this.micVad.pause(); // Stop recording first
     // }
 
+    console.log('rest vad web instance', this.micVad);
     // Properly destroy MicVAD instance
     if (this.micVad && typeof this.micVad.destroy === 'function') {
+      console.log('destroy vad web instance', this.micVad);
       this.micVad.destroy();
     }
+
+    console.log('reset vad web instance - 333', this.micVad);
 
     // Reset VAD state
     this.vad_past = [];

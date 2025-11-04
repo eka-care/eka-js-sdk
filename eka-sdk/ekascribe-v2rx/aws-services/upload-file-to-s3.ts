@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
-import { S3_BUCKET_NAME } from '../constants/constant';
+import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 
 const pushFileToS3 = async ({
   fileBlob,
@@ -23,7 +23,7 @@ const pushFileToS3 = async ({
 }> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
-      Bucket: S3_BUCKET_NAME,
+      Bucket: GET_S3_BUCKET_NAME(),
       Key: fileName,
       Body: fileBlob,
       Metadata: {
