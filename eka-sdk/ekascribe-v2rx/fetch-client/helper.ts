@@ -42,8 +42,6 @@ const setEnv = ({
   }
 };
 
-console.log(envVar, 'dev');
-
 export const GET_S3_BUCKET_NAME = () => envVar.S3_BUCKET_NAME;
 export const GET_CLIENT_ID = () => client_id;
 export const GET_AUTH_TOKEN = () => auth;

@@ -10,28 +10,33 @@ export type TGetConfigV2Response = {
       supported_output_formats: number;
       consultation_modes: number;
     };
-    selected_preferences?: TSelectedPreferences;
-    settings?: TConfigSettings;
-    model?: string;
-    my_templates?: string[];
+    settings: TConfigSettings;
+    my_templates: [
+      {
+        id: string;
+        name: string;
+      }
+    ];
     user_details: {
+      uuid: string;
       fn: string;
       mn: string;
       ln: string;
       dob: string;
       gen: 'F' | 'M' | 'O';
       s: string;
+      wid: string;
+      'b-id': string;
       is_paid_doc: boolean;
-      uuid: string;
     };
-    wid: string;
+    selected_preferences?: TSelectedPreferences;
   };
   message?: string;
   code?: number;
 };
 
 export type TSelectedPreferences = {
-  languages?: string[];
+  input_languages?: TGetConfigItem[];
   output_formats?: string[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
@@ -359,6 +364,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
   default_languages?: string[];
   my_templates?: string[];
   scribe_enabled?: boolean;
+  request_type?: string;
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {

@@ -53,11 +53,14 @@ import deleteV1TemplateSection from './api/template-sections/delete-v1-template-
 import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
 import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to-template';
-import searchSessionsByPatient, {
-  TSearchSessionsByPatientRequest,
-} from './utils/search-sessions-by-patient-name';
 import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
 import { patchVoiceApiV3Status } from './api/transaction/patch-voice-api-v3-status';
+import searchSessions, {
+  searchSessionsByPatient,
+  searchSessionsBySessionId,
+  TSearchSessionsByPatientRequest,
+  TSearchSessionsRequest,
+} from './utils/search-past-sessions';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -459,9 +462,19 @@ class EkaScribe {
     return convertToTemplateResponse;
   }
 
+  async searchPastSessions(request: TSearchSessionsRequest) {
+    const searchSessionsResponse = await searchSessions(request);
+    return searchSessionsResponse;
+  }
+
   async searchSessionsByPatientName(request: TSearchSessionsByPatientRequest) {
     const searchSessionsByPatientNameResponse = await searchSessionsByPatient(request);
     return searchSessionsByPatientNameResponse;
+  }
+
+  async searchSessionsBySessionId(request: TSearchSessionsByPatientRequest) {
+    const searchSessionsBySessionIdResponse = await searchSessionsBySessionId(request);
+    return searchSessionsBySessionIdResponse;
   }
 
   async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
