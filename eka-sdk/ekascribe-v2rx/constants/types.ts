@@ -37,10 +37,11 @@ export type TGetConfigV2Response = {
 
 export type TSelectedPreferences = {
   input_languages?: TGetConfigItem[];
-  output_formats?: string[];
+  output_format_template?: string[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
   auto_download?: boolean;
+  model_type?: string;
 };
 
 export type TGetConfigItem = {
