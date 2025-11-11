@@ -61,6 +61,7 @@ import searchSessions, {
   TSearchSessionsByPatientRequest,
   TSearchSessionsRequest,
 } from './utils/search-past-sessions';
+import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-templates';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -485,6 +486,11 @@ class EkaScribe {
   async updateResultSummary(request: TPatchVoiceApiV3StatusRequest) {
     const updateResultSummaryResponse = await patchVoiceApiV3Status(request);
     return updateResultSummaryResponse;
+  }
+
+  async getConfigMyTemplates() {
+    const configMyTemplatesResponse = await getConfigV2MyTemplates();
+    return configMyTemplatesResponse;
   }
 }
 

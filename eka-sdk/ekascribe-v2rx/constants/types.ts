@@ -37,7 +37,7 @@ export type TGetConfigV2Response = {
 
 export type TSelectedPreferences = {
   input_languages?: TGetConfigItem[];
-  output_format_template?: string[];
+  output_format?: TGetConfigItem[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
   auto_download?: boolean;
@@ -361,11 +361,16 @@ export interface TGetV1TemplateSectionsResponse {
 }
 
 export type TPatchVoiceApiV2ConfigRequest = {
-  auto_download?: boolean;
-  default_languages?: string[];
-  my_templates?: string[];
-  scribe_enabled?: boolean;
-  request_type?: string;
+  request_type: string;
+  data: {
+    auto_download?: boolean;
+    input_languages?: TGetConfigItem[];
+    consultation_mode?: string;
+    model_type?: string;
+    output_format_template?: TGetConfigItem[];
+    my_templates?: string[];
+    scribe_enabled?: boolean;
+  };
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
