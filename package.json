@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk",
-  "version": "1.5.62",
+  "version": "1.5.63",
   "main": "dist/index.js",
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
