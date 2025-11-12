@@ -50,7 +50,6 @@ import getV1TemplateSections from './api/template-sections/get-v1-template-secti
 import postV1TemplateSection from './api/template-sections/post-v1-template-section';
 import patchV1TemplateSection from './api/template-sections/patch-v1-template-section';
 import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
-import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
 import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to-template';
 import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
@@ -62,6 +61,7 @@ import searchSessions, {
   TSearchSessionsRequest,
 } from './utils/search-past-sessions';
 import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-templates';
+import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -433,7 +433,7 @@ class EkaScribe {
   }
 
   async updateConfig(request: TPatchVoiceApiV2ConfigRequest) {
-    const configResponse = await patchVoiceApiV2Config(request);
+    const configResponse = await putVoiceApiV2Config(request);
     return configResponse;
   }
 

@@ -6,10 +6,10 @@ import {
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
-const patchVoiceApiV2Config = async (request: TPatchVoiceApiV2ConfigRequest) => {
+const putVoiceApiV2Config = async (request: TPatchVoiceApiV2ConfigRequest) => {
   try {
     const options = {
-      method: 'PATCH',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -33,4 +33,4 @@ const patchVoiceApiV2Config = async (request: TPatchVoiceApiV2ConfigRequest) => 
   }
 };
 
-export default patchVoiceApiV2Config;
+export default putVoiceApiV2Config;
