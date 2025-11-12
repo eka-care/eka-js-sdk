@@ -45,6 +45,7 @@ type TApiResponse = {
       total_resources?: number;
       total_parsed_resources?: number;
     };
+    created_at?: string;
   };
   error?: {
     code: string;
