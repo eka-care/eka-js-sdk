@@ -25,8 +25,8 @@ export type TGetConfigV2Response = {
       dob: string;
       gen: 'F' | 'M' | 'O';
       s: string;
-      w_id: string;
-      w_n: string;
+      'w-id': string;
+      'w-n': string;
       'b-id': string;
       is_paid_doc: boolean;
     };
