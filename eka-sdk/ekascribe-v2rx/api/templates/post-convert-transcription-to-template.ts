@@ -6,7 +6,7 @@ import {
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
-async function postConvertTransactionToTemplate({
+async function postConvertTranscriptionToTemplate({
   txn_id,
   template_id,
   transcript,
@@ -46,4 +46,4 @@ async function postConvertTransactionToTemplate({
   }
 }
 
-export default postConvertTransactionToTemplate;
+export default postConvertTranscriptionToTemplate;

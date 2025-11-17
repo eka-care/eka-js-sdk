@@ -62,7 +62,7 @@ import searchSessions, {
 } from './utils/search-past-sessions';
 import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-templates';
 import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
-import postConvertTransactionToTemplate from './api/templates/post-convert-transaction-to-template';
+import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -464,8 +464,8 @@ class EkaScribe {
     return convertToTemplateResponse;
   }
 
-  async convertTransactionToTemplate(request: TPostV1ConvertToTemplateRequest) {
-    const convertToTemplateResponse = await postConvertTransactionToTemplate(request);
+  async convertTranscriptionToTemplate(request: TPostV1ConvertToTemplateRequest) {
+    const convertToTemplateResponse = await postConvertTranscriptionToTemplate(request);
     return convertToTemplateResponse;
   }
 
