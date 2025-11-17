@@ -385,6 +385,7 @@ export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRe
 export type TPostV1ConvertToTemplateRequest = {
   txn_id: string;
   template_id: string;
+  transcript?: string;
 };
 
 export type TPostV1ConvertToTemplateResponse = {
