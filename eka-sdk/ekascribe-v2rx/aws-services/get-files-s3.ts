@@ -1,5 +1,6 @@
 import * as AWS from 'aws-sdk';
 import s3RetryWrapper from './s3-retry-wrapper';
+import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 
 type TS3Response = {
   response?: AWS.S3.GetObjectOutput;
@@ -14,7 +15,7 @@ export const getFilesS3 = async ({
 }): Promise<TS3Response> => {
   try {
     const requestBody: AWS.S3.GetObjectRequest = {
-      Bucket: 'm-prod-voice2rx',
+      Bucket: GET_S3_BUCKET_NAME(),
       Key: fileName,
     };
 

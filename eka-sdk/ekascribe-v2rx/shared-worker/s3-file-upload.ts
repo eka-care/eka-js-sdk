@@ -49,7 +49,8 @@ onconnect = function (event: MessageEvent) {
       }
 
       case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER: {
-        const { fileName, audioFrames, txnID, businessID, fileBlob } = workerData.payload;
+        const { fileName, audioFrames, txnID, businessID, fileBlob, s3BucketName } =
+          workerData.payload;
         uploadRequestReceived++;
 
         let audioBlob: Blob;
@@ -66,6 +67,7 @@ onconnect = function (event: MessageEvent) {
         }
 
         await pushFileToS3({
+          s3BucketName,
           fileBlob: audioBlob,
           fileName,
           txnID,

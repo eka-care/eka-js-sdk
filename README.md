@@ -315,6 +315,136 @@ Use this method to fetch the final generated prescription output for a session.
 await ekascribe.getTemplateOutput({ txn_id: 'abc-123' });
 ```
 
+- #### Response type:
+
+```ts
+{
+  response?: {
+    data: {
+      output: TOutputSummary[];
+      template_results: {
+        integration: TOutputSummary[];
+        custom: TOutputSummary[];
+      };
+      audio_matrix?: {
+        quality: string;
+      };
+      additional_data?: {
+        doctor: {
+          _id: string;
+          profile: {
+            personal: {
+              name: {
+                l: string;
+                f: string;
+              };
+            };
+          };
+        };
+      };
+      meta_data?: {
+        total_resources?: number;
+        total_parsed_resources?: number;
+      };
+      created_at?: string;
+    };
+    error?: {
+      code: string;
+      msg: string;
+    };
+  } | null;
+  status_code: number;
+  message?: string;
+}
+
+type TOutputSummary = {
+  template_id: string;
+  value?: string | null; // base64 encoded
+  type: string;
+  name: string;
+  status: 'success' | 'partial_success' | 'failure';
+  errors?: Array<{
+    type: 'warning' | 'error';
+    code?: string;
+    msg: string;
+  }>;
+  warnings?: Array<{
+    type: 'warning' | 'error';
+    code?: string;
+    msg: string;
+  }>;
+};
+```
+
+- #### Example Response:
+
+```ts
+{
+  status_code: 200,
+  response: {
+    data: {
+      output: [
+        {
+          template_id: "template_123",
+          value: "eyJwYXRpZW50Ijp7Im5hbWUiOiJKb2huIERvZSJ9fQ==",
+          type: "custom",
+          name: "General Prescription",
+          status: "success"
+        }
+      ],
+      template_results: {
+        integration: [
+          {
+            template_id: "integration_template_456",
+            value: "eyJkaWFnbm9zaXMiOiJDb21tb24gQ29sZCJ9",
+            type: "json",
+            name: "Diagnosis Template",
+            status: "success"
+          }
+        ],
+        custom: [
+          {
+            template_id: "custom_template_789",
+            value: "eyJtZWRpY2F0aW9ucyI6W119",
+            type: "custom",
+            name: "Custom Medication Template",
+            status: "partial_success",
+            warnings: [
+              {
+                type: "warning",
+                code: "FIELD_MISSING",
+                msg: "Dosage information not found"
+              }
+            ]
+          }
+        ]
+      },
+      audio_matrix: {
+        quality: "4.5"
+      },
+      additional_data: {
+        doctor: {
+          _id: "doc_001",
+          profile: {
+            personal: {
+              name: {
+                l: "Smith",
+                f: "Dr. Jane"
+              }
+            }
+          }
+        }
+      },
+      meta_data: {
+        total_resources: 10,
+        total_parsed_resources: 9
+      },
+      created_at: "2024-11-19T10:30:00Z"
+    }
+  }
+}
+```
+
 ### 13. Get previous sessions
 
 Use this method to retrieve all the previous sessions for a specific doctor ID

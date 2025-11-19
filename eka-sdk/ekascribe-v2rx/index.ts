@@ -50,14 +50,19 @@ import getV1TemplateSections from './api/template-sections/get-v1-template-secti
 import postV1TemplateSection from './api/template-sections/post-v1-template-section';
 import patchV1TemplateSection from './api/template-sections/patch-v1-template-section';
 import deleteV1TemplateSection from './api/template-sections/delete-v1-template-section';
-import patchVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import cookV1MediaAiCreateTemplate from './api/templates/cook-v1-medai-ai-create-template';
 import postV1ConvertToTemplate from './api/templates/post-transaction-convert-to-template';
-import searchSessionsByPatient, {
-  TSearchSessionsByPatientRequest,
-} from './utils/search-sessions-by-patient-name';
 import { postV1UploadAudioFiles } from './main/upload-full-audio-with-presigned-url';
 import { patchVoiceApiV3Status } from './api/transaction/patch-voice-api-v3-status';
+import searchSessions, {
+  searchSessionsByPatient,
+  searchSessionsBySessionId,
+  TSearchSessionsByPatientRequest,
+  TSearchSessionsRequest,
+} from './utils/search-past-sessions';
+import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-templates';
+import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
+import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -183,7 +188,10 @@ class EkaScribe {
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
+      console.log('mic vad', this.vadInstance.getMicVad());
       this.vadInstance.pauseVad();
+
+      console.log('mic vad paused', this.vadInstance.getMicVad());
 
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
@@ -426,7 +434,7 @@ class EkaScribe {
   }
 
   async updateConfig(request: TPatchVoiceApiV2ConfigRequest) {
-    const configResponse = await patchVoiceApiV2Config(request);
+    const configResponse = await putVoiceApiV2Config(request);
     return configResponse;
   }
 
@@ -456,9 +464,24 @@ class EkaScribe {
     return convertToTemplateResponse;
   }
 
+  async convertTranscriptionToTemplate(request: TPostV1ConvertToTemplateRequest) {
+    const convertToTemplateResponse = await postConvertTranscriptionToTemplate(request);
+    return convertToTemplateResponse;
+  }
+
+  async searchPastSessions(request: TSearchSessionsRequest) {
+    const searchSessionsResponse = await searchSessions(request);
+    return searchSessionsResponse;
+  }
+
   async searchSessionsByPatientName(request: TSearchSessionsByPatientRequest) {
     const searchSessionsByPatientNameResponse = await searchSessionsByPatient(request);
     return searchSessionsByPatientNameResponse;
+  }
+
+  async searchSessionsBySessionId(request: TSearchSessionsByPatientRequest) {
+    const searchSessionsBySessionIdResponse = await searchSessionsBySessionId(request);
+    return searchSessionsBySessionIdResponse;
   }
 
   async uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest) {
@@ -469,6 +492,11 @@ class EkaScribe {
   async updateResultSummary(request: TPatchVoiceApiV3StatusRequest) {
     const updateResultSummaryResponse = await patchVoiceApiV3Status(request);
     return updateResultSummaryResponse;
+  }
+
+  async getConfigMyTemplates() {
+    const configMyTemplatesResponse = await getConfigV2MyTemplates();
+    return configMyTemplatesResponse;
   }
 }
 

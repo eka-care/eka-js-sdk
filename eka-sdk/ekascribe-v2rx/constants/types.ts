@@ -10,32 +10,39 @@ export type TGetConfigV2Response = {
       supported_output_formats: number;
       consultation_modes: number;
     };
-    selected_preferences?: TSelectedPreferences;
-    settings?: TConfigSettings;
-    model?: string;
-    my_templates?: string[];
+    settings: TConfigSettings;
+    my_templates: [
+      {
+        id: string;
+        name: string;
+      }
+    ];
     user_details: {
+      uuid: string;
       fn: string;
       mn: string;
       ln: string;
       dob: string;
       gen: 'F' | 'M' | 'O';
       s: string;
+      'w-id': string;
+      'w-n': string;
+      'b-id': string;
       is_paid_doc: boolean;
-      uuid: string;
     };
-    wid: string;
+    selected_preferences?: TSelectedPreferences;
   };
   message?: string;
   code?: number;
 };
 
 export type TSelectedPreferences = {
-  languages?: string[];
-  output_formats?: string[];
+  languages?: TGetConfigItem[];
+  output_format?: TGetConfigItem[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
   auto_download?: boolean;
+  model_type?: string;
 };
 
 export type TGetConfigItem = {
@@ -54,6 +61,7 @@ export type TConfigSettings = {
 export type TStartRecordingRequest = {
   mode: string;
   input_language: string[];
+  output_language: string;
   output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
   txn_id: string;
   auto_download: boolean;
@@ -123,6 +131,7 @@ export type TPostTransactionInitRequest = {
   s3Url?: string;
   txn_id: string;
   input_language: string[];
+  output_language: string;
   output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
   transfer: string;
   auto_download: boolean;
@@ -355,10 +364,16 @@ export interface TGetV1TemplateSectionsResponse {
 }
 
 export type TPatchVoiceApiV2ConfigRequest = {
-  auto_download?: boolean;
-  default_languages?: string[];
-  my_templates?: string[];
-  scribe_enabled?: boolean;
+  request_type: string;
+  data: {
+    auto_download?: boolean;
+    input_languages?: TGetConfigItem[];
+    consultation_mode?: string;
+    model_type?: string;
+    output_format_template?: TGetConfigItem[];
+    my_templates?: string[];
+    scribe_enabled?: boolean;
+  };
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
@@ -370,6 +385,7 @@ export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRe
 export type TPostV1ConvertToTemplateRequest = {
   txn_id: string;
   template_id: string;
+  transcript?: string;
 };
 
 export type TPostV1ConvertToTemplateResponse = {
