@@ -25,7 +25,7 @@ async function postConvertTranscriptionToTemplate({
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/transaction/${txn_id}/convert-to-template?transcript=true`,
+      `${GET_EKA_VOICE_HOST_V1()}/transaction/${txn_id}/convert-to-template`,
       options,
       60000
     );
