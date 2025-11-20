@@ -316,6 +316,7 @@ export interface TTemplate {
   desc: string;
   section_ids: string[];
   is_editable: boolean;
+  is_favorite?: boolean;
 }
 
 export interface TGetV1TemplatesResponse {
