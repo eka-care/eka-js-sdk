@@ -13,6 +13,7 @@ export type TOutputSummary = {
   value?: string | null; //<base 64 encoded>
   type: string;
   name: string;
+  lang?: string;
   status: TTemplateStatus;
   errors?: TTemplateMessage[];
   warnings?: TTemplateMessage[];
@@ -49,6 +50,7 @@ type TApiResponse = {
     template_results: {
       integration: TOutputSummary[];
       custom: TOutputSummary[];
+      transcript: TOutputSummary[];
     };
   };
   error?: {
