@@ -8,7 +8,7 @@ async function postCogInit(): Promise<TPostCogResponse> {
       method: 'GET',
     };
 
-    const respJson = await fetchWrapper(`${GET_EKA_VOICE_HOST_V1()}/s3-token`, options);
+    const respJson = await fetchWrapper(`${GET_EKA_VOICE_HOST_V1()}/s3-token/`, options);
 
     const resp = await respJson.json();
     return resp;
