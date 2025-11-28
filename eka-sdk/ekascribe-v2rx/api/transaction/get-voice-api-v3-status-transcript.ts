@@ -65,7 +65,7 @@ export type TGetStatusResponse = {
   message?: string;
 };
 
-export const getVoiceApiV3StatusTranscription = async ({
+export const getVoiceApiV3StatusTranscript = async ({
   txnId,
 }: {
   txnId: string;
@@ -81,7 +81,7 @@ export const getVoiceApiV3StatusTranscription = async ({
 
     // Use custom timeout for this API (16 seconds instead of default 5 seconds)
     const getResponse = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V3()}/status/transcription/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V3()}/status/transcript/${txnId}`,
       options,
       16000
     );
