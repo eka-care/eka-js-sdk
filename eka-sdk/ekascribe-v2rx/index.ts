@@ -63,6 +63,7 @@ import searchSessions, {
 import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-templates';
 import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
+import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -297,6 +298,21 @@ class EkaScribe {
   async getTemplateOutput({ txn_id }: { txn_id: string }) {
     try {
       const getStatusResponse = await getVoiceApiV3Status({
+        txnId: txn_id,
+      });
+
+      return getStatusResponse;
+    } catch (error) {
+      return {
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to fetch output templates, ${error}`,
+      } as TGetStatusResponse;
+    }
+  }
+
+  async getOutputTranscription({ txn_id }: { txn_id: string }) {
+    try {
+      const getStatusResponse = await getVoiceApiV3StatusTranscript({
         txnId: txn_id,
       });
 
