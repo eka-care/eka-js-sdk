@@ -106,6 +106,10 @@ class AudioFileManager {
   createSharedWorkerInstance() {
     try {
       // new URL(relativeOrAbsolutePath, baseUrl)
+      // const worker = new SharedWorker(
+      //   'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.80/dist/shared-worker/s3-file-upload.js'
+      // );
+
       const worker = new SharedWorker(
         new URL('../shared-worker/s3-file-upload.js', import.meta.url)
       );
@@ -237,7 +241,18 @@ class AudioFileManager {
 
       return true;
     } catch (error) {
-      console.error('Error creating shared worker instance:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('SecurityError') || errorMessage.includes('Failed to construct')) {
+        console.error(
+          'Error creating shared worker instance: CORS/Same-origin policy violation. ' +
+            'The SharedWorker script must be served from the same origin as your application, ' +
+            'or the server must allow cross-origin access with proper CORS headers. ' +
+            'Falling back to non-worker upload method.',
+          error
+        );
+      } else {
+        console.error('Error creating shared worker instance:', error);
+      }
       return false;
     }
   }
@@ -456,7 +471,16 @@ class AudioFileManager {
       console.log('Shared Workers are supported in this browser.');
 
       if (!this.sharedWorkerInstance) {
-        this.createSharedWorkerInstance();
+        const workerCreated = this.createSharedWorkerInstance();
+        if (!workerCreated) {
+          // SharedWorker creation failed (likely due to CORS/same-origin policy)
+          // Fall back to non-worker upload
+          console.warn(
+            'Failed to create SharedWorker instance. Falling back to non-worker upload method.'
+          );
+          await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
+          return;
+        }
       }
 
       await this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
@@ -482,6 +506,8 @@ class AudioFileManager {
       await this.uploadAudioChunkInWorker({ audioFrames, fileName, chunkIndex });
     } catch (error) {
       console.error('Error uploading audio to S3: uploadAudioToS3WithWorker: ', error);
+      // Fall back to non-worker upload if worker fails
+      await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     }
   }
 
