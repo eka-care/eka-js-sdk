@@ -64,6 +64,7 @@ import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-
 import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
+import { pollOutputSummary, TPollingResponse } from './main/poll-output-summary';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -323,6 +324,12 @@ class EkaScribe {
         message: `Failed to fetch output templates, ${error}`,
       } as TGetStatusResponse;
     }
+  }
+
+  async pollSessionOutput(request: { txn_id: string; max_polling_time: number }) {
+    const pollingResponse = await pollOutputSummary(request);
+
+    return pollingResponse;
   }
 
   async getSessionHistory({ txn_count }: { txn_count: number }) {
