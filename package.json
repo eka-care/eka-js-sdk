@@ -16,7 +16,7 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc && yarn build:worker",
-        "build:worker": "esbuild eka-sdk/ekascribe-v2rx/shared-worker/worker.ts --bundle --outfile=dist/shared-worker/worker.bundle.js --format=iife --platform=browser",
+        "build:worker": "esbuild eka-sdk/ekascribe-v2rx/shared-worker/s3-file-upload.ts --bundle --outfile=dist/shared-worker/worker.bundle.js --format=iife --platform=browser --minify",
         "prepare": "yarn build",
         "lint": "eslint . --ext .ts"
     },
