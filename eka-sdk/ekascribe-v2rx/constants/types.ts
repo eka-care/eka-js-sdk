@@ -72,6 +72,7 @@ export type TStartRecordingRequest = {
   model_type: string;
   version?: string;
   flavour?: string;
+  additional_data?: any;
 };
 
 export type Gender = 'M' | 'F' | 'O';
@@ -143,6 +144,7 @@ export type TPostTransactionInitRequest = {
   flavour?: string;
   batch_s3_url?: string;
   audio_file_names?: string[];
+  additional_data?: any;
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
