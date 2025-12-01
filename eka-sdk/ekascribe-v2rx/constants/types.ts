@@ -67,7 +67,7 @@ export type TStartRecordingRequest = {
   auto_download: boolean;
   model_training_consent: boolean;
   transfer: string;
-  system_info: TSystemInfo;
+  system_info?: TSystemInfo;
   patient_details?: TPatientDetails;
   model_type: string;
   version?: string;
@@ -136,7 +136,7 @@ export type TPostTransactionInitRequest = {
   transfer: string;
   auto_download: boolean;
   model_training_consent: boolean;
-  system_info: TSystemInfo;
+  system_info?: TSystemInfo;
   patient_details?: TPatientDetails;
   model_type: string;
   version?: string;
