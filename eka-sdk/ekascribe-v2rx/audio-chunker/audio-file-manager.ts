@@ -106,7 +106,10 @@ class AudioFileManager {
     createSharedWorkerInstance() {
         try {
             // new URL(relativeOrAbsolutePath, baseUrl)
-            const worker = new SharedWorker(new URL('./shared-worker/worker.bundle.js', import.meta.url));
+            const worker = new SharedWorker(
+                new URL('../shared-worker/s3-file-upload.ts', import.meta.url),
+                { name: 'eka-s3-upload' }
+            );
 
             this.sharedWorkerInstance = worker;
 

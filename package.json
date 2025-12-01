@@ -1,7 +1,17 @@
 {
     "name": "@eka-care/ekascribe-ts-sdk",
     "version": "1.5.78",
-    "main": "dist/index.js",
+    "main": "dist/index.mjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "default": "./dist/index.mjs"
+        },
+        "./worker": "./dist/worker.bundle.js"
+    },
     "repository": "git@github.com:eka-care/eka-js-sdk.git",
     "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
     "keywords": [
@@ -13,10 +23,9 @@
         "eka care"
     ],
     "license": "MIT",
-    "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc && yarn build:worker",
-        "build:worker": "esbuild eka-sdk/ekascribe-v2rx/shared-worker/s3-file-upload.ts --bundle --outfile=dist/shared-worker/worker.bundle.js --format=iife --platform=browser --minify",
+        "clean": "rm -rf dist",
+        "build": "yarn clean && vite build",
         "prepare": "yarn build",
         "lint": "eslint . --ext .ts"
     },
@@ -33,7 +42,9 @@
         "esbuild": "^0.27.0",
         "eslint": "^9.25.0",
         "ts-node": "^10.9.2",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "vite": "^7.2.6",
+        "vite-plugin-dts": "^4.5.4"
     },
     "dependencies": {
         "@aws-sdk/client-translate": "^3.857.0",
