@@ -38,13 +38,8 @@
     "dependencies": {
         "@aws-sdk/client-translate": "^3.857.0",
         "@breezystack/lamejs": "^1.2.7",
-        "@ffmpeg/ffmpeg": "0.9.4",
-        "@ffmpeg/util": "^0.12.2",
         "@ricky0123/vad-web": "^0.0.22",
-        "@types/chrome": "^0.0.315",
-        "aws-sdk": "^2.1692.0",
-        "lamejs": "^1.2.1",
-        "uuid": "^11.1.0"
+        "aws-sdk": "^2.1692.0"
     },
     "files": [
         "dist",
