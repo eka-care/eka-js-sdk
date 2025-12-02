@@ -32,25 +32,18 @@
     "publishConfig": {
         "access": "public"
     },
-    "engines": {
-        "node": ">=14.0.0"
-    },
     "devDependencies": {
-        "@types/node": "^22.14.1",
-        "@typescript-eslint/eslint-plugin": "^8.30.1",
-        "@typescript-eslint/parser": "^8.30.1",
-        "esbuild": "^0.27.0",
-        "eslint": "^9.25.0",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.8.3",
-        "vite": "^7.2.6",
-        "vite-plugin-dts": "^4.5.4"
-    },
-    "dependencies": {
         "@aws-sdk/client-translate": "^3.857.0",
         "@breezystack/lamejs": "^1.2.7",
         "@ricky0123/vad-web": "^0.0.22",
-        "aws-sdk": "^2.1692.0"
+        "@types/node": "^22.14.1",
+        "@typescript-eslint/eslint-plugin": "^8.30.1",
+        "@typescript-eslint/parser": "^8.30.1",
+        "aws-sdk": "^2.1692.0",
+        "eslint": "^9.25.0",
+        "typescript": "^5.8.3",
+        "vite": "^7.2.6",
+        "vite-plugin-dts": "^4.5.4"
     },
     "files": [
         "dist",
