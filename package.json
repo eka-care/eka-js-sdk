@@ -1,7 +1,8 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk",
-  "version": "1.5.86",
+  "version": "1.5.94",
   "main": "dist/index.js",
+  "module": "dist/index.esm.js",
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
   "keywords": [
@@ -15,7 +16,7 @@
   "license": "MIT",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && cp -R eka-sdk/ekascribe-v2rx/shared-worker dist",
+    "build": "node build.mjs && tsc --emitDeclarationOnly && cp -R eka-sdk/ekascribe-v2rx/shared-worker dist",
     "lint": "eslint . --ext .ts",
     "start": "ts-node ./eka-sdk/ekascribe-v2rx/index.ts",
     "prepare": "yarn build"
@@ -27,6 +28,7 @@
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
+    "esbuild": "^0.25.0",
     "eslint": "^9.25.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
@@ -39,6 +41,7 @@
     "@ricky0123/vad-web": "^0.0.22",
     "@types/chrome": "^0.0.315",
     "aws-sdk": "^2.1692.0",
+    "core-js": "^3.40.0",
     "lamejs": "^1.2.1",
     "uuid": "^11.1.0"
   },

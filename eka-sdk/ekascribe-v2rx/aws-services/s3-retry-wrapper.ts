@@ -11,6 +11,7 @@ async function s3RetryWrapper<T>(
   try {
     return await s3Fn();
   } catch (error) {
+    console.log(JSON.stringify(error, null, 2), 'file upload - s3RetryWrapper - error');
     if (retryAttempt >= maxRetryCount) {
       throw error;
     }
