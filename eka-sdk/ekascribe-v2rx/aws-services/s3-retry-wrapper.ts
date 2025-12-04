@@ -25,7 +25,15 @@ async function s3RetryWrapper<T>(
     } else {
       // eslint-disable-next-line
       // @ts-ignore
-      if (error.code === 'ExpiredToken') {
+      const errorCode = error.code;
+      // eslint-disable-next-line
+      // @ts-ignore
+      const statusCode = error.statusCode;
+
+      // Normalise detection of expired/invalid credentials:
+      // - Legacy AWS SDK path sets error.code === 'ExpiredToken'
+      // - aws4 path (V2) sets both error.code === 'ExpiredToken' and statusCode >= 400
+      if (errorCode === 'ExpiredToken' || statusCode >= 400) {
         const cogResponse = await postCogInit();
         const { credentials } = cogResponse;
         if (credentials) {

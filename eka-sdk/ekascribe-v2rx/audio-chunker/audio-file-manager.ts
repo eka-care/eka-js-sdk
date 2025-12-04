@@ -1,6 +1,5 @@
 import { TAudioChunksInfo } from '../constants/types';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
-import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import postCogInit from '../api/post-cog-init';
 import { configureAWS } from '../aws-services/configure-aws';
 import { CALLBACK_TYPE, SHARED_WORKER_ACTION } from '../constants/enums';
@@ -8,6 +7,7 @@ import compressAudioToMp3 from '../utils/compress-mp3-audio';
 import EkaScribeStore from '../store/store';
 import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import { getSharedWorkerUrl } from '../utils/get-worker-url';
+import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-v2';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -279,6 +279,9 @@ class AudioFileManager {
           },
         });
       } else {
+        // Configure AWS credentials once in the main thread.
+        // - Legacy paths (AWS SDK) read from AWS.config
+        // - aws4-based uploads (`pushFilesToS3V2`) read from the shared credential store
         configureAWS({
           accessKeyId: AccessKeyId,
           secretKey: SecretKey,
@@ -288,7 +291,7 @@ class AudioFileManager {
 
       this.isAWSConfigured = true;
 
-      return true;
+      return credentials;
     } catch (error) {
       console.log('%c Line:198 🥃 error', 'color:#42b983', error);
 
@@ -336,7 +339,7 @@ class AudioFileManager {
 
     const s3BucketName = GET_S3_BUCKET_NAME();
     // Push upload promise to track status
-    const uploadPromise = pushFileToS3({
+    const uploadPromise = pushFilesToS3V2({
       s3BucketName,
       fileBlob: audioBlob,
       fileName: s3FileName,
@@ -685,7 +688,7 @@ class AudioFileManager {
           }
 
           if (failedFileBlob) {
-            const uploadPromise = pushFileToS3({
+            const uploadPromise = pushFilesToS3V2({
               s3BucketName,
               fileBlob: failedFileBlob,
               fileName: `${this.filePath}/${fileName}`,

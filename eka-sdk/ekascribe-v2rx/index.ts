@@ -179,7 +179,7 @@ class EkaScribe {
     return endRecordingResponse;
   }
 
-  async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
+  async retryUploadRecording({ force_commit }: { force_commit?: boolean }) {
     const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
     console.log('%c Line:138 🍖 retryUploadResponse', 'color:#3f7cff', retryUploadResponse);
     return retryUploadResponse;
