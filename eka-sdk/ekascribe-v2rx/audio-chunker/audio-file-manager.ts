@@ -1,12 +1,12 @@
-import { TAudioChunksInfo } from '../constants/types';
-import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
-import pushFileToS3 from '../aws-services/upload-file-to-s3';
 import postCogInit from '../api/post-cog-init';
 import { configureAWS } from '../aws-services/configure-aws';
+import pushFileToS3 from '../aws-services/upload-file-to-s3';
+import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { CALLBACK_TYPE, SHARED_WORKER_ACTION } from '../constants/enums';
-import compressAudioToMp3 from '../utils/compress-mp3-audio';
-import EkaScribeStore from '../store/store';
+import { TAudioChunksInfo } from '../constants/types';
 import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
+import EkaScribeStore from '../store/store';
+import compressAudioToMp3 from '../utils/compress-mp3-audio';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -111,7 +111,7 @@ class AudioFileManager {
       // );
 
       const worker = new SharedWorker(
-        new URL('../shared-worker/s3-file-upload.js', import.meta.url)
+        'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.79/dist/shared-worker/s3-file-upload.js'
       );
 
       this.sharedWorkerInstance = worker;

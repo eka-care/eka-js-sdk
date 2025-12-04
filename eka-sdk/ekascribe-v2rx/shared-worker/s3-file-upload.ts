@@ -54,7 +54,7 @@ onconnect = function (event: MessageEvent) {
         uploadRequestReceived++;
 
         let audioBlob: Blob;
-        let compressedAudioBuffer: Uint8Array<ArrayBufferLike>[];
+        let compressedAudioBuffer: Uint8Array[] = [];
 
         if (fileBlob) {
           audioBlob = fileBlob;
