@@ -67,11 +67,12 @@ export type TStartRecordingRequest = {
   auto_download: boolean;
   model_training_consent: boolean;
   transfer: string;
-  system_info: TSystemInfo;
+  system_info?: TSystemInfo;
   patient_details?: TPatientDetails;
   model_type: string;
   version?: string;
   flavour?: string;
+  additional_data?: any;
 };
 
 export type Gender = 'M' | 'F' | 'O';
@@ -136,13 +137,14 @@ export type TPostTransactionInitRequest = {
   transfer: string;
   auto_download: boolean;
   model_training_consent: boolean;
-  system_info: TSystemInfo;
+  system_info?: TSystemInfo;
   patient_details?: TPatientDetails;
   model_type: string;
   version?: string;
   flavour?: string;
   batch_s3_url?: string;
   audio_file_names?: string[];
+  additional_data?: any;
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
@@ -288,7 +290,7 @@ export type TEventCallbackData = {
   total?: number;
   is_uploaded?: boolean;
   fileName?: string;
-  chunkData?: Uint8Array<ArrayBufferLike>[];
+  chunkData?: Uint8Array[];
   request?: unknown;
   response?: unknown;
   status_code?: number;

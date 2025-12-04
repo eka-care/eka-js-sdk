@@ -20,6 +20,7 @@ async function postTransactionInit({
   batch_s3_url,
   audio_file_names,
   output_language,
+  additional_data,
 }: TPostTransactionInitRequest): Promise<TPostTransactionResponse> {
   try {
     const headers = new Headers();
@@ -42,6 +43,7 @@ async function postTransactionInit({
       model_type,
       version,
       batch_s3_url,
+      additional_data,
       ...(audio_file_names ? { client_generated_files: audio_file_names } : {}),
     };
 

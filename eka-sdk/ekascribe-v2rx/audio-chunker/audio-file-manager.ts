@@ -106,6 +106,10 @@ class AudioFileManager {
   createSharedWorkerInstance() {
     try {
       // new URL(relativeOrAbsolutePath, baseUrl)
+      // const worker = new SharedWorker(
+      //   'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.80/dist/shared-worker/s3-file-upload.js'
+      // );
+
       const worker = new SharedWorker(
         'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.79/dist/shared-worker/s3-file-upload.js'
       );
@@ -502,7 +506,6 @@ class AudioFileManager {
       await this.uploadAudioChunkInWorker({ audioFrames, fileName, chunkIndex });
     } catch (error) {
       console.error('Error uploading audio to S3: uploadAudioToS3WithWorker: ', error);
-
       // Fall back to non-worker upload if worker fails
       await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     }
