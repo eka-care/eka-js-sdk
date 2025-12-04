@@ -5,9 +5,9 @@ import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
 const retryUploadFailedFiles = async ({
-  force_commit,
+  force_commit = false,
 }: {
-  force_commit: boolean;
+  force_commit?: boolean;
 }): Promise<TEndRecordingResponse> => {
   try {
     const fileManagerInstance = EkaScribeStore.audioFileManagerInstance;

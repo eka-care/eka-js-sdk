@@ -1,7 +1,7 @@
 import * as lamejs from '@breezystack/lamejs';
 import { BITRATE, SAMPLING_RATE } from '../constants/constant';
 
-const compressAudioToMp3 = (audio: Float32Array) => {
+const compressAudioToMp3 = (audio: Float32Array): Uint8Array[] => {
   try {
     const audioEncoder = new lamejs.Mp3Encoder(1, SAMPLING_RATE, BITRATE);
 
@@ -13,10 +13,10 @@ const compressAudioToMp3 = (audio: Float32Array) => {
     }
 
     const mp3Data: Uint8Array[] = [];
-    const encodedBuffer = audioEncoder.encodeBuffer(samples);
+    const encodedBuffer = audioEncoder.encodeBuffer(samples) as Uint8Array;
 
     mp3Data.push(encodedBuffer);
-    const lastAudioBuffer = audioEncoder.flush();
+    const lastAudioBuffer = audioEncoder.flush() as Uint8Array;
 
     mp3Data.push(lastAudioBuffer);
 

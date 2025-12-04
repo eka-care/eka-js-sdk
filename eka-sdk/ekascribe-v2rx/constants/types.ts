@@ -290,7 +290,7 @@ export type TEventCallbackData = {
   total?: number;
   is_uploaded?: boolean;
   fileName?: string;
-  chunkData?: Uint8Array<ArrayBufferLike>[];
+  chunkData?: Uint8Array[];
   request?: unknown;
   response?: unknown;
   status_code?: number;
