@@ -110,9 +110,7 @@ class AudioFileManager {
       //   'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.80/dist/shared-worker/s3-file-upload.js'
       // );
 
-      const worker = new SharedWorker(
-        new URL('../shared-worker/s3-file-upload.js', import.meta.url)
-      );
+      const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.js'));
 
       // const workerUrl = getSharedWorkerUrl();
 

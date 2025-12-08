@@ -142,6 +142,9 @@ class EkaScribe {
   }
 
   async initTransaction(request: TStartRecordingRequest) {
+    // Reset all instances before starting a new transaction
+    this.resetEkaScribe();
+
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
