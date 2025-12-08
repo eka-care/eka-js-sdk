@@ -1,6 +1,7 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
+import { decodeOutputSummaries, TTemplateValue } from '../../utils/template-value';
 
 export type TTemplateMessage = {
   type: 'warning' | 'error';
@@ -10,7 +11,7 @@ export type TTemplateMessage = {
 
 export type TOutputSummary = {
   template_id: string;
-  value?: string | null; //<base 64 encoded>
+  value?: TTemplateValue; // decoded value sent to client
   type: string;
   name: string;
   lang?: string;
@@ -65,6 +66,26 @@ export type TGetStatusResponse = {
   message?: string;
 };
 
+const decodeApiResponse = (apiResponse: TApiResponse): TApiResponse => {
+  if (!apiResponse?.data) return apiResponse;
+
+  const { data } = apiResponse;
+
+  return {
+    ...apiResponse,
+    data: {
+      ...data,
+      output: decodeOutputSummaries(data.output),
+      template_results: {
+        ...data.template_results,
+        integration: decodeOutputSummaries(data.template_results?.integration),
+        custom: decodeOutputSummaries(data.template_results?.custom),
+        transcript: decodeOutputSummaries(data.template_results?.transcript),
+      },
+    },
+  };
+};
+
 export const getVoiceApiV3StatusTranscript = async ({
   txnId,
 }: {
@@ -86,10 +107,11 @@ export const getVoiceApiV3StatusTranscript = async ({
       16000
     );
 
-    const response = await getResponse.json();
+    const response = (await getResponse.json()) as TApiResponse;
+    const decodedResponse = decodeApiResponse(response);
 
     return {
-      response,
+      response: decodedResponse,
       status_code: getResponse.status,
     };
   } catch (error) {

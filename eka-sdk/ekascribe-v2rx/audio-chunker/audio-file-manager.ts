@@ -1,6 +1,6 @@
 import postCogInit from '../api/post-cog-init';
 import { configureAWS } from '../aws-services/configure-aws';
-import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-v2';
+import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-es6';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { CALLBACK_TYPE, SHARED_WORKER_ACTION } from '../constants/enums';
 import { TAudioChunksInfo } from '../constants/types';
