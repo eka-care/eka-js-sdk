@@ -1,5 +1,11 @@
 // ekascribe main Class having all the methods - Entry point
 
+// Core-js polyfills for ES6/ES2015 compatibility
+// Note: ES6 build uses Babel with useBuiltIns: 'usage' which also injects polyfills automatically
+// This import ensures polyfills are available for both ES6 and ES11 builds
+// ES11 build will include it but modern browsers won't need it
+import 'core-js/stable';
+
 import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
@@ -64,6 +70,7 @@ import { getConfigV2MyTemplates } from './api/config/get-voice-api-v2-config-my-
 import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
+import { pollOutputSummary } from './main/poll-output-summary';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -176,7 +183,7 @@ class EkaScribe {
     return endRecordingResponse;
   }
 
-  async retryUploadRecording({ force_commit }: { force_commit: boolean }) {
+  async retryUploadRecording({ force_commit }: { force_commit?: boolean }) {
     const retryUploadResponse = await retryUploadFailedFiles({ force_commit });
     console.log('%c Line:138 🍖 retryUploadResponse', 'color:#3f7cff', retryUploadResponse);
     return retryUploadResponse;
@@ -323,6 +330,12 @@ class EkaScribe {
         message: `Failed to fetch output templates, ${error}`,
       } as TGetStatusResponse;
     }
+  }
+
+  async pollSessionOutput(request: { txn_id: string; max_polling_time: number }) {
+    const pollingResponse = await pollOutputSummary(request);
+
+    return pollingResponse;
   }
 
   async getSessionHistory({ txn_count }: { txn_count: number }) {
