@@ -332,7 +332,7 @@ class EkaScribe {
     }
   }
 
-  async pollSessionOutput(request: { txn_id: string; max_polling_time: number }) {
+  async pollSessionOutput(request: { txn_id: string; max_polling_time?: number }) {
     const pollingResponse = await pollOutputSummary(request);
 
     return pollingResponse;
