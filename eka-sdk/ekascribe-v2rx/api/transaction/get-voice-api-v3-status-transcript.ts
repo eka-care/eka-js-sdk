@@ -2,69 +2,7 @@ import { SDK_STATUS_CODE } from '../../constants/constant';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
 import { decodeOutputSummaries } from '../../utils/template-value';
-
-export type TTemplateMessage = {
-  type: 'warning' | 'error';
-  code?: string;
-  msg: string;
-};
-
-export type TOutputSummary = {
-  template_id: string;
-  value?: unknown; // decoded value sent to client
-  type: string;
-  name: string;
-  lang?: string;
-  status: TTemplateStatus;
-  errors?: TTemplateMessage[];
-  warnings?: TTemplateMessage[];
-};
-
-export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
-
-type TAdditionalData = {
-  doctor: {
-    _id: string;
-    profile: {
-      personal: {
-        name: {
-          l: string;
-          f: string;
-        };
-      };
-    };
-  };
-};
-
-type TApiResponse = {
-  data: {
-    output: TOutputSummary[];
-    audio_matrix?: {
-      quality: string;
-    };
-    additional_data?: TAdditionalData;
-    meta_data?: {
-      total_resources?: number;
-      total_parsed_resources?: number;
-    };
-    created_at?: string;
-    template_results: {
-      integration: TOutputSummary[];
-      custom: TOutputSummary[];
-      transcript: TOutputSummary[];
-    };
-  };
-  error?: {
-    code: string;
-    msg: string;
-  };
-};
-
-export type TGetStatusResponse = {
-  response?: TApiResponse | null;
-  status_code: number;
-  message?: string;
-};
+import { TApiResponse, TGetStatusResponse } from './get-voice-api-v3-status';
 
 const decodeApiResponse = (apiResponse: TApiResponse): TApiResponse => {
   if (!apiResponse?.data) return apiResponse;

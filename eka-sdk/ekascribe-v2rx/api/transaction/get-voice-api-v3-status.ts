@@ -11,7 +11,7 @@ export type TTemplateMessage = {
 
 export type TOutputSummary = {
   template_id: string;
-  value?: unknown;
+  value?: any;
   type: string;
   name: string;
   lang?: string;
@@ -36,7 +36,7 @@ type TAdditionalData = {
   };
 };
 
-type TApiResponse = {
+export type TApiResponse = {
   data: {
     output: TOutputSummary[];
     audio_matrix?: {
