@@ -1208,13 +1208,13 @@
   integrity sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==
 
 "@eka-care/ekascribe-ts-sdk-legacy@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es6":
-  version "2.0.4"
+  version "2.0.5"
   resolved "file:packages/es6"
   dependencies:
     core-js "^3.38.0"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "2.0.4"
+  version "2.0.5"
   resolved "file:packages/es11"
 
 "@esbuild/darwin-arm64@0.25.12":

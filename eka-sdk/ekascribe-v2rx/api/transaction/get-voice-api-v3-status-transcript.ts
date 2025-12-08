@@ -2,9 +2,9 @@ import { SDK_STATUS_CODE } from '../../constants/constant';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
 import { decodeOutputSummaries } from '../../utils/template-value';
-import { TApiResponse, TGetStatusResponse } from './get-voice-api-v3-status';
+import { TGetStatusApiResponse, TGetStatusResponse } from './get-voice-api-v3-status';
 
-const decodeApiResponse = (apiResponse: TApiResponse): TApiResponse => {
+const decodeApiResponse = (apiResponse: TGetStatusApiResponse): TGetStatusApiResponse => {
   if (!apiResponse?.data) return apiResponse;
 
   const { data } = apiResponse;
@@ -45,7 +45,7 @@ export const getVoiceApiV3StatusTranscript = async ({
       16000
     );
 
-    const response = (await getResponse.json()) as TApiResponse;
+    const response = (await getResponse.json()) as TGetStatusApiResponse;
     const decodedResponse = decodeApiResponse(response);
 
     return {

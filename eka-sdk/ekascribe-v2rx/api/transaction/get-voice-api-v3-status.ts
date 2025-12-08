@@ -22,27 +22,12 @@ export type TOutputSummary = {
 
 export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
 
-type TAdditionalData = {
-  doctor: {
-    _id: string;
-    profile: {
-      personal: {
-        name: {
-          l: string;
-          f: string;
-        };
-      };
-    };
-  };
-};
-
-export type TApiResponse = {
+export type TGetStatusApiResponse = {
   data: {
     output: TOutputSummary[];
     audio_matrix?: {
       quality: string;
     };
-    additional_data?: TAdditionalData;
     meta_data?: {
       total_resources?: number;
       total_parsed_resources?: number;
@@ -61,12 +46,12 @@ export type TApiResponse = {
 };
 
 export type TGetStatusResponse = {
-  response?: TApiResponse | null;
+  response?: TGetStatusApiResponse | null;
   status_code: number;
   message?: string;
 };
 
-const decodeApiResponse = (apiResponse: TApiResponse): TApiResponse => {
+const decodeApiResponse = (apiResponse: TGetStatusApiResponse): TGetStatusApiResponse => {
   if (!apiResponse?.data) return apiResponse;
 
   const { data } = apiResponse;
@@ -107,7 +92,7 @@ export const getVoiceApiV3Status = async ({
       16000
     );
 
-    const response = (await getResponse.json()) as TApiResponse;
+    const response = (await getResponse.json()) as TGetStatusApiResponse;
     const decodedResponse = decodeApiResponse(response);
 
     return {
