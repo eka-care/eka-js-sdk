@@ -7,7 +7,6 @@ import { TAudioChunksInfo } from '../constants/types';
 import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import EkaScribeStore from '../store/store';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
-import { getSharedWorkerUrl } from '../utils/get-worker-url';
 
 type UploadPromise = Promise<{ success?: string; error?: string }>;
 
@@ -111,9 +110,15 @@ class AudioFileManager {
       //   'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.80/dist/shared-worker/s3-file-upload.js'
       // );
 
-      const workerUrl = getSharedWorkerUrl();
+      const worker = new SharedWorker(
+        new URL('../shared-worker/s3-file-upload.js', import.meta.url)
+      );
 
-      const worker = new SharedWorker(workerUrl);
+      // const workerUrl = getSharedWorkerUrl();
+
+      // console.log(workerUrl, 'worker url');
+
+      // const worker = new SharedWorker(workerUrl);
 
       this.sharedWorkerInstance = worker;
 
@@ -293,7 +298,7 @@ class AudioFileManager {
 
       return credentials;
     } catch (error) {
-      console.log('%c Line:198 🥃 error', 'color:#42b983', error);
+      console.error('%c Line:198 🥃 error', 'color:#42b983', error);
 
       this.isAWSConfigured = false;
       return false;
@@ -476,6 +481,8 @@ class AudioFileManager {
 
       if (!this.sharedWorkerInstance) {
         const workerCreated = this.createSharedWorkerInstance();
+
+        console.log(workerCreated, 'worker created');
         if (!workerCreated) {
           // SharedWorker creation failed (likely due to CORS/same-origin policy)
           // Fall back to non-worker upload

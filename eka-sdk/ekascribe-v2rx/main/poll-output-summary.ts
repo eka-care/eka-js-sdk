@@ -1,7 +1,6 @@
 import {
   getVoiceApiV3Status,
   TGetStatusApiResponse,
-  TOutputSummary,
 } from '../api/transaction/get-voice-api-v3-status';
 
 export type TPollingResponse = {
