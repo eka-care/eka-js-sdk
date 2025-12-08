@@ -1,8 +1,6 @@
 import { TEMPLATE_TYPE } from '../constants/enums';
 
-export type TTemplateValue = string | Record<string, unknown> | Array<unknown> | null;
-
-const safeJsonParse = (input: string): TTemplateValue => {
+const safeJsonParse = (input: string) => {
   try {
     return JSON.parse(input);
   } catch {
@@ -31,10 +29,7 @@ export const decodeUnicodeBase64 = (str: string): string => {
   }
 };
 
-export const processStructuredSummaryData = (
-  type: string,
-  value?: string | null
-): TTemplateValue => {
+export const processStructuredSummaryData = (type: string, value?: string | null) => {
   if (!value || value.trim() === '') return null;
 
   const decoded = decodeUnicodeBase64(value);

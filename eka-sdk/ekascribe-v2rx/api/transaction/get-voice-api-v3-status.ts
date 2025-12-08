@@ -1,7 +1,7 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
-import { decodeOutputSummaries, TTemplateValue } from '../../utils/template-value';
+import { decodeOutputSummaries } from '../../utils/template-value';
 
 export type TTemplateMessage = {
   type: 'warning' | 'error';
@@ -11,7 +11,7 @@ export type TTemplateMessage = {
 
 export type TOutputSummary = {
   template_id: string;
-  value?: TTemplateValue; // decoded value sent to client
+  value?: unknown;
   type: string;
   name: string;
   lang?: string;
