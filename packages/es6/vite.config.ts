@@ -10,23 +10,23 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, '../../eka-sdk/ekascribe-v2rx/index.ts'),
       formats: ['es'],
-      fileName: 'index'
+      fileName: 'index',
     },
     outDir: 'dist',
     rollupOptions: {
       output: {
         assetFileNames: '[name][extname]',
-        chunkFileNames: '[name].js'
-      }
-    }
+        chunkFileNames: '[name].js',
+      },
+    },
   },
   worker: {
     format: 'iife',
     rollupOptions: {
       output: {
-        entryFileNames: 'worker.bundle.js'
-      }
-    }
+        entryFileNames: 'worker.bundle.js',
+      },
+    },
   },
   plugins: [
     babel({
@@ -36,22 +36,22 @@ export default defineConfig({
             '@babel/preset-env',
             {
               targets: {
-                browsers: ['> 0.5%', 'last 2 versions', 'not dead', 'not IE 11']
+                browsers: ['> 0.5%', 'last 2 versions', 'not dead', 'not IE 11'],
               },
               useBuiltIns: 'usage',
               corejs: {
                 version: 3,
-                proposals: true
+                proposals: true,
               },
-              modules: false
-            }
-          ]
-        ]
-      }
+              modules: false,
+            },
+          ],
+        ],
+      },
     }),
     dts({
       rollupTypes: true,
-      outDir: 'dist'
-    })
-  ]
+      outDir: 'dist',
+    }),
+  ],
 });

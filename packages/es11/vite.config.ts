@@ -9,28 +9,28 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, '../../eka-sdk/ekascribe-v2rx/index.ts'),
       formats: ['es'],
-      fileName: 'index'
+      fileName: 'index',
     },
     outDir: 'dist',
     rollupOptions: {
       output: {
         assetFileNames: '[name][extname]',
-        chunkFileNames: '[name].js'
-      }
-    }
+        chunkFileNames: '[name].js',
+      },
+    },
   },
   worker: {
     format: 'iife',
     rollupOptions: {
       output: {
-        entryFileNames: 'worker.bundle.js'
-      }
-    }
+        entryFileNames: 'worker.bundle.js',
+      },
+    },
   },
   plugins: [
     dts({
       rollupTypes: true,
-      outDir: 'dist'
-    })
-  ]
+      outDir: 'dist',
+    }),
+  ],
 });
