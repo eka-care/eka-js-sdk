@@ -196,10 +196,7 @@ class EkaScribe {
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
-      console.log('mic vad', this.vadInstance.getMicVad());
       this.vadInstance.pauseVad();
-
-      console.log('mic vad paused', this.vadInstance.getMicVad());
 
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
@@ -366,14 +363,6 @@ class EkaScribe {
   }
 
   resetEkaScribe() {
-    console.log(
-      this.audioFileManagerInstance,
-      this.audioBufferInstance,
-      this.vadInstance,
-      EkaScribeStore,
-      'before reset ekascribe'
-    );
-
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();

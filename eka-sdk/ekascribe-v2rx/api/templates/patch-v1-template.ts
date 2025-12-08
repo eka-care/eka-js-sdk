@@ -38,7 +38,7 @@ export async function patchV1Template({
 
     return res;
   } catch (error) {
-    console.log('%c patchV1Template -> error', 'color:#f5ce50', error);
+    console.error('%c patchV1Template -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       msg: `Something went wrong! ${error}`,

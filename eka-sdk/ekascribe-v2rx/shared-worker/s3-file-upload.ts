@@ -88,7 +88,7 @@ onconnect = function (event: MessageEvent) {
             });
           })
           .catch((error) => {
-            console.log(error, 'shared worker - file upload');
+            console.error(error, 'shared worker - file upload');
             uploadRequestCompleted++;
           });
 
