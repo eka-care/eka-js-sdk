@@ -1,11 +1,5 @@
 // ekascribe main Class having all the methods - Entry point
 
-// Core-js polyfills for ES6/ES2015 compatibility
-// Note: ES6 build uses Babel with useBuiltIns: 'usage' which also injects polyfills automatically
-// This import ensures polyfills are available for both ES6 and ES11 builds
-// ES11 build will include it but modern browsers won't need it
-import 'core-js/stable';
-
 import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
