@@ -39,7 +39,7 @@ async function postV1TemplateSection({
 
     return res;
   } catch (error) {
-    console.log('%c postV1TemplateSection -> error', 'color:#f5ce50', error);
+    console.error('%c postV1TemplateSection -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       msg: `Something went wrong! ${error}`,

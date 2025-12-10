@@ -23,7 +23,7 @@ async function getV1Templates(): Promise<TGetV1TemplatesResponse> {
 
     return res;
   } catch (error) {
-    console.log('%c getV1Templates -> error', 'color:#f5ce50', error);
+    console.error('%c getV1Templates -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       items: [],

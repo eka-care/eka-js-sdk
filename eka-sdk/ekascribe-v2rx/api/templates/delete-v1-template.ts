@@ -26,7 +26,7 @@ async function deleteV1Template(template_id: string): Promise<TPostV1TemplateRes
 
     return res;
   } catch (error) {
-    console.log('%c deleteV1Template -> error', 'color:#f5ce50', error);
+    console.error('%c deleteV1Template -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       msg: `Something went wrong! ${error}`,

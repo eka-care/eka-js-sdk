@@ -1,0 +1,45 @@
+{
+  "name": "@eka-care/ekascribe-ts-sdk-legacy",
+  "version": "2.0.11",
+  "description": "EkaScribe TypeScript SDK - ES6/ES2015 build with polyfills for legacy browser support",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./worker": "./dist/worker.bundle.js"
+  },
+  "repository": "git@github.com:eka-care/eka-js-sdk.git",
+  "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
+  "keywords": [
+    "ekascribe",
+    "typescript",
+    "sdk",
+    "javascript",
+    "voice2rx",
+    "eka care",
+    "legacy",
+    "es6",
+    "polyfill"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "yarn clean && vite build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "core-js": "^3.38.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}

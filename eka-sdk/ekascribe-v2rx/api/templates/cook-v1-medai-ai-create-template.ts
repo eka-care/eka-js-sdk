@@ -26,7 +26,7 @@ async function cookV1MediaAiCreateTemplate(
 
     return res;
   } catch (error) {
-    console.log('%c postV1Template -> error', 'color:#f5ce50', error);
+    console.error('%c postV1Template -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,

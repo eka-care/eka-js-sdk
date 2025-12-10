@@ -83,6 +83,14 @@ const pushFilesToS3V2 = async ({
     const err = JSON.stringify(error, null, 2);
     console.error('pushFilesToS3V2 error =>', err);
 
+    if (error.statusCode === 401 || error.code === 'AuthTokenExpired') {
+      return {
+        error: 'Authentication token expired. Please call updateAuthTokens with a new token.',
+        errorCode: 'AuthTokenExpired',
+        code: 401,
+      };
+    }
+
     if (error.statusCode && error.statusCode >= 400) {
       return {
         error: `Expired token! ${err}`,

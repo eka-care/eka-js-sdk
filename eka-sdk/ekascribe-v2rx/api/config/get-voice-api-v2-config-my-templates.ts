@@ -23,7 +23,7 @@ export const getConfigV2MyTemplates = async (): Promise<TGetConfigV2Response> =>
       code: response.status,
     };
   } catch (error) {
-    console.log('Error in getConfigV2MyTemplates api: ', error);
+    console.error('Error in getConfigV2MyTemplates api: ', error);
 
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,

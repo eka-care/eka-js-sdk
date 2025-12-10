@@ -1,7 +1,5 @@
 // ekascribe main Class having all the methods - Entry point
 
-import 'core-js/stable';
-
 import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
@@ -138,6 +136,9 @@ class EkaScribe {
   }
 
   async initTransaction(request: TStartRecordingRequest) {
+    // Reset all instances before starting a new transaction
+    this.resetEkaScribe();
+
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
     return initTransactionResponse;
@@ -192,10 +193,7 @@ class EkaScribe {
   }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
-      console.log('mic vad', this.vadInstance.getMicVad());
       this.vadInstance.pauseVad();
-
-      console.log('mic vad paused', this.vadInstance.getMicVad());
 
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
@@ -328,7 +326,7 @@ class EkaScribe {
     }
   }
 
-  async pollSessionOutput(request: { txn_id: string; max_polling_time: number }) {
+  async pollSessionOutput(request: { txn_id: string; max_polling_time?: number }) {
     const pollingResponse = await pollOutputSummary(request);
 
     return pollingResponse;
@@ -362,14 +360,6 @@ class EkaScribe {
   }
 
   resetEkaScribe() {
-    console.log(
-      this.audioFileManagerInstance,
-      this.audioBufferInstance,
-      this.vadInstance,
-      EkaScribeStore,
-      'before reset ekascribe'
-    );
-
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();

@@ -34,14 +34,27 @@ async function s3RetryWrapper<T>(
       // - Legacy AWS SDK path sets error.code === 'ExpiredToken'
       // - aws4 path (V2) sets both error.code === 'ExpiredToken' and statusCode >= 400
       if (errorCode === 'ExpiredToken' || statusCode >= 400) {
-        const cogResponse = await postCogInit();
-        const { credentials } = cogResponse;
-        if (credentials) {
-          configureAWS({
-            accessKeyId: credentials.AccessKeyId,
-            secretKey: credentials.SecretKey,
-            sessionToken: credentials.SessionToken,
-          });
+        try {
+          const cogResponse = await postCogInit();
+          const { credentials, code: cogStatus } = cogResponse as any;
+
+          // Surface auth expiry to caller so it can be handled in the right context (e.g., main thread).
+          if (cogStatus === 401) {
+            const authError: any = new Error('Auth token expired');
+            authError.statusCode = 401;
+            authError.code = 'AuthTokenExpired';
+            throw authError;
+          }
+
+          if (credentials) {
+            configureAWS({
+              accessKeyId: credentials.AccessKeyId,
+              secretKey: credentials.SecretKey,
+              sessionToken: credentials.SessionToken,
+            });
+          }
+        } catch (cogError) {
+          throw cogError;
         }
       }
     }

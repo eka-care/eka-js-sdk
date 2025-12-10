@@ -30,6 +30,52 @@ npm install @eka-care/ekascribe-ts-sdk
 yarn add @eka-care/ekascribe-ts-sdk
 ```
 
+## Bundler Setup
+
+The SDK uses a SharedWorker for background audio uploads. Modern bundlers (Webpack 5, Vite) automatically handle the worker bundling.
+
+### Vite
+
+Works out of the box - no configuration needed.
+
+```ts
+// Just import and use
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+```
+
+### Webpack 5
+
+Works out of the box with default configuration. The `new URL(..., import.meta.url)` pattern is natively supported.
+
+```ts
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+```
+
+### Next.js
+
+For Next.js projects, ensure the SDK is only used on the client side:
+
+```tsx
+'use client';
+
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+
+// Use inside a client component
+const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
+```
+
+### Browser (Script Tag)
+
+For direct browser usage without a bundler:
+
+```html
+<script type="module">
+  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+
+  const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
+</script>
+```
+
 ## Usage
 
 ### 1. Get Ekascribe Instance

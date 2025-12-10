@@ -1,45 +1,10 @@
-import { getVoiceApiV3Status, TOutputSummary } from '../api/transaction/get-voice-api-v3-status';
-
-interface IError {
-  code: string;
-  msg: string;
-}
-
-interface IADDITIONAL_DATA {
-  doctor: {
-    _id: string;
-    profile: {
-      personal: {
-        name: {
-          l: string;
-          f: string;
-        };
-      };
-    };
-  };
-}
-
-interface IApiResponse {
-  data: {
-    output: TOutputSummary[];
-    additional_data?: IADDITIONAL_DATA;
-    meta_data?: {
-      total_resources?: number;
-      total_parsed_resources?: number;
-    };
-    audio_matrix?: { quality: string };
-    created_at?: string;
-    template_results: {
-      integration: TOutputSummary[];
-      custom: TOutputSummary[];
-      transcript?: TOutputSummary[];
-    };
-  };
-  error?: IError;
-}
+import {
+  getVoiceApiV3Status,
+  TGetStatusApiResponse,
+} from '../api/transaction/get-voice-api-v3-status';
 
 export type TPollingResponse = {
-  response?: IApiResponse | null;
+  response?: TGetStatusApiResponse | null;
   status_code: number;
   errorMessage?: string;
   errorCode?: string;
@@ -47,10 +12,10 @@ export type TPollingResponse = {
 
 export const pollOutputSummary = async ({
   txn_id,
-  max_polling_time = 5 * 60 * 1000,
+  max_polling_time = 2 * 60 * 1000,
 }: {
   txn_id: string;
-  max_polling_time: number;
+  max_polling_time?: number;
 }): Promise<TPollingResponse> => {
   try {
     const time = new Date().getTime();

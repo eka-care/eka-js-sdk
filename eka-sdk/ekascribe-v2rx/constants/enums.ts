@@ -62,3 +62,9 @@ export enum CALLBACK_TYPE {
   NETWORK_STATUS = 'network_status',
   STORAGE_STATUS = 'storage_status',
 }
+
+export enum TEMPLATE_TYPE {
+  JSON = 'json',
+  TRANSCRIPT = 'transcript',
+  MARKDOWN = 'markdown',
+}

@@ -24,7 +24,7 @@ const putVoiceApiV2Config = async (request: TPatchVoiceApiV2ConfigRequest) => {
       code: response.status,
     };
   } catch (error) {
-    console.log('Error in getConfigV2 api: ', error);
+    console.error('Error in getConfigV2 api: ', error);
 
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
