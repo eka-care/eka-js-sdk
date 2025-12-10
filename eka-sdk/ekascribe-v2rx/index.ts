@@ -1,5 +1,7 @@
 // ekascribe main Class having all the methods - Entry point
 
+import 'core-js/stable';
+
 import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
