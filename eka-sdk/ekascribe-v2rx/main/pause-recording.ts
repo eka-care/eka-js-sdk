@@ -64,7 +64,7 @@ const pauseVoiceRecording = (): TPauseRecordingResponse => {
       is_paused: true,
     };
   } catch (error) {
-    console.log('%c Line:7 🍔 pauseRecording error', 'color:#3f7cff', error);
+    console.error('%c Line:7 🍔 pauseRecording error', 'color:#3f7cff', error);
     return {
       error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,

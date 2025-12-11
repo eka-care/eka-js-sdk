@@ -1,68 +1,27 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V3 } from '../../fetch-client/helper';
+import { decodeOutputSummaries } from '../../utils/template-value';
+import { TGetStatusApiResponse, TGetStatusResponse } from './get-voice-api-v3-status';
 
-export type TTemplateMessage = {
-  type: 'warning' | 'error';
-  code?: string;
-  msg: string;
-};
+const decodeApiResponse = (apiResponse: TGetStatusApiResponse): TGetStatusApiResponse => {
+  if (!apiResponse?.data) return apiResponse;
 
-export type TOutputSummary = {
-  template_id: string;
-  value?: string | null; //<base 64 encoded>
-  type: string;
-  name: string;
-  lang?: string;
-  status: TTemplateStatus;
-  errors?: TTemplateMessage[];
-  warnings?: TTemplateMessage[];
-};
+  const { data } = apiResponse;
 
-export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
-
-type TAdditionalData = {
-  doctor: {
-    _id: string;
-    profile: {
-      personal: {
-        name: {
-          l: string;
-          f: string;
-        };
-      };
-    };
+  return {
+    ...apiResponse,
+    data: {
+      ...data,
+      output: decodeOutputSummaries(data.output),
+      template_results: {
+        ...data.template_results,
+        integration: decodeOutputSummaries(data.template_results?.integration),
+        custom: decodeOutputSummaries(data.template_results?.custom),
+        transcript: decodeOutputSummaries(data.template_results?.transcript),
+      },
+    },
   };
-};
-
-type TApiResponse = {
-  data: {
-    output: TOutputSummary[];
-    audio_matrix?: {
-      quality: string;
-    };
-    additional_data?: TAdditionalData;
-    meta_data?: {
-      total_resources?: number;
-      total_parsed_resources?: number;
-    };
-    created_at?: string;
-    template_results: {
-      integration: TOutputSummary[];
-      custom: TOutputSummary[];
-      transcript: TOutputSummary[];
-    };
-  };
-  error?: {
-    code: string;
-    msg: string;
-  };
-};
-
-export type TGetStatusResponse = {
-  response?: TApiResponse | null;
-  status_code: number;
-  message?: string;
 };
 
 export const getVoiceApiV3StatusTranscript = async ({
@@ -86,10 +45,11 @@ export const getVoiceApiV3StatusTranscript = async ({
       16000
     );
 
-    const response = await getResponse.json();
+    const response = (await getResponse.json()) as TGetStatusApiResponse;
+    const decodedResponse = decodeApiResponse(response);
 
     return {
-      response,
+      response: decodedResponse,
       status_code: getResponse.status,
     };
   } catch (error) {

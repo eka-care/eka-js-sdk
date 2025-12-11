@@ -38,7 +38,7 @@ async function postConvertTranscriptionToTemplate({
 
     return res;
   } catch (error) {
-    console.log('%c postV1ConvertToTemplate -> error', 'color:#f5ce50', error);
+    console.error('%c postV1ConvertToTemplate -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,

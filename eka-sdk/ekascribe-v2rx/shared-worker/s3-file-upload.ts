@@ -4,7 +4,7 @@ if (typeof window === 'undefined') {
 }
 
 import { configureAWS } from '../aws-services/configure-aws';
-import pushFileToS3 from '../aws-services/upload-file-to-s3';
+import pushFileToS3 from '../aws-services/upload-file-to-s3-es11';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
@@ -54,7 +54,7 @@ onconnect = function (event: MessageEvent) {
         uploadRequestReceived++;
 
         let audioBlob: Blob;
-        let compressedAudioBuffer: Uint8Array<ArrayBufferLike>[];
+        let compressedAudioBuffer: Uint8Array[];
 
         if (fileBlob) {
           audioBlob = fileBlob;
@@ -88,7 +88,7 @@ onconnect = function (event: MessageEvent) {
             });
           })
           .catch((error) => {
-            console.log(error, 'shared worker - file upload');
+            console.error(error, 'shared worker - file upload');
             uploadRequestCompleted++;
           });
 

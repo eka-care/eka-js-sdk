@@ -6,10 +6,6 @@ This guide explains how to integrate the Eka Care Ekascribe Typescript SDK into 
 
 The Eka Care Ekascribe SDK allows you to capture and process audio, generating structured medical documentation using Eka Care's voice transcription API.
 
-## Documentation
-
-[Visit the documentation site](https://developer.eka.care/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
-
 ## Prerequisites
 
 Before getting started, ensure you have:
@@ -25,9 +21,9 @@ Before getting started, ensure you have:
 Install the SDK using `npm` or `yarn`:
 
 ```bash
-npm install @eka-care/ekascribe-ts-sdk
+npm install @eka-care/ekascribe-ts-sdk-legacy
 # or
-yarn add @eka-care/ekascribe-ts-sdk
+yarn add @eka-care/ekascribe-ts-sdk-legacy
 ```
 
 ## Bundler Setup

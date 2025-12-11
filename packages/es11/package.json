@@ -1,0 +1,38 @@
+{
+  "name": "@eka-care/ekascribe-ts-sdk",
+  "version": "2.0.15",
+  "description": "EkaScribe TypeScript SDK - Modern ES2020 build",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./worker": "./dist/worker.bundle.js"
+  },
+  "repository": "git@github.com:eka-care/eka-js-sdk.git",
+  "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
+  "keywords": [
+    "ekascribe",
+    "typescript",
+    "sdk",
+    "javascript",
+    "voice2rx",
+    "eka care"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "yarn clean && vite build && cp ../../README.md ."
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
