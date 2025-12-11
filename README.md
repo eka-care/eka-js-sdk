@@ -183,14 +183,22 @@ const response = await ekascribe.initTransaction({
 
 ```ts
 {
-  "status_code": 200,
-  "message": "Transaction initialized successfully",
-  "business_id": "biz_abc123def456",
-  "txn_id": "abc-123",
-  "oid": "org_789xyz",
-  "uuid": "user_uuid_456"
+  error_code?: ERROR_CODE,
+  status_code: 200,
+  message: "Transaction initialized successfully",
+  business_id: "biz_abc123def456",
+  txn_id: "abc-123",
+  oid: "org_789xyz",
+  uuid: "user_uuid_456"
 }
 ```
+
+**Error handling:**
+
+Possible Error Codes in `error_code`:
+
+- `txn_limit_exceeded`: Maximum number of transactions exceeded
+- `txn_init_failed`: Something went wrong. Retry with the same method call
 
 **Handling 401 Status Code:**
 
@@ -296,8 +304,23 @@ const response = await ekascribe.endRecording();
 
 - Possible Error Codes, `error_code`
 - `txn_stop_failed`: Call `endRecording` again.
-- `audio_upload_failed`: Use `retryUploadRecording` (step 8).
-- `txn_commit_failed`: Call `commitTransactionCall` (step 10).
+- `audio_upload_failed`: Use `retryUploadRecording` (step 9).
+- `txn_commit_failed`: Call `commitTransactionCall` (step 11).
+
+**Handling 401 Status Code:**
+
+If you receive a `status_code: 401`, update the tokens in your config and retry:
+
+```ts
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.endRecording();
+```
 
 ### 8. Get output template prescriptions
 
@@ -462,6 +485,21 @@ const response = await ekascribe.retryUploadRecording({ force_commit: true });
 - `force_commit: true` - Model will initiate the processing if some files still fail after retry
 - `force_commit: false` - It will waits until all files are uploaded successfully before processing.
 
+**Handling 401 Status Code:**
+
+If you receive a `status_code: 401`, update the tokens in your config and retry:
+
+```ts
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.retryUploadRecording({ force_commit: true });
+```
+
 ### 10. Patch recording session status
 
 Cancel or update the status of a recording session.
@@ -496,6 +534,21 @@ const response = await ekascribe.patchSessionStatus({
 }
 ```
 
+**Handling 401 Status Code:**
+
+If you receive a `code: 401`, update the tokens in your config and retry:
+
+```ts
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.patchSessionStatus({ ... });
+```
+
 ### 11. Commit transaction
 
 Call this if `endRecording` returns `error_code: 'txn_commit_failed'` or the transaction is not yet committed.
@@ -514,6 +567,21 @@ const response = await ekascribe.commitTransactionCall();
 };
 ```
 
+**Handling 401 Status Code:**
+
+If you receive a `status_code: 401`, update the tokens in your config and retry:
+
+```ts
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.commitTransactionCall();
+```
+
 ### 12. Stop transaction
 
 Use this method to stop a transaction that has not yet been stopped or returned a `txn_stop_failed` error in a previous step.
@@ -530,6 +598,21 @@ const response = await ekascribe.stopTransactionCall();
   status_code: number;
   message: string;
 };
+```
+
+**Handling 401 Status Code:**
+
+If you receive a `status_code: 401`, update the tokens in your config and retry:
+
+```ts
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.stopTransactionCall();
 ```
 
 ### 13. Get previous sessions
@@ -825,134 +908,89 @@ const deleteResult = await ekascribe.deleteTemplateSection('section-123');
 }
 ```
 
-### 11. Convert a transaction into another template after prescription generation
+## Non-vaded flow: Upload raw audio to get output summary
 
-Use this method to convert an existing transaction's output to use a different template format.
+Use this method to upload pre-recorded audio files directly and get transcription output without real-time recording. This is useful when you have existing audio files and want to process them.
 
-```ts
-const convertResult = await ekascribe.postTransactionConvertToTemplate({
-  txn_id: 'abc-123',
-  template_id: 'new-template-456',
-});
-```
+**What this method does:**
 
-- #### Response type:
-
-```ts
-{
-  status: 'success' | 'failed';
-  message: string;
-  txn_id: string;
-  template_id: string;
-  b_id: string;
-  code: number;
-  msg: string;
-  error?: { code: string; message: string; display_message: string };
-}
-```
-
-```ts
-// Returns filtered array of session history data
-[
-  {
-    created_at: 'string',
-    b_id: 'string',
-    user_status: 'string',
-    processing_status: 'string',
-    txn_id: 'string',
-    mode: 'string',
-    uuid: 'string',
-    oid: 'string',
-    patient_details: {
-      username: 'string',
-      oid: 'string',
-      age: number,
-      biologicalSex: 'M' | 'F' | 'O',
-      mobile: 'string',
-      email: 'string',
-    },
-  },
-];
-```
-
-## Non-vaded flow, upload raw audio to get output summary
-
-### 1. Upload audio file to get output summary
-
-Use this method to upload audio files directly and get transcription output without real-time recording.
+- Gets a presigned URL from the server
+- Uploads audio files to S3 via presigned URL
+- Initializes a transaction with the uploaded files
+- Returns the transaction details
 
 ```ts
 const audioFiles = [file1, file2]; // File or Blob objects
 const audioFileNames = ['audio1.mp3', 'audio2.mp3'];
 
-const uploadResult = await ekascribe.uploadAudioWithPresignedUrl({
-  action: 'upload',
+const response = await ekascribe.uploadAudioWithPresignedUrl({
+  action: 'ekascribe-v2', // Pass this exact value without changing
   audioFiles,
   audioFileNames,
   mode: 'consultation',
-  txn_id: 'upload-session-123',
-  input_language: ['en'],
-  output_format_template: [{ template_id: 'eka_emr_template' }],
-  transfer: 'non-vaded',
-  auto_download: false,
-  model_training_consent: false,
+  txn_id: 'unique-transaction-id',
+  input_language: ['en-IN'],
+  output_format_template: [{ template_id: 'your_template_id' }],
+  transfer: 'non-vaded', // Use 'non-vaded' for raw audio files
+  model_type: 'pro' | 'lite',
   system_info: {
     platform: 'web',
     language: 'en',
     time_zone: 'Asia/Kolkata',
   },
-  model_type: 'pro',
+  patient_details: {
+    username: 'John Doe',
+    age: 35,
+    biologicalSex: 'M',
+  },
+  version: '1.0.0',
+  additional_data: {},
 });
 ```
 
-- #### Response type:
+**Key Parameters:**
+
+- `action`: Pass `ekascribe-v2` exactly as shown
+- `audioFiles`: Array of File or Blob objects
+- `audioFileNames`: Array of file names corresponding to audio files
+- `transfer`: Use `non-vaded` for raw audio files (not processed with VAD)
+- Other parameters: Same as `initTransaction` (see step 3)
+
+- #### Sample Response:
 
 ```ts
 {
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-  business_id?: string;
-  txn_id?: string;
-  oid?: string;
-  uuid?: string;
+  error_code?: ERROR_CODE,
+  status_code: 200,
+  message: 'Recording uploaded successfully.',
 }
 ```
 
-### Edit output summary
+**Error handling:**
 
-Use this method to edit the generated output summary for a completed transaction.
+Possible Error Codes in `error_code`:
 
-```ts
-const editResult = await ekascribe.updateResultSummary({
-  txnId: 'abc-123',
-  data: [
-    {
-      'template-id': 'eka_emr_template',
-      data: 'Updated prescription content here',
-    },
-  ],
-});
-```
+- `get_presigned_url_failed`: Failed to get presigned URL from server, retry with the same method
+- `audio_upload_failed`: Failed to upload audio files to S3, retry with the same method
+- `txn_limit_exceeded`: Maximum number of transactions exceeded
+- `txn_init_failed`: Failed to initialize transaction after upload, retry with the same method
 
-- #### Response type:
+**Handling 401 Status Code:**
+
+If you receive a `status_code: 401`, update the tokens in your config and retry:
 
 ```ts
-{
-  status: string;
-  message: string;
-  txn_id: string;
-  b_id: string;
-  code: number;
-  error?: { code: string; message: string; display_message: string };
-}
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now retry the method call
+const response = await ekascribe.uploadAudioWithPresignedUrl({ ... });
 ```
 
 ## Utility Methods
-
-```ts
-const ekaScribe = getEkaScribeInstance({ access_token: 'old_token' });
-```
 
 ### 1. Get total uploaded files
 
@@ -1026,14 +1064,6 @@ Use this method to completely destroy the VAD instance and free up resources.
 
 ```ts
 ekaScribe.destroyVad();
-```
-
-### 8. Update Authentication Tokens
-
-Use this method to update the access token without reinitializing the entire SDK instance.
-
-```ts
-ekaScribe.updateAuthTokens({ access_token: 'new_token' });
 ```
 
 ## Generic Callbacks
