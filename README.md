@@ -302,7 +302,8 @@ const response = await ekascribe.endRecording();
 
 **Error handling:**
 
-- Possible Error Codes, `error_code`
+Possible Error Codes in `error_code`:
+
 - `txn_stop_failed`: Call `endRecording` again.
 - `audio_upload_failed`: Use `retryUploadRecording` (step 9).
 - `txn_commit_failed`: Call `commitTransactionCall` (step 11).
@@ -347,10 +348,10 @@ const res = await ekascribe.pollSessionOutput({
 
 Status codes to handle:
 
-- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
-- `500`: All template processing failed, or internal server error; stop and surface error.
-- `206`: Partial success; some templates not processed fully.
 - `200`: Success; all templates processed.
+- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
+- `206`: Partial success; some templates not processed fully.
+- `500`: All template processing failed, or internal server error; stop and surface error.
 
 - #### Response type:
 
