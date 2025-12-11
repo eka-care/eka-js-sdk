@@ -6,10 +6,6 @@ This guide explains how to integrate the Eka Care Ekascribe Typescript SDK into 
 
 The Eka Care Ekascribe SDK allows you to capture and process audio, generating structured medical documentation using Eka Care's voice transcription API.
 
-## Documentation
-
-[Visit the documentation site](https://developer.eka.care/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
-
 ## Prerequisites
 
 Before getting started, ensure you have:
@@ -25,9 +21,9 @@ Before getting started, ensure you have:
 Install the SDK using `npm` or `yarn`:
 
 ```bash
-npm install @eka-care/ekascribe-ts-sdk
+npm install @eka-care/ekascribe-ts-sdk-legacy
 # or
-yarn add @eka-care/ekascribe-ts-sdk
+yarn add @eka-care/ekascribe-ts-sdk-legacy
 ```
 
 ## Bundler Setup
@@ -302,7 +298,8 @@ const response = await ekascribe.endRecording();
 
 **Error handling:**
 
-- Possible Error Codes, `error_code`
+Possible Error Codes in `error_code`:
+
 - `txn_stop_failed`: Call `endRecording` again.
 - `audio_upload_failed`: Use `retryUploadRecording` (step 9).
 - `txn_commit_failed`: Call `commitTransactionCall` (step 11).
@@ -347,10 +344,10 @@ const res = await ekascribe.pollSessionOutput({
 
 Status codes to handle:
 
-- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
-- `500`: All template processing failed, or internal server error; stop and surface error.
-- `206`: Partial success; some templates not processed fully.
 - `200`: Success; all templates processed.
+- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
+- `206`: Partial success; some templates not processed fully.
+- `500`: All template processing failed, or internal server error; stop and surface error.
 
 - #### Response type:
 
