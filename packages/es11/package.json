@@ -26,7 +26,7 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn clean && vite build"
+    "build": "yarn clean && vite build && cp ../../README.md ."
   },
   "publishConfig": {
     "access": "public"

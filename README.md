@@ -322,13 +322,35 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.endRecording();
 ```
 
-### 8. Get output template prescriptions
+### 8. Get output recorded prescription
 
-Use this method to fetch the final generated prescription output for a session.
+You can fetch output in two ways:
+
+- `getTemplateOutput({ txn_id })`: polling is your responsibility; call repeatedly until processing finishes.
+- `pollSessionOutput({ txn_id, max_polling_time })`: SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
+
+Example (manual polling):
 
 ```ts
-await ekascribe.getTemplateOutput({ txn_id: 'abc-123' });
+const res = await ekascribe.getTemplateOutput({ txn_id: 'transaction-id' });
 ```
+
+Example (SDK-managed polling):
+
+```ts
+// Waits up to 2 minutes by default; override as needed
+const res = await ekascribe.pollSessionOutput({
+  txn_id: 'transaction-id',
+  max_polling_time: 2 * 60 * 1000, // optional
+});
+```
+
+Status codes to handle:
+
+- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
+- `500`: All template processing failed, or internal server error; stop and surface error.
+- `206`: Partial success; some templates not processed fully.
+- `200`: Success; all templates processed.
 
 - #### Response type:
 
@@ -340,27 +362,12 @@ await ekascribe.getTemplateOutput({ txn_id: 'abc-123' });
       template_results: {
         integration: TOutputSummary[];
         custom: TOutputSummary[];
+        transcript: TOutputSummary[];
       };
       audio_matrix?: {
         quality: string;
       };
-      additional_data?: {
-        doctor: {
-          _id: string;
-          profile: {
-            personal: {
-              name: {
-                l: string;
-                f: string;
-              };
-            };
-          };
-        };
-      };
-      meta_data?: {
-        total_resources?: number;
-        total_parsed_resources?: number;
-      };
+      additional_data?: {};
       created_at?: string;
     };
     error?: {
@@ -374,7 +381,7 @@ await ekascribe.getTemplateOutput({ txn_id: 'abc-123' });
 
 type TOutputSummary = {
   template_id: string;
-  value?: string | null; // base64 encoded
+  value?: JSON | Array | string;
   type: string;
   name: string;
   status: 'success' | 'partial_success' | 'failure';
@@ -400,27 +407,18 @@ type TOutputSummary = {
     data: {
       output: [
         {
-          template_id: "template_123",
-          value: "eyJwYXRpZW50Ijp7Im5hbWUiOiJKb2huIERvZSJ9fQ==",
+          template_id: "template_id_passed_in_initTransaction",
+          value: "Output Data for this template",
           type: "custom",
           name: "General Prescription",
           status: "success"
         }
       ],
       template_results: {
-        integration: [
-          {
-            template_id: "integration_template_456",
-            value: "eyJkaWFnbm9zaXMiOiJDb21tb24gQ29sZCJ9",
-            type: "json",
-            name: "Diagnosis Template",
-            status: "success"
-          }
-        ],
         custom: [
           {
-            template_id: "custom_template_789",
-            value: "eyJtZWRpY2F0aW9ucyI6W119",
+            template_id: "custom_template",
+            value: "Output prescription",
             type: "custom",
             name: "Custom Medication Template",
             status: "partial_success",
@@ -436,23 +434,6 @@ type TOutputSummary = {
       },
       audio_matrix: {
         quality: "4.5"
-      },
-      additional_data: {
-        doctor: {
-          _id: "doc_001",
-          profile: {
-            personal: {
-              name: {
-                l: "Smith",
-                f: "Dr. Jane"
-              }
-            }
-          }
-        }
-      },
-      meta_data: {
-        total_resources: 10,
-        total_parsed_resources: 9
       },
       created_at: "2024-11-19T10:30:00Z"
     }
