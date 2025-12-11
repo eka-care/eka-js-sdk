@@ -26,12 +26,12 @@ import {
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
   TPatchVoiceApiV3StatusRequest,
+  TPostTransactionInitRequest,
   TPostTransactionResponse,
   TPostV1ConvertToTemplateRequest,
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
   TPostV1UploadAudioFilesRequest,
-  TStartRecordingRequest,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
@@ -137,7 +137,7 @@ class EkaScribe {
     });
   }
 
-  async initTransaction(request: TStartRecordingRequest) {
+  async initTransaction(request: TPostTransactionInitRequest) {
     // Reset all instances before starting a new transaction
     this.resetEkaScribe();
 

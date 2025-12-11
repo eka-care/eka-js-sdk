@@ -80,24 +80,26 @@ For direct browser usage without a bundler:
 
 ### 1. Get Ekascribe Instance
 
-It will give you the main class instance, use this instance to access all methods
+Get the SDK instance once and use it everywhere in your application to call all methods.
 
 ```ts
-getEkaScribeInstance({
+// Create a config variable to manage tokens
+const sdkConfig = {
   access_token: '<your_access_token>',
-});
+};
+
+// Get instance and use it throughout your application
+const ekascribe = getEkaScribeInstance(sdkConfig);
 ```
 
-```ts
-const ekaScribe = getEkaScribeInstance({ access_token: 'old_token' });
-```
+**Important:** Use this same `ekascribe` instance for all SDK method calls.
 
 ### 2. Fetch configurations list
 
 Get supported input languages, output formats, and consultation modes.
 
 ```ts
-ekascribe.getEkascribeConfig();
+const config = await ekascribe.getEkascribeConfig();
 ```
 
 - #### Sample Response:
@@ -141,16 +143,14 @@ ekascribe.getEkascribeConfig();
 
 ### 3. Init transaction
 
-Use this method to init a transaction before starting recording.
+Initialize a transaction before starting recording. This sets up the session with your configuration.
 
 ```ts
-await ekascribe.initTransaction({
+const response = await ekascribe.initTransaction({
   mode: 'consultation',
-  input_language: ['te', 'en'],
-  output_format_template: [{ template_id: 'eka_emr_template' }],
-  txn_id: 'abc-123',
-  auto_download: false,
-  model_training_consent: false,
+  input_language: ['en-IN'],
+  output_format_template: [{ template_id: 'your_template_id' }],
+  txn_id: 'unique-transaction-id',
   transfer: 'vaded' | 'non-vaded',
   model_type: 'pro' | 'lite',
   system_info: {
@@ -164,9 +164,20 @@ await ekascribe.initTransaction({
     biologicalSex: 'M',
   },
   version: '1.0.0',
-  flavour: 'web' | 'extension',
+  additional_data: {},
 });
 ```
+
+**Key Parameters:**
+
+- `input_language`: Language code array (e.g., `['en-IN']`)
+- `output_format_template`: Array with `template_id` - depends on your end user's template selection
+- `system_info`: Optional - Pass your system configuration to backend
+- `patient_details`: Optional - Patient information
+- `version`: SDK version
+- `additional_data`: Optional - Pass any data you want to receive unchanged in the response
+- `transfer`: Audio mode. Use `vaded` for audio already processed with Voice Activity Detection (SDK does this by default); use `non-vaded` only if you are sending raw audio without VAD.
+- `model_type`: Transcription model choice. `pro` = most accurate; `lite` = lower latency, more performant.
 
 - #### Sample Response:
 
@@ -181,12 +192,27 @@ await ekascribe.initTransaction({
 }
 ```
 
-### 4. Start recording
+**Handling 401 Status Code:**
 
-Start recording with user-selected options.
+If you receive a `status_code: 401`, update the tokens in your config and reinitialize the instance:
 
 ```ts
-await ekascribe.startRecording();
+// Update tokens in your config variable
+sdkConfig.access_token = '<new_access_token>';
+
+// Update tokens in the instance
+ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+
+// Now you can retry the method call
+const response = await ekascribe.initTransaction({ ... });
+```
+
+### 4. Start recording
+
+Start recording audio after initializing the transaction.
+
+```ts
+const response = await ekascribe.startRecording();
 ```
 
 - #### Sample Response:
@@ -196,16 +222,19 @@ await ekascribe.startRecording();
   "status_code": 200,
   "message": "Recording started successfully",
   "txn_id": "abc-123",
+  // Possible error codes:
+  // - "microphone" -> microphone permission not granted
+  // - "vad_not_initialized" -> VAD failed to initialize; reinitialize and retry the same function call
   error_code?: ERROR_CODE
 }
 ```
 
 ### 5. Pause recording
 
-Use the method to pause voice recording
+Pause the ongoing voice recording.
 
 ```ts
-await ekascribe.pauseRecording();
+const response = await ekascribe.pauseRecording();
 ```
 
 - #### Sample Response:
@@ -221,10 +250,10 @@ await ekascribe.pauseRecording();
 
 ### 6. Resume recording
 
-Use the method to resume voice recording
+Resume a paused recording.
 
 ```ts
-await ekascribe.resumeRecording();
+const response = await ekascribe.resumeRecording();
 ```
 
 - #### Sample Response:
@@ -240,10 +269,15 @@ await ekascribe.resumeRecording();
 
 ### 7. End recording
 
-Use the method to end voice recording
+End the recording session. This method:
+
+- Stops the recording
+- Uploads all audio chunks to the server
+- Automatically retries failed uploads once
+- Calls the commit API to finalize the transaction
 
 ```ts
-await ekascribe.endRecording();
+const response = await ekascribe.endRecording();
 ```
 
 - #### Sample Response:
@@ -252,108 +286,20 @@ await ekascribe.endRecording();
 {
   "status_code": 200,
   "message": "Recording ended and files uploaded successfully",
-  failed_files?: ['1.mp3', '2.mp3']; // if there are any failed files
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3']; // list of all audio files generated
+  failed_files?: ['1.mp3', '2.mp3'], // Only present if some files failed to upload
+  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'], // List of all audio files generated
   error_code?: ERROR_CODE;
 }
 ```
 
-### 8. Retry upload recording
+**Error handling:**
 
-Use this method to retry uploading failed audio files.
+- Possible Error Codes, `error_code`
+- `txn_stop_failed`: Call `endRecording` again.
+- `audio_upload_failed`: Use `retryUploadRecording` (step 8).
+- `txn_commit_failed`: Call `commitTransactionCall` (step 10).
 
-```ts
-await ekascribe.retryUploadRecording({ force_commit: true });
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "All files uploaded successfully after retry",
-  error_code?: ERROR_CODE;
-  failed_files?: ['1.mp3', '2.mp3'];
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
-}
-```
-
-`force_commit` behavior
-
--- If `force_commit` is set to `true`, the SDK will call the commit API even if some audio files still fail to upload after retrying once.
-
--- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
-
-### 9. Patch recording session status
-
-Use the method to cancel a recording session.
-
-```ts
-await ekascribe.patchSessionStatus({
-  sessionId: 'abc-123',
-  processing_status: 'cancelled',
-  processing_error: {
-    error: {
-      type: 'user_action',
-      code: 'cancelled_by_user',
-      msg: 'Session cancelled by user',
-    },
-  },
-});
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status": "success",
-  "message": "Session status updated successfully",
-  "code": 200,
-  error?: {
-    code: string;
-    message: string;
-    display_message: string;
-  };
-}
-```
-
-### 10. Commit transaction
-
-Use this method to commit a transaction that is not yet committed or returned a "commit failed" error in a previous step.
-
-```ts
-await ekascribe.commitTransactionCall();
-```
-
-- #### Response type:
-
-```ts
-{
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-};
-```
-
-### 11. Stop transaction
-
-Use this method to stop a transaction that has not yet been stopped or returned a "stop failed" error in a previous step.
-
-```ts
-await ekascribe.stopTransactionCall();
-```
-
-- #### Response type:
-
-```ts
-{
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-};
-```
-
-### 12. Get output template prescriptions
+### 8. Get output template prescriptions
 
 Use this method to fetch the final generated prescription output for a session.
 
@@ -491,12 +437,107 @@ type TOutputSummary = {
 }
 ```
 
-### 13. Get previous sessions
+### 9. Retry upload recording
 
-Use this method to retrieve all the previous sessions for a specific doctor ID
+Retry uploading failed audio files after `endRecording`.
 
 ```ts
-const sessions = await ekascribe.getSessionHistory({ txn_count: 10 });
+const response = await ekascribe.retryUploadRecording({ force_commit: true });
+```
+
+- #### Sample Response:
+
+```ts
+{
+  "status_code": 200,
+  "message": "All files uploaded successfully after retry",
+  error_code?: ERROR_CODE;
+  failed_files?: ['1.mp3', '2.mp3'];
+  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
+}
+```
+
+**`force_commit` behavior:**
+
+- `force_commit: true` - Model will initiate the processing if some files still fail after retry
+- `force_commit: false` - It will waits until all files are uploaded successfully before processing.
+
+### 10. Patch recording session status
+
+Cancel or update the status of a recording session.
+
+```ts
+const response = await ekascribe.patchSessionStatus({
+  sessionId: 'abc-123', // txn_id of the session you want to cancel
+  processing_status: 'cancelled', // pass exactly this value
+  processing_error: {
+    error: {
+      // Pass these exact values without changing them
+      type: 'user_action',
+      code: 'cancelled_by_user',
+      msg: 'Session cancelled by user',
+    },
+  },
+});
+```
+
+- #### Sample Response:
+
+```ts
+{
+  "status": "success",
+  "message": "Session status updated successfully",
+  "code": 200,
+  error?: {
+    code: string;
+    message: string;
+    display_message: string;
+  };
+}
+```
+
+### 11. Commit transaction
+
+Call this if `endRecording` returns `error_code: 'txn_commit_failed'` or the transaction is not yet committed.
+
+```ts
+const response = await ekascribe.commitTransactionCall();
+```
+
+- #### Response type:
+
+```ts
+{
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+};
+```
+
+### 12. Stop transaction
+
+Use this method to stop a transaction that has not yet been stopped or returned a `txn_stop_failed` error in a previous step.
+
+```ts
+const response = await ekascribe.stopTransactionCall();
+```
+
+- #### Response type:
+
+```ts
+{
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+};
+```
+
+### 13. Get previous sessions
+
+Fetch previous sessions. `txn_count` controls how many sessions the API returns.
+
+```ts
+const sessions = await ekascribe.getSessionHistory({ txn_count: 10 }); // txn_count = number of sessions to fetch
 ```
 
 - #### Response type:
@@ -505,24 +546,33 @@ const sessions = await ekascribe.getSessionHistory({ txn_count: 10 });
 {
   data: [
     {
-      "created_at": "string",
-      "b_id": "string",
-      "user_status": "string",
-      "processing_status": "string",
-      "txn_id": "string",
-      "mode": "string",
-      "uuid": "string",
-      "oid": "string"
+      b_id: "7174661713699045", // business ID
+      created_at: "2025-12-10T10:28:00Z",
+      mode: "consultation",
+      oid: "174661713843153", // logged-in doctor's org ID
+      patient_details: {      // present only if sent in initTransaction
+        "age": 18,
+        "biologicalSex": "M",
+        "username": ""
+      },
+      // processing_status can be: success | system_failure | request_failure | cancelled | in-progress
+      processing_status: "in-progress",
+      txn_id: "sc-c2e9be8b-46e5-489a-9473-236ddb5b24fb",
+      // user_status can be: init | commit
+      user_status: "init",
+      uuid: "c44fd76d-8de1-4011-aa54-5ddcca140f0f" // logged-in doctor's user ID
     }
   ],
-  status: "string",
-  code: "number",
-  message: "string",
-  retrieved_count: "number"
+  status: "success",
+  code: 200,
+  message: "Sessions fetched",
+  retrieved_count: 1
 }
 ```
 
-### 14. Get All Templates
+## Templates SDK Methods
+
+### 1. Get All Templates
 
 Use this method to retrieve all available templates for the current user.
 
@@ -548,7 +598,7 @@ const templates = await ekascribe.getAllTemplates();
 }
 ```
 
-### 15. Create Template
+### 2. Create Template
 
 Use this method to create a new custom template.
 
@@ -572,7 +622,7 @@ const newTemplate = await ekascribe.createTemplate({
 }
 ```
 
-### 16. Edit Template
+### 3. Edit Template
 
 Use this method to update an existing template.
 
@@ -597,7 +647,7 @@ const updatedTemplate = await ekascribe.updateTemplate({
 }
 ```
 
-### 17. Delete Template
+### 4. Delete Template
 
 Use this method to delete an existing template.
 
@@ -617,7 +667,7 @@ const deleteResult = await ekascribe.deleteTemplate('template-123');
 }
 ```
 
-### 18. Generate Template with AI by giving a prompt
+### 5. Generate Template with AI by giving a prompt
 
 Use this method to generate a template using AI with a text prompt.
 
@@ -652,7 +702,7 @@ const aiTemplate = await ekascribe.aiGenerateTemplate(formData);
 }
 ```
 
-### 19. Add templates to list
+### 6. Add templates to list
 
 Use this method to mark templates as favourite templates.
 
@@ -676,7 +726,7 @@ const configUpdate = await ekascribe.updateConfig({
 }
 ```
 
-### 20. Get All Sections
+### 7. Get All Sections
 
 Use this method to retrieve all available template sections.
 
@@ -704,7 +754,7 @@ const sections = await ekascribe.getAllTemplateSections();
 }
 ```
 
-### 21. Create Section in a template
+### 8. Create Section in a template
 
 Use this method to create a new section that can be used in templates.
 
@@ -729,7 +779,7 @@ const newSection = await ekascribe.createTemplateSection({
 }
 ```
 
-### 22. Edit Section in a template
+### 9. Edit Section in a template
 
 Use this method to update an existing template section.
 
@@ -755,7 +805,7 @@ const updatedSection = await ekascribe.updateTemplateSection({
 }
 ```
 
-### 23. Delete Section from a template
+### 10. Delete Section from a template
 
 Use this method to delete a template section.
 
@@ -775,7 +825,7 @@ const deleteResult = await ekascribe.deleteTemplateSection('section-123');
 }
 ```
 
-### 24. Convert a transaction into another template after prescription generation
+### 11. Convert a transaction into another template after prescription generation
 
 Use this method to convert an existing transaction's output to use a different template format.
 
@@ -801,23 +851,6 @@ const convertResult = await ekascribe.postTransactionConvertToTemplate({
 }
 ```
 
-### 25. Search past sessions by a patient name
-
-Use this method to search through previous sessions by patient name.
-
-```ts
-// First get session history
-const sessions = await ekascribe.getSessionHistory({ txn_count: 50 });
-
-// Then search by patient name
-const filteredSessions = await ekascribe.searchSessionsByPatientName({
-  sessions: sessions.data || [],
-  patientName: 'John Doe',
-});
-```
-
-- #### Response type:
-
 ```ts
 // Returns filtered array of session history data
 [
@@ -842,7 +875,9 @@ const filteredSessions = await ekascribe.searchSessionsByPatientName({
 ];
 ```
 
-### 26. Upload audio file to get output summary
+## Non-vaded flow, upload raw audio to get output summary
+
+### 1. Upload audio file to get output summary
 
 Use this method to upload audio files directly and get transcription output without real-time recording.
 
@@ -884,7 +919,7 @@ const uploadResult = await ekascribe.uploadAudioWithPresignedUrl({
 }
 ```
 
-### 27. Edit output summary
+### Edit output summary
 
 Use this method to edit the generated output summary for a completed transaction.
 

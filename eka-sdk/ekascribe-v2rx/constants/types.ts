@@ -58,23 +58,6 @@ export type TConfigSettings = {
   };
 };
 
-export type TStartRecordingRequest = {
-  mode: string;
-  input_language: string[];
-  output_language: string;
-  output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
-  txn_id: string;
-  auto_download: boolean;
-  model_training_consent: boolean;
-  transfer: string;
-  system_info?: TSystemInfo;
-  patient_details?: TPatientDetails;
-  model_type: string;
-  version?: string;
-  flavour?: string;
-  additional_data?: any;
-};
-
 export type Gender = 'M' | 'F' | 'O';
 
 export type TPatientDetails = {
@@ -132,11 +115,11 @@ export type TPostTransactionInitRequest = {
   s3Url?: string;
   txn_id: string;
   input_language: string[];
-  output_language: string;
+  output_language?: string;
   output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
   transfer: string;
-  auto_download: boolean;
-  model_training_consent: boolean;
+  auto_download?: boolean;
+  model_training_consent?: boolean;
   system_info?: TSystemInfo;
   patient_details?: TPatientDetails;
   model_type: string;
