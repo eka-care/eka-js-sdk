@@ -33,7 +33,7 @@ export type TGetConfigV2Response = {
     selected_preferences?: TSelectedPreferences;
     clinic_name?: string;
     specialization?: string;
-    emr?: string;
+    emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
   };
@@ -366,7 +366,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
     scribe_enabled?: boolean;
     clinic_name?: string;
     specialization?: string;
-    emr?: string;
+    emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
   };
