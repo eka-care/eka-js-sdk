@@ -31,6 +31,11 @@ export type TGetConfigV2Response = {
       is_paid_doc: boolean;
     };
     selected_preferences?: TSelectedPreferences;
+    clinic_name?: string;
+    specialization?: string;
+    emr_name?: string;
+    microphone_permission_check?: boolean;
+    consult_language?: string[];
   };
   message?: string;
   code?: number;
@@ -359,6 +364,11 @@ export type TPatchVoiceApiV2ConfigRequest = {
     output_format_template?: TGetConfigItem[];
     my_templates?: string[];
     scribe_enabled?: boolean;
+    clinic_name?: string;
+    specialization?: string;
+    emr_name?: string;
+    microphone_permission_check?: boolean;
+    consult_language?: string[];
   };
 };
 
