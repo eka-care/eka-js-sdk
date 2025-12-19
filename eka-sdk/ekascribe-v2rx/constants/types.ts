@@ -36,6 +36,8 @@ export type TGetConfigV2Response = {
     emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
   };
   message?: string;
   code?: number;
@@ -369,7 +371,10 @@ export type TPatchVoiceApiV2ConfigRequest = {
     emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
   };
+  query_params?: string;
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
