@@ -122,7 +122,7 @@ class EkaScribe {
   }
 
   // Method to reset the singleton instance (useful for testing)
-  public static resetInstance(): void {
+  public resetInstance(): void {
     EkaScribe.instance = null;
   }
 
@@ -364,18 +364,24 @@ class EkaScribe {
   }
 
   resetEkaScribe() {
+    // Clean up internal state before destroying instances
     this.audioFileManagerInstance.resetFileManagerInstance();
     this.audioBufferInstance.resetBufferManagerInstance();
     this.vadInstance.resetVadWebInstance();
 
+    // Clear store (this also clears instance references)
     EkaScribeStore.resetStore();
-    console.log(
-      this.audioFileManagerInstance,
-      this.audioBufferInstance,
-      this.vadInstance,
-      EkaScribeStore,
-      'after reset ekascribe'
-    );
+
+    // Destroy class instances by setting them to null
+    // @ts-ignore - Intentionally setting to null for complete cleanup
+    this.audioFileManagerInstance = null;
+    // @ts-ignore - Intentionally setting to null for complete cleanup
+    this.audioBufferInstance = null;
+    // @ts-ignore - Intentionally setting to null for complete cleanup
+    this.vadInstance = null;
+
+    // Reset singleton instance - next getInstance() will create brand new instances
+    this.resetInstance();
   }
 
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
