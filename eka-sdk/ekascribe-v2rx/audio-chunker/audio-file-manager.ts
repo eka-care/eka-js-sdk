@@ -621,6 +621,7 @@ class AudioFileManager {
     return this.audioChunks;
   }
 
+  // TODO: check this logic once
   /**
    * Retry uploading failed files
    */

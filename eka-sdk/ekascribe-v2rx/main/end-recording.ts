@@ -130,13 +130,17 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     // call commit transaction api
+    const successfullyUploadedAudioInfo = audioInfo.filter((file) => file.status === 'success');
+    const successfullyUploadedAudioFiles = successfullyUploadedAudioInfo.map(
+      (file) => file.fileName
+    );
     if (
       EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
       EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
     ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: txnID,
-        audioFiles,
+        audioFiles: successfullyUploadedAudioFiles,
       });
 
       if (onEventCallback) {

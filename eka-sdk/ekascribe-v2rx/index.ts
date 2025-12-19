@@ -233,7 +233,9 @@ class EkaScribe {
         EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
         EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
       ) {
-        const audioInfo = this.audioFileManagerInstance?.audioChunks;
+        const audioInfo = this.audioFileManagerInstance?.audioChunks.filter(
+          (file) => file.status === 'success'
+        );
         const audioFiles = audioInfo.map((audio) => audio.fileName);
 
         const { message, code: txnCommitStatusCode } = await postTransactionCommit({
