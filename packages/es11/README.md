@@ -325,16 +325,7 @@ const response = await ekascribe.endRecording();
 
 ### 8. Get output recorded prescription
 
-You can fetch output in two ways:
-
-- `getTemplateOutput({ txn_id })`: polling is your responsibility; call repeatedly until processing finishes.
-- `pollSessionOutput({ txn_id, max_polling_time })`: SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
-
-Example (manual polling):
-
-```ts
-const res = await ekascribe.getTemplateOutput({ txn_id: 'transaction-id' });
-```
+`pollSessionOutput({ txn_id, max_polling_time })`: SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
 
 Example (SDK-managed polling):
 

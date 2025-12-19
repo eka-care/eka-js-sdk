@@ -18,7 +18,7 @@ const retryUploadFailedFiles = async ({
     }
 
     const failedFiles = (await fileManagerInstance.retryFailedUploads()) || [];
-    const audioInfo = fileManagerInstance?.audioChunks;
+    const audioInfo = fileManagerInstance?.audioChunks.filter((file) => file.status === 'success');
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
     if (failedFiles.length > 0 && !force_commit) {
