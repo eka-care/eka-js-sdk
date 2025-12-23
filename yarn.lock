@@ -1214,7 +1214,7 @@
     core-js "^3.38.0"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "2.0.22"
+  version "2.0.24"
   resolved "file:packages/es11"
 
 "@esbuild/darwin-arm64@0.25.12":

@@ -372,16 +372,16 @@ class EkaScribe {
     // Clear store (this also clears instance references)
     EkaScribeStore.resetStore();
 
-    // Destroy class instances by setting them to null
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.audioFileManagerInstance = null;
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.audioBufferInstance = null;
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.vadInstance = null;
+    // // Destroy class instances by setting them to null
+    // // @ts-ignore - Intentionally setting to null for complete cleanup
+    // this.audioFileManagerInstance = null;
+    // // @ts-ignore - Intentionally setting to null for complete cleanup
+    // this.audioBufferInstance = null;
+    // // @ts-ignore - Intentionally setting to null for complete cleanup
+    // this.vadInstance = null;
 
-    // Reset singleton instance - next getInstance() will create brand new instances
-    this.resetInstance();
+    // // Reset singleton instance - next getInstance() will create brand new instances
+    // this.resetInstance();
   }
 
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
