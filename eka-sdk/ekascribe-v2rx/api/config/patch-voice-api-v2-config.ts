@@ -16,7 +16,12 @@ const putVoiceApiV2Config = async (request: TPatchVoiceApiV2ConfigRequest) => {
       body: JSON.stringify(request),
     };
 
-    const response = await fetchWrapper(`${GET_EKA_VOICE_HOST_V2()}/config/`, options);
+    const queryParams = request.query_params ? `?${request.query_params}` : '';
+
+    const response = await fetchWrapper(
+      `${GET_EKA_VOICE_HOST_V2()}/config/${queryParams}`,
+      options
+    );
     const res = await response.json();
 
     return {
