@@ -70,32 +70,13 @@ import { pollOutputSummary } from './main/poll-output-summary';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
-  private vadInstance: VadWebClient; // vadWebClient Instance
-  private audioFileManagerInstance: AudioFileManager; // AudioFileManager Instance
-  private audioBufferInstance: AudioBufferManager;
+  private vadInstance!: VadWebClient; // vadWebClient Instance
+  private audioFileManagerInstance!: AudioFileManager; // AudioFileManager Instance
+  private audioBufferInstance!: AudioBufferManager;
 
   // Private constructor to prevent direct instantiation
   private constructor() {
-    this.audioFileManagerInstance = new AudioFileManager();
-    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
-
-    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
-
-    this.vadInstance = new VadWebClient(
-      PREF_CHUNK_LENGTH,
-      DESP_CHUNK_LENGTH,
-      MAX_CHUNK_LENGTH,
-      FRAME_RATE
-    );
-    EkaScribeStore.vadInstance = this.vadInstance;
-
-    console.log(
-      'Initialising SDK: ',
-      this.audioFileManagerInstance,
-      this.audioBufferInstance,
-      this.vadInstance
-    );
+    // Instances will be initialized in initTransaction
   }
 
   // Static method to get the singleton instance with optional initialization
@@ -138,8 +119,24 @@ class EkaScribe {
   }
 
   async initTransaction(request: TPostTransactionInitRequest) {
-    // Reset all instances before starting a new transaction
-    this.resetEkaScribe();
+    // reinitiate all instances before starting a new transaction
+    EkaScribeStore.resetStore();
+
+    this.audioFileManagerInstance = new AudioFileManager();
+    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
+    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
+    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
+    this.vadInstance = new VadWebClient(
+      PREF_CHUNK_LENGTH,
+      DESP_CHUNK_LENGTH,
+      MAX_CHUNK_LENGTH,
+      FRAME_RATE
+    );
+    EkaScribeStore.vadInstance = this.vadInstance;
+
+    console.log('Initialising SDK Instances ', EkaScribeStore);
 
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
@@ -211,8 +208,6 @@ class EkaScribe {
           timestamp: new Date().toISOString(),
         });
       }
-
-      this.resetEkaScribe();
 
       return patchTransactionResponse;
     } catch (error) {
@@ -371,17 +366,6 @@ class EkaScribe {
 
     // Clear store (this also clears instance references)
     EkaScribeStore.resetStore();
-
-    // // Destroy class instances by setting them to null
-    // // @ts-ignore - Intentionally setting to null for complete cleanup
-    // this.audioFileManagerInstance = null;
-    // // @ts-ignore - Intentionally setting to null for complete cleanup
-    // this.audioBufferInstance = null;
-    // // @ts-ignore - Intentionally setting to null for complete cleanup
-    // this.vadInstance = null;
-
-    // // Reset singleton instance - next getInstance() will create brand new instances
-    // this.resetInstance();
   }
 
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {

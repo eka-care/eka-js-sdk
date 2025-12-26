@@ -116,10 +116,10 @@ class EkaScribeStore {
     this._txnID = '';
     this._sessionBucketPath = '';
     this._sessionStatus = {};
-    // // Clear instance references
-    // this._vadInstance = null;
-    // this._audioFileManagerInstance = null;
-    // this._audioBufferInstance = null;
+    // Clear instance references
+    this._vadInstance = null;
+    this._audioFileManagerInstance = null;
+    this._audioBufferInstance = null;
     // Clear callbacks
     this._userSpeechCallback = null;
     this._eventCallback = null;
