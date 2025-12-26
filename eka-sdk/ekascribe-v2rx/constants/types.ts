@@ -45,7 +45,7 @@ export type TGetConfigV2Response = {
 
 export type TSelectedPreferences = {
   languages?: TGetConfigItem[];
-  output_format?: TGetConfigItem[];
+  output_formats?: TGetConfigItem[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
   auto_download?: boolean;
