@@ -1,4 +1,4 @@
-import { ERROR_CODE, CALLBACK_TYPE } from './enums';
+import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS } from './enums';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -446,3 +446,23 @@ export type TVadFrameProcessedCallback = (args: {
   };
   frame: Float32Array;
 }) => void;
+
+export type TCompatibilityTestResult = {
+  test_type: string;
+  status: COMPATIBILITY_TEST_STATUS;
+  message: string;
+  data?: any;
+  timestamp: string;
+  error?: string;
+};
+
+export type TCompatibilityTestSummary = {
+  allPassed: boolean;
+  results: TCompatibilityTestResult[];
+  totalTests: number;
+  passedTests: number;
+  failedTests: number;
+  warningTests: number;
+};
+
+export type TCompatibilityCallback = (result: TCompatibilityTestResult) => void;

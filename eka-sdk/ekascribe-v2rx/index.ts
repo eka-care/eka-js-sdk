@@ -67,12 +67,15 @@ import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
 import { pollOutputSummary } from './main/poll-output-summary';
+import SystemCompatibilityManager from './main/system-compatiblity-manager';
+import { TCompatibilityCallback, TCompatibilityTestSummary } from './constants/types';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
   private vadInstance!: VadWebClient; // vadWebClient Instance
   private audioFileManagerInstance!: AudioFileManager; // AudioFileManager Instance
   private audioBufferInstance!: AudioBufferManager;
+  private compatibilityManager: SystemCompatibilityManager | null = null; // SystemCompatibilityManager Instance
 
   // Private constructor to prevent direct instantiation
   private constructor() {
@@ -508,6 +511,30 @@ class EkaScribe {
   async getConfigMyTemplates() {
     const configMyTemplatesResponse = await getConfigV2MyTemplates();
     return configMyTemplatesResponse;
+  }
+
+  /**
+   * Run system compatibility test
+   * @param callback - Callback function to receive test results as they complete
+   * @param workerUrl - Optional worker URL for SharedWorker test
+   * @returns Promise with test summary
+   */
+  async runSystemCompatibilityTest(
+    callback: TCompatibilityCallback,
+    workerUrl?: string
+  ): Promise<TCompatibilityTestSummary> {
+    try {
+      // Create new compatibility manager instance
+      this.compatibilityManager = new SystemCompatibilityManager(workerUrl);
+
+      // Run all compatibility tests
+      const summary = await this.compatibilityManager.runCompatibilityTest(callback);
+
+      return summary;
+    } catch (error) {
+      console.error('Error running compatibility test:', error);
+      throw error;
+    }
   }
 }
 
