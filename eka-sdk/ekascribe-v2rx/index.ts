@@ -107,12 +107,12 @@ class EkaScribe {
     EkaScribe.instance = null;
   }
 
-  public async getEkascribeConfig() {
+  async getEkascribeConfig() {
     const response = await getConfigV2();
     return response;
   }
 
-  public updateAuthTokens({ access_token }: { access_token: string }) {
+  updateAuthTokens({ access_token }: { access_token: string }) {
     setEnv({
       auth_token: access_token,
     });
@@ -199,6 +199,8 @@ class EkaScribe {
         processing_status,
         processing_error,
       });
+
+      this.resetEkaScribe();
 
       if (onEventCallback) {
         onEventCallback({
