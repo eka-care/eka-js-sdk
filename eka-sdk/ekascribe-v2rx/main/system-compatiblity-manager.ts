@@ -11,7 +11,7 @@ import {
   TCompatibilityTestSummary,
 } from '../constants/types';
 import fetchWrapper from '../fetch-client';
-import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
+import { GET_EKA_HOST, GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import { getSharedWorkerUrl } from '../utils/get-worker-url';
 import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-es6';
 
@@ -154,7 +154,7 @@ class SystemCompatibilityManager {
       const systemTimeISO = systemTime.toISOString();
 
       // Validate timezone and system time
-      const validationError = this.validateTimezone(systemTime, timezone);
+      const validationError = await this.validateTimezone();
       if (validationError) {
         return this.createTestResult(testType, COMPATIBILITY_TEST_STATUS.ERROR, validationError, {
           browser,
@@ -185,48 +185,33 @@ class SystemCompatibilityManager {
   /**
    * Validate timezone against system time
    */
-  private validateTimezone(systemTime: Date, timezone: string): string | null {
+  private async validateTimezone(): Promise<string | null> {
     try {
-      // Check if date is valid
-      if (isNaN(systemTime.getTime())) {
-        return 'Invalid system time detected';
-      }
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Get the offset from the timezone
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-
-      const parts = formatter.formatToParts(systemTime);
-      const tzDate = new Date(
-        parseInt(parts.find((p) => p.type === 'year')!.value),
-        parseInt(parts.find((p) => p.type === 'month')!.value) - 1,
-        parseInt(parts.find((p) => p.type === 'day')!.value),
-        parseInt(parts.find((p) => p.type === 'hour')!.value),
-        parseInt(parts.find((p) => p.type === 'minute')!.value),
-        parseInt(parts.find((p) => p.type === 'second')!.value)
+      const serverTimeResponse = await fetchWrapper(
+        `${GET_EKA_HOST()}/voice/sys/time?timezone=${timezone}`,
+        {
+          method: 'GET',
+        }
       );
 
-      // Calculate the difference in hours
-      const diffHours = Math.abs((systemTime.getTime() - tzDate.getTime()) / (1000 * 60 * 60));
+      const serverTimeJson = await serverTimeResponse.json();
+      const serverTime = serverTimeJson.time;
 
-      // Allow up to 24 hours difference (could be timezone offset)
-      // But check if it's a reasonable timezone offset (-12 to +14)
-      const systemOffset = -systemTime.getTimezoneOffset() / 60;
-      if (systemOffset < -12 || systemOffset > 14) {
-        return 'System timezone offset is invalid (outside -12 to +14 range)';
-      }
+      // Validate server time and system time are within 10 minutes
+      const serverTimeDate = new Date(serverTime);
+      const systemTimeDate = new Date();
 
-      // Check for extremely wrong system time (more than 1 day off from expected timezone time)
-      if (diffHours > 24) {
-        return 'System time does not match timezone configuration';
+      // Calculate absolute difference in milliseconds
+      const timeDifferenceMs = Math.abs(serverTimeDate.getTime() - systemTimeDate.getTime());
+
+      // 10 minutes = 10 * 60 * 1000 = 600,000 milliseconds
+      const allowedDifferenceMs = 10 * 60 * 1000;
+
+      if (timeDifferenceMs > allowedDifferenceMs) {
+        const differenceMinutes = Math.round(timeDifferenceMs / (60 * 1000));
+        return `System time and server time differ by ${differenceMinutes} minutes. Maximum allowed difference is 10 minutes.`;
       }
 
       return null;
@@ -510,7 +495,7 @@ class SystemCompatibilityManager {
    */
   private async pingApi(): Promise<boolean> {
     try {
-      const response = await fetchWrapper(`https://api.eka.care/voice/ping`, {
+      const response = await fetchWrapper(`${GET_EKA_HOST()}/voice/ping`, {
         method: 'GET',
       });
       return response.ok;
