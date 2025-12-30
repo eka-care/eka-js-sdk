@@ -423,10 +423,6 @@ class SystemCompatibilityManager {
               { supported: true, workerCreated: true }
             )
           );
-        } else if (action === SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS) {
-          this.awsConfigured = true;
-        } else if (action === SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR) {
-          this.awsConfigured = false;
         }
       };
 
@@ -535,13 +531,39 @@ class SystemCompatibilityManager {
         const { AccessKeyId, SecretKey, SessionToken } = cogResponse.credentials;
 
         if (this.testSharedWorker) {
-          this.testSharedWorker.port.postMessage({
-            action: SHARED_WORKER_ACTION.CONFIGURE_AWS,
-            payload: {
-              accessKeyId: AccessKeyId,
-              secretKey: SecretKey,
-              sessionToken: SessionToken,
-            },
+          const worker = this.testSharedWorker;
+
+          await new Promise<void>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              worker.port.removeEventListener('message', messageHandler);
+              reject(new Error('AWS configuration timeout'));
+            }, WORKER_TIMEOUT * 2);
+
+            const messageHandler = (event: MessageEvent) => {
+              const { action, error } = event.data || {};
+
+              if (action === SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS) {
+                clearTimeout(timeoutId);
+                worker.port.removeEventListener('message', messageHandler);
+                this.awsConfigured = true;
+                resolve();
+              } else if (action === SHARED_WORKER_ACTION.CONFIGURE_AWS_ERROR) {
+                clearTimeout(timeoutId);
+                worker.port.removeEventListener('message', messageHandler);
+                this.awsConfigured = false;
+                reject(new Error(error || 'AWS configuration failed'));
+              }
+            };
+
+            worker.port.addEventListener('message', messageHandler);
+            worker.port.postMessage({
+              action: SHARED_WORKER_ACTION.CONFIGURE_AWS,
+              payload: {
+                accessKeyId: AccessKeyId,
+                secretKey: SecretKey,
+                sessionToken: SessionToken,
+              },
+            });
           });
         } else {
           configureAWS({
@@ -554,6 +576,7 @@ class SystemCompatibilityManager {
       }
     } catch (error) {
       console.error('AWS configuration failed:', error);
+      this.awsConfigured = false;
     }
   }
 
@@ -563,7 +586,7 @@ class SystemCompatibilityManager {
   private async testS3Upload(): Promise<boolean> {
     try {
       const dummyFile = this.createDummyMp4File();
-      const fileName = `${COMPATIBILITY_TEST_FOLDER}/${Date.now()}.mp4`;
+      const fileName = `${COMPATIBILITY_TEST_FOLDER}/sample-audio.m4a_`;
       const txnID = `compat-test-${Date.now()}`;
       const businessID = 'compat-test';
       const s3BucketName = GET_S3_BUCKET_NAME();
@@ -604,7 +627,7 @@ class SystemCompatibilityManager {
       0x34, 0x31,
     ]);
 
-    return new Blob([mp4Header], { type: 'video/mp4' });
+    return new Blob([mp4Header], { type: 'audio/mp4' });
   }
 
   /**
