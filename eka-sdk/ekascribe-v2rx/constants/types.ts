@@ -373,6 +373,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
     consult_language?: string[];
     contact_number?: string;
     onboarding_step?: string;
+    system_compatibility_info?: any;
   };
   query_params?: string;
 };

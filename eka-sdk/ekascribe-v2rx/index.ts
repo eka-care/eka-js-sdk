@@ -87,16 +87,20 @@ class EkaScribe {
     access_token,
     env,
     clientId,
+    clientEndpoint,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
     clientId?: string;
+    clientEndpoint?: string;
   }): EkaScribe {
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
       ...(clientId ? { clientId } : {}),
     });
+
+    console.log(clientEndpoint, 'clientEndpoint');
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
@@ -513,19 +517,28 @@ class EkaScribe {
     return configMyTemplatesResponse;
   }
 
-  /**
-   * Run system compatibility test
-   * @param callback - Callback function to receive test results as they complete
-   * @param workerUrl - Optional worker URL for SharedWorker test
-   * @returns Promise with test summary
-   */
   async runSystemCompatibilityTest(
     callback: TCompatibilityCallback,
-    workerUrl?: string
+    clientEndpoint?: string,
+    sharedWorker?: SharedWorker
   ): Promise<TCompatibilityTestSummary> {
     try {
       // Create new compatibility manager instance
-      this.compatibilityManager = new SystemCompatibilityManager(workerUrl);
+      // clientEndpoint is the base URL where SDK is hosted, worker URL will be constructed from it
+      this.compatibilityManager = new SystemCompatibilityManager(clientEndpoint);
+      // const workerUrl = new URL(
+      //   './worker.bundle.js', // Path relative to where this index.mjs file sits in dist
+      //   clientEndpoint
+      // );
+
+      // const sharedWorker = new SharedWorker(workerUrl.href, { name: 'EkaS3Worker' });
+      // console.log(sharedWorker, 'EkaS3Worker');
+
+      // sharedWorker.port.start();
+
+      if (sharedWorker) {
+        this.compatibilityManager.setCompatiblityTestSharedWorker(sharedWorker);
+      }
 
       // Run all compatibility tests
       const summary = await this.compatibilityManager.runCompatibilityTest(callback);
@@ -543,8 +556,10 @@ export const getEkaScribeInstance = ({
   access_token,
   env,
   clientId,
+  clientEndpoint,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId });
+  clientEndpoint?: string;
+}) => EkaScribe.getInstance({ access_token, env, clientId, clientEndpoint });

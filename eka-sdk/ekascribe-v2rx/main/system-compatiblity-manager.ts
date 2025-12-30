@@ -24,11 +24,12 @@ const COMPATIBILITY_TEST_FOLDER = 'system-compatibility-test';
 class SystemCompatibilityManager {
   private testSharedWorker: SharedWorker | null = null;
   private microphoneStream: MediaStream | null = null;
-  private workerUrl: string;
+  private clientEndpoint: string;
   private awsConfigured: boolean = false;
 
-  constructor(workerUrl?: string) {
-    this.workerUrl = workerUrl || getSharedWorkerUrl();
+  constructor(clientEndpoint?: string) {
+    this.clientEndpoint = clientEndpoint || getSharedWorkerUrl();
+    console.log(this.clientEndpoint, 'client endpoint');
   }
 
   /**
@@ -333,6 +334,10 @@ class SystemCompatibilityManager {
   /**
    * Test 4: Check Shared Worker Support
    */
+  setCompatiblityTestSharedWorker(worker: SharedWorker): void {
+    this.testSharedWorker = worker;
+  }
+
   private async checkSharedWorkerSupport(): Promise<TCompatibilityTestResult> {
     const testType = COMPATIBILITY_TEST_TYPE.SHARED_WORKER;
 
@@ -347,13 +352,27 @@ class SystemCompatibilityManager {
       }
 
       try {
-        const worker = new SharedWorker('../shared-worker/s3-file-upload.ts', this.workerUrl);
+        // const worker = new SharedWorker(
+        //   'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk@2.0.30/dist/worker.bundle.js'
+        // );
 
-        console.log(worker, 'worker');
+        // // const worker = new SharedWorker(new URL('./worker.bundle.js', import.meta.url));
+
+        // console.log(worker, 'worker');
         // this.testSharedWorker = worker;
 
-        return await this.testWorkerCommunication(worker);
+        if (!this.testSharedWorker) {
+          return this.createTestResult(
+            testType,
+            COMPATIBILITY_TEST_STATUS.WARNING,
+            'SharedWorker not created',
+            { supported: false, workerCreated: false }
+          );
+        }
+
+        return await this.testWorkerCommunication(this.testSharedWorker);
       } catch (workerError) {
+        console.log(workerError, 'worker error');
         return this.createTestResult(
           testType,
           COMPATIBILITY_TEST_STATUS.WARNING,
