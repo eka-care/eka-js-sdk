@@ -14,6 +14,7 @@ import fetchWrapper from '../fetch-client';
 import { GET_EKA_HOST, GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import { getSharedWorkerUrl } from '../utils/get-worker-url';
 import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-es6';
+import { getConfigV2Timezone } from '../api/config/get-voice-api-v2-config-timezone';
 
 // Constants
 const INTERNET_TIMEOUT = 5000;
@@ -116,7 +117,7 @@ class SystemCompatibilityManager {
         return this.createTestResult(
           testType,
           COMPATIBILITY_TEST_STATUS.SUCCESS,
-          'Internet connection is active',
+          'Internet connection is working properly.',
           { isOnline: true, pingTime }
         );
       } catch (fetchError) {
@@ -168,7 +169,7 @@ class SystemCompatibilityManager {
       return this.createTestResult(
         testType,
         COMPATIBILITY_TEST_STATUS.SUCCESS,
-        'System information collected successfully',
+        'Your browser and device meet the required specifications.',
         { browser, version, ram: deviceMemory, timezone, systemTime: systemTimeISO }
       );
     } catch (error) {
@@ -189,15 +190,18 @@ class SystemCompatibilityManager {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const serverTimeResponse = await fetchWrapper(
-        `${GET_EKA_HOST()}/voice/sys/time?timezone=${timezone}`,
-        {
-          method: 'GET',
-        }
-      );
+      const serverTimeResponse = await getConfigV2Timezone({ timezone });
 
-      const serverTimeJson = await serverTimeResponse.json();
-      const serverTime = serverTimeJson.time;
+      if (serverTimeResponse.code >= 400) {
+        return 'Failed to validate timezone against system time';
+      }
+
+      const serverTime = serverTimeResponse.current_time_utc;
+
+      // Validate that server time is present and valid
+      if (!serverTime) {
+        return 'Failed to validate timezone against system time';
+      }
 
       // Validate server time and system time are within 10 minutes
       const serverTimeDate = new Date(serverTime);
@@ -211,7 +215,7 @@ class SystemCompatibilityManager {
 
       if (timeDifferenceMs > allowedDifferenceMs) {
         const differenceMinutes = Math.round(timeDifferenceMs / (60 * 1000));
-        return `System time and server time differ by ${differenceMinutes} minutes. Maximum allowed difference is 10 minutes.`;
+        return `System time is invalid. It differs from server time by ${differenceMinutes} minutes.`;
       }
 
       return null;
@@ -274,7 +278,7 @@ class SystemCompatibilityManager {
         return this.createTestResult(
           testType,
           COMPATIBILITY_TEST_STATUS.SUCCESS,
-          'Microphone permission granted',
+          'Microphone access is enabled and working.',
           { permission: 'granted', deviceId }
         );
       } catch (permissionError: any) {
@@ -404,7 +408,7 @@ class SystemCompatibilityManager {
             this.createTestResult(
               testType,
               COMPATIBILITY_TEST_STATUS.SUCCESS,
-              'SharedWorker is supported and functional',
+              'Your browser supports smooth background performance.',
               { supported: true, workerCreated: true }
             )
           );
@@ -453,7 +457,7 @@ class SystemCompatibilityManager {
         return this.createTestResult(
           testType,
           COMPATIBILITY_TEST_STATUS.SUCCESS,
-          'Network and API access verified, S3 upload successful',
+          'Secure network access is confirmed.',
           data
         );
       } else if (results.pingSuccess && this.awsConfigured) {

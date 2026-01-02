@@ -40,7 +40,15 @@ export type TGetConfigV2Response = {
     onboarding_step?: string;
   };
   message?: string;
-  code?: number;
+  code: number;
+};
+
+export type TGetConfigV2TimezoneResponse = {
+  timezone: string;
+  current_time_utc: string;
+  timestamp: number;
+  code: number;
+  message?: string;
 };
 
 export type TSelectedPreferences = {

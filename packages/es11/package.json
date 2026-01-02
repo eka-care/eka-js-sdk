@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk",
-  "version": "2.0.35",
+  "version": "2.0.38",
   "description": "EkaScribe TypeScript SDK - Modern ES2020 build",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
