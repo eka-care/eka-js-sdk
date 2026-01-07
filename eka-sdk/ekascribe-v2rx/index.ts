@@ -23,6 +23,7 @@ import {
   TEndRecordingResponse,
   TEventCallback,
   TGetTransactionHistoryResponse,
+  TPartialResultCallback,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
   TPatchVoiceApiV3StatusRequest,
@@ -383,7 +384,6 @@ class EkaScribe {
 
   onEventCallback(callback: TEventCallback) {
     EkaScribeStore.eventCallback = callback;
-    // this.audioFileManagerInstance.setProgressCallback(callback);
   }
 
   onVadFramesCallback(callback: TVadFramesCallback) {
@@ -392,6 +392,10 @@ class EkaScribe {
 
   onVadFrameProcessedCallback(callback: TVadFrameProcessedCallback) {
     EkaScribeStore.vadFrameProcessedCallback = callback;
+  }
+
+  onPartialResultCallback(callback: TPartialResultCallback) {
+    EkaScribeStore.partialResultCallback = callback;
   }
 
   configureVadConstants({

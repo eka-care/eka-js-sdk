@@ -1,3 +1,4 @@
+import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
 import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS } from './enums';
 
 export type TGetConfigV2Response = {
@@ -475,3 +476,11 @@ export type TCompatibilityTestSummary = {
 };
 
 export type TCompatibilityCallback = (result: TCompatibilityTestResult) => void;
+
+export type TPartialResultCallback = (data: {
+  txn_id: string;
+  response: TGetStatusApiResponse;
+  status_code: number;
+  message: string;
+  poll_status: 'in-progress' | 'completed' | 'failed' | 'timeout';
+}) => void;
