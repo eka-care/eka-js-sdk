@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk",
-  "version": "2.0.39",
+  "version": "2.0.41",
   "description": "EkaScribe TypeScript SDK - Modern ES2020 build",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist",
     "build:main": "vite build",
     "build:worker": "vite build --config vite.worker.config.ts",
-    "build": "yarn clean && yarn build:main && yarn build:worker",
+    "build": "yarn clean && yarn build:main && yarn build:worker && cp ../../README.md .",
     "prepublishOnly": "yarn build"
   },
   "publishConfig": {

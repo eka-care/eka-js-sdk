@@ -479,8 +479,8 @@ export type TCompatibilityCallback = (result: TCompatibilityTestResult) => void;
 
 export type TPartialResultCallback = (data: {
   txn_id: string;
-  response: TGetStatusApiResponse;
+  response: TGetStatusApiResponse | null;
   status_code: number;
   message: string;
-  poll_status: 'in-progress' | 'completed' | 'failed' | 'timeout';
+  poll_status: 'in-progress' | 'success' | 'failed' | 'timeout';
 }) => void;

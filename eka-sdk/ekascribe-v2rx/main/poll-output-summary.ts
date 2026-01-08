@@ -18,11 +18,35 @@ export const pollOutputSummary = async ({
   txn_id: string;
   max_polling_time?: number;
 }): Promise<TPollingResponse> => {
+  const onPartialResultCallback = EkaScribeStore.partialResultCallback;
+
+  const createResponse = (
+    status_code: number,
+    response: TGetStatusApiResponse | null | undefined,
+    message: string,
+    poll_status: 'timeout' | 'failed' | 'in-progress' | 'success'
+  ): TPollingResponse => {
+    const result: TPollingResponse = {
+      response: response ?? null,
+      status_code,
+      errorMessage:
+        poll_status === 'success' || poll_status === 'in-progress' ? undefined : message,
+    };
+
+    onPartialResultCallback?.({
+      txn_id,
+      response: response ?? null,
+      status_code,
+      message,
+      poll_status,
+    });
+
+    return result;
+  };
+
   try {
     const time = new Date().getTime();
     const maxPollingTimeout = time + max_polling_time;
-
-    const onPartialResultCallback = EkaScribeStore.partialResultCallback;
 
     let failedCount = 0;
 
@@ -38,18 +62,12 @@ export const pollOutputSummary = async ({
         if (currentTime >= maxPollingTimeout) {
           const errorMessage =
             'We encountered an error while fetching analysis results due to timeout. Please try again.';
-          return {
-            status_code: 500,
-            errorMessage,
-          };
+
+          return createResponse(500, null, errorMessage, 'timeout');
         }
 
         if (status_code === 401 || status_code === 403) {
-          return {
-            response,
-            status_code,
-            errorMessage: 'Unauthorized or Forbidden',
-          };
+          return createResponse(status_code, response, 'Unauthorized or Forbidden', 'failed');
         }
 
         if (status_code === 202 || status_code === 400 || status_code >= 500) {
@@ -66,14 +84,13 @@ export const pollOutputSummary = async ({
 
           if (status_code >= 400) {
             failedCount++;
+
             if (failedCount >= 3) {
-              return {
-                response,
-                status_code,
-                errorMessage:
-                  response?.error?.msg ||
-                  `We encountered a backend error while fetching results. Please try again.`,
-              };
+              const errorMessage =
+                response?.error?.msg ||
+                'We encountered a backend error while fetching results. Please try again.';
+
+              return createResponse(status_code, null, errorMessage, 'failed');
             }
           } else {
             failedCount = 0;
@@ -82,39 +99,32 @@ export const pollOutputSummary = async ({
           return getSummary();
         }
 
-        if (response) {
-          onPartialResultCallback?.({
-            txn_id,
-            response,
-            status_code,
-            message:
-              'Template results generated successfully. Polling for this session is complete.',
-            poll_status: 'completed',
-          });
-        }
-
-        return {
-          response,
+        return createResponse(
           status_code,
-        };
+          response,
+          'Template results generated successfully. Polling for this session is complete.',
+          'success'
+        );
       } catch (error) {
-        return {
-          status_code: -1, // -1: non-https status_code to distinguish backend's 500 status_code
-          errorMessage: `Something went wrong from inside catch block. ${error}`,
-        };
+        return createResponse(
+          -1,
+          null,
+          `Something went wrong from inside catch block. ${error}`,
+          'failed'
+        );
       }
     };
     return getSummary();
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      return {
-        status_code: -1,
-        errorMessage: 'Request was aborted due to timeout.',
-      };
+      return createResponse(-1, null, 'Request was aborted due to timeout.', 'timeout');
     }
-    return {
-      status_code: -1,
-      errorMessage: `Something went wrong from outer catch block, ${error}`,
-    };
+
+    return createResponse(
+      -1,
+      null,
+      `Something went wrong from outer catch block, ${error}`,
+      'failed'
+    );
   }
 };
