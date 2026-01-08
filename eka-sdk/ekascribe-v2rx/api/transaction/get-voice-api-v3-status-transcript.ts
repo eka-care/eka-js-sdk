@@ -40,7 +40,7 @@ export const getVoiceApiV3StatusTranscript = async ({
 
     // Use custom timeout for this API (16 seconds instead of default 5 seconds)
     const getResponse = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V3()}/status/transcript/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V3()}/status/${txnId}?transcript=true`,
       options,
       16000
     );

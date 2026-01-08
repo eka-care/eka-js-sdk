@@ -23,6 +23,7 @@ import {
   TEndRecordingResponse,
   TEventCallback,
   TGetTransactionHistoryResponse,
+  TPartialResultCallback,
   TPatchTransactionRequest,
   TPatchVoiceApiV2ConfigRequest,
   TPatchVoiceApiV3StatusRequest,
@@ -67,15 +68,68 @@ import putVoiceApiV2Config from './api/config/patch-voice-api-v2-config';
 import postConvertTranscriptionToTemplate from './api/templates/post-convert-transcription-to-template';
 import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
 import { pollOutputSummary } from './main/poll-output-summary';
+import SystemCompatibilityManager from './main/system-compatiblity-manager';
+import { TCompatibilityCallback, TCompatibilityTestSummary } from './constants/types';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
-  private vadInstance: VadWebClient; // vadWebClient Instance
-  private audioFileManagerInstance: AudioFileManager; // AudioFileManager Instance
-  private audioBufferInstance: AudioBufferManager;
+  private vadInstance!: VadWebClient; // vadWebClient Instance
+  private audioFileManagerInstance!: AudioFileManager; // AudioFileManager Instance
+  private audioBufferInstance!: AudioBufferManager;
+  private compatibilityManager: SystemCompatibilityManager | null = null; // SystemCompatibilityManager Instance
 
   // Private constructor to prevent direct instantiation
   private constructor() {
+    // Instances will be initialized in initTransaction
+  }
+
+  // Static method to get the singleton instance with optional initialization
+  public static getInstance({
+    access_token,
+    env,
+    clientId,
+    clientEndpoint,
+  }: {
+    access_token?: string;
+    env?: 'PROD' | 'DEV';
+    clientId?: string;
+    clientEndpoint?: string;
+  }): EkaScribe {
+    setEnv({
+      ...(access_token ? { auth_token: access_token } : {}),
+      ...(env ? { env } : {}),
+      ...(clientId ? { clientId } : {}),
+    });
+
+    console.log(clientEndpoint, 'clientEndpoint');
+
+    if (!EkaScribe.instance) {
+      EkaScribe.instance = new EkaScribe();
+    }
+
+    return EkaScribe.instance;
+  }
+
+  // Method to reset the singleton instance (useful for testing)
+  public resetInstance(): void {
+    EkaScribe.instance = null;
+  }
+
+  async getEkascribeConfig() {
+    const response = await getConfigV2();
+    return response;
+  }
+
+  updateAuthTokens({ access_token }: { access_token: string }) {
+    setEnv({
+      auth_token: access_token,
+    });
+  }
+
+  async initTransaction(request: TPostTransactionInitRequest) {
+    // reinitiate all instances before starting a new transaction
+    EkaScribeStore.resetStore();
+
     this.audioFileManagerInstance = new AudioFileManager();
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
 
@@ -90,56 +144,7 @@ class EkaScribe {
     );
     EkaScribeStore.vadInstance = this.vadInstance;
 
-    console.log(
-      'Initialising SDK: ',
-      this.audioFileManagerInstance,
-      this.audioBufferInstance,
-      this.vadInstance
-    );
-  }
-
-  // Static method to get the singleton instance with optional initialization
-  public static getInstance({
-    access_token,
-    env,
-    clientId,
-  }: {
-    access_token?: string;
-    env?: 'PROD' | 'DEV';
-    clientId?: string;
-  }): EkaScribe {
-    setEnv({
-      ...(access_token ? { auth_token: access_token } : {}),
-      ...(env ? { env } : {}),
-      ...(clientId ? { clientId } : {}),
-    });
-
-    if (!EkaScribe.instance) {
-      EkaScribe.instance = new EkaScribe();
-    }
-
-    return EkaScribe.instance;
-  }
-
-  // Method to reset the singleton instance (useful for testing)
-  public resetInstance(): void {
-    EkaScribe.instance = null;
-  }
-
-  public async getEkascribeConfig() {
-    const response = await getConfigV2();
-    return response;
-  }
-
-  public updateAuthTokens({ access_token }: { access_token: string }) {
-    setEnv({
-      auth_token: access_token,
-    });
-  }
-
-  async initTransaction(request: TPostTransactionInitRequest) {
-    // Reset all instances before starting a new transaction
-    this.resetEkaScribe();
+    console.log('Initialising SDK Instances ', EkaScribeStore);
 
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
@@ -203,6 +208,8 @@ class EkaScribe {
         processing_error,
       });
 
+      this.resetEkaScribe();
+
       if (onEventCallback) {
         onEventCallback({
           callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
@@ -211,8 +218,6 @@ class EkaScribe {
           timestamp: new Date().toISOString(),
         });
       }
-
-      this.resetEkaScribe();
 
       return patchTransactionResponse;
     } catch (error) {
@@ -371,17 +376,6 @@ class EkaScribe {
 
     // Clear store (this also clears instance references)
     EkaScribeStore.resetStore();
-
-    // Destroy class instances by setting them to null
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.audioFileManagerInstance = null;
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.audioBufferInstance = null;
-    // @ts-ignore - Intentionally setting to null for complete cleanup
-    this.vadInstance = null;
-
-    // Reset singleton instance - next getInstance() will create brand new instances
-    this.resetInstance();
   }
 
   onUserSpeechCallback(callback: (isSpeech: boolean) => void) {
@@ -390,7 +384,6 @@ class EkaScribe {
 
   onEventCallback(callback: TEventCallback) {
     EkaScribeStore.eventCallback = callback;
-    // this.audioFileManagerInstance.setProgressCallback(callback);
   }
 
   onVadFramesCallback(callback: TVadFramesCallback) {
@@ -399,6 +392,10 @@ class EkaScribe {
 
   onVadFrameProcessedCallback(callback: TVadFrameProcessedCallback) {
     EkaScribeStore.vadFrameProcessedCallback = callback;
+  }
+
+  onPartialResultCallback(callback: TPartialResultCallback) {
+    EkaScribeStore.partialResultCallback = callback;
   }
 
   configureVadConstants({
@@ -523,6 +520,39 @@ class EkaScribe {
     const configMyTemplatesResponse = await getConfigV2MyTemplates();
     return configMyTemplatesResponse;
   }
+
+  async runSystemCompatibilityTest(
+    callback: TCompatibilityCallback,
+    clientEndpoint?: string,
+    sharedWorker?: SharedWorker
+  ): Promise<TCompatibilityTestSummary> {
+    try {
+      // Create new compatibility manager instance
+      // clientEndpoint is the base URL where SDK is hosted, worker URL will be constructed from it
+      this.compatibilityManager = new SystemCompatibilityManager(clientEndpoint);
+      // const workerUrl = new URL(
+      //   './worker.bundle.js', // Path relative to where this index.mjs file sits in dist
+      //   clientEndpoint
+      // );
+
+      // const sharedWorker = new SharedWorker(workerUrl.href, { name: 'EkaS3Worker' });
+      // console.log(sharedWorker, 'EkaS3Worker');
+
+      // sharedWorker.port.start();
+
+      if (sharedWorker) {
+        this.compatibilityManager.setCompatiblityTestSharedWorker(sharedWorker);
+      }
+
+      // Run all compatibility tests
+      const summary = await this.compatibilityManager.runCompatibilityTest(callback);
+
+      return summary;
+    } catch (error) {
+      console.error('Error running compatibility test:', error);
+      throw error;
+    }
+  }
 }
 
 // Export the singleton instance getter with optional initialization
@@ -530,8 +560,10 @@ export const getEkaScribeInstance = ({
   access_token,
   env,
   clientId,
+  clientEndpoint,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId });
+  clientEndpoint?: string;
+}) => EkaScribe.getInstance({ access_token, env, clientId, clientEndpoint });

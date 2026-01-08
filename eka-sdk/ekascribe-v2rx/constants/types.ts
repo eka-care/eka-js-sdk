@@ -1,4 +1,5 @@
-import { ERROR_CODE, CALLBACK_TYPE } from './enums';
+import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
+import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS } from './enums';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -36,14 +37,24 @@ export type TGetConfigV2Response = {
     emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
   };
   message?: string;
-  code?: number;
+  code: number;
+};
+
+export type TGetConfigV2TimezoneResponse = {
+  timezone: string;
+  current_time_utc: string;
+  timestamp: number;
+  code: number;
+  message?: string;
 };
 
 export type TSelectedPreferences = {
   languages?: TGetConfigItem[];
-  output_format?: TGetConfigItem[];
+  output_formats?: TGetConfigItem[];
   consultation_mode?: string;
   use_audio_cues?: boolean;
   auto_download?: boolean;
@@ -369,7 +380,11 @@ export type TPatchVoiceApiV2ConfigRequest = {
     emr_name?: string;
     microphone_permission_check?: boolean;
     consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
+    sys_info?: any;
   };
+  query_params?: string;
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
@@ -440,4 +455,32 @@ export type TVadFrameProcessedCallback = (args: {
     isSpeech: number;
   };
   frame: Float32Array;
+}) => void;
+
+export type TCompatibilityTestResult = {
+  test_type: string;
+  status: COMPATIBILITY_TEST_STATUS;
+  message: string;
+  data?: any;
+  timestamp: string;
+  error?: string;
+};
+
+export type TCompatibilityTestSummary = {
+  allPassed: boolean;
+  results: TCompatibilityTestResult[];
+  totalTests: number;
+  passedTests: number;
+  failedTests: number;
+  warningTests: number;
+};
+
+export type TCompatibilityCallback = (result: TCompatibilityTestResult) => void;
+
+export type TPartialResultCallback = (data: {
+  txn_id: string;
+  response: TGetStatusApiResponse;
+  status_code: number;
+  message: string;
+  poll_status: 'in-progress' | 'completed' | 'failed' | 'timeout';
 }) => void;

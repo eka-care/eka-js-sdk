@@ -23,7 +23,19 @@ onconnect = function (event: MessageEvent) {
   workerPort.onmessage = async function (event) {
     const workerData = event.data;
 
+    console.log(workerData, 'shared worker message received');
+
     switch (workerData.action) {
+      case SHARED_WORKER_ACTION.TEST_WORKER: {
+        // Respond to test message to confirm worker is functional
+        workerPort.postMessage({
+          action: SHARED_WORKER_ACTION.TEST_WORKER,
+          message: 'Shared worker is functional',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       case SHARED_WORKER_ACTION.CONFIGURE_AWS: {
         try {
           const { accessKeyId, secretKey, sessionToken } = workerData.payload;

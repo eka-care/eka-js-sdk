@@ -2,6 +2,7 @@ import {
   getVoiceApiV3Status,
   TGetStatusApiResponse,
 } from '../api/transaction/get-voice-api-v3-status';
+import EkaScribeStore from '../store/store';
 
 export type TPollingResponse = {
   response?: TGetStatusApiResponse | null;
@@ -20,6 +21,8 @@ export const pollOutputSummary = async ({
   try {
     const time = new Date().getTime();
     const maxPollingTimeout = time + max_polling_time;
+
+    const onPartialResultCallback = EkaScribeStore.partialResultCallback;
 
     let failedCount = 0;
 
@@ -50,6 +53,17 @@ export const pollOutputSummary = async ({
         }
 
         if (status_code === 202 || status_code === 400 || status_code >= 500) {
+          // callback to pass processed templates
+          if (status_code === 202 && response) {
+            onPartialResultCallback?.({
+              txn_id,
+              response,
+              status_code,
+              message: 'Partial result received',
+              poll_status: 'in-progress',
+            });
+          }
+
           if (status_code >= 400) {
             failedCount++;
             if (failedCount >= 3) {
@@ -66,6 +80,17 @@ export const pollOutputSummary = async ({
           }
           // await new Promise((resolve) => setTimeout(resolve, 1000));
           return getSummary();
+        }
+
+        if (response) {
+          onPartialResultCallback?.({
+            txn_id,
+            response,
+            status_code,
+            message:
+              'Template results generated successfully. Polling for this session is complete.',
+            poll_status: 'completed',
+          });
         }
 
         return {

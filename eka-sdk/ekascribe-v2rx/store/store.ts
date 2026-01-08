@@ -6,6 +6,7 @@ import {
   TSessionStatus,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
+  TPartialResultCallback,
 } from '../constants/types';
 
 class EkaScribeStore {
@@ -20,6 +21,7 @@ class EkaScribeStore {
   private _eventCallback: TEventCallback | null = null;
   private _vadFramesCallback: TVadFramesCallback | null = null;
   private _vadFrameProcessedCallback: TVadFrameProcessedCallback | null = null;
+  private _partialResultCallback: TPartialResultCallback | null = null;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -111,6 +113,14 @@ class EkaScribeStore {
     this._vadFrameProcessedCallback = callback;
   }
 
+  // Partial Result Callback
+  get partialResultCallback(): TPartialResultCallback | null {
+    return this._partialResultCallback;
+  }
+  set partialResultCallback(callback: TPartialResultCallback | null) {
+    this._partialResultCallback = callback;
+  }
+
   // Reset store to initial state
   resetStore(): void {
     this._txnID = '';
@@ -125,6 +135,7 @@ class EkaScribeStore {
     this._eventCallback = null;
     this._vadFramesCallback = null;
     this._vadFrameProcessedCallback = null;
+    this._partialResultCallback = null;
   }
 }
 
