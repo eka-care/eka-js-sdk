@@ -50,10 +50,18 @@ export const pollOutputSummary = async ({
 
     let failedCount = 0;
 
-    const getSummary = async () => {
+    onPartialResultCallback?.({
+      txn_id,
+      response: null,
+      status_code: 202,
+      message: 'Polling for session output summary started',
+      poll_status: 'in-progress',
+    });
+
+    const getSummary = async (queryParams?: string) => {
       // this try-catch block is needed to handle the errors of this recursive call
       try {
-        const getResponse = await getVoiceApiV3Status({ txnId: txn_id });
+        const getResponse = await getVoiceApiV3Status({ txnId: txn_id, queryParams });
 
         const { status_code, response } = getResponse;
 
@@ -114,7 +122,8 @@ export const pollOutputSummary = async ({
         );
       }
     };
-    return getSummary();
+
+    return getSummary('template_id=transcript');
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       return createResponse(-1, null, 'Request was aborted due to timeout.', 'timeout');
