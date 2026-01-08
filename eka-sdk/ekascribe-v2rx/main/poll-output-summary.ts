@@ -14,9 +14,11 @@ export type TPollingResponse = {
 export const pollOutputSummary = async ({
   txn_id,
   max_polling_time = 2 * 60 * 1000,
+  is_ongoing_session,
 }: {
   txn_id: string;
   max_polling_time?: number;
+  is_ongoing_session?: boolean;
 }): Promise<TPollingResponse> => {
   const onPartialResultCallback = EkaScribeStore.partialResultCallback;
 
@@ -123,7 +125,7 @@ export const pollOutputSummary = async ({
       }
     };
 
-    return getSummary('template_id=transcript');
+    return getSummary(is_ongoing_session ? 'template_id=transcript' : '');
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       return createResponse(-1, null, 'Request was aborted due to timeout.', 'timeout');
