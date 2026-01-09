@@ -338,7 +338,7 @@ class EkaScribe {
   async pollSessionOutput(request: {
     txn_id: string;
     max_polling_time?: number;
-    is_ongoing_session?: boolean;
+    template_id?: string;
   }) {
     const pollingResponse = await pollOutputSummary(request);
 
