@@ -73,8 +73,10 @@ const decodeApiResponse = (apiResponse: TGetStatusApiResponse): TGetStatusApiRes
 
 export const getVoiceApiV3Status = async ({
   txnId,
+  queryParams,
 }: {
   txnId: string;
+  queryParams?: string;
 }): Promise<TGetStatusResponse> => {
   try {
     const headers = new Headers();
@@ -87,7 +89,7 @@ export const getVoiceApiV3Status = async ({
 
     // Use custom timeout for this API (16 seconds instead of default 5 seconds)
     const getResponse = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V3()}/status/${txnId}`,
+      `${GET_EKA_VOICE_HOST_V3()}/status/${txnId}${queryParams ? `?${queryParams}` : ''}`,
       options,
       16000
     );
