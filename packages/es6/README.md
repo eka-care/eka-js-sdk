@@ -36,7 +36,7 @@ Works out of the box - no configuration needed.
 
 ```ts
 // Just import and use
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 ```
 
 ### Webpack 5
@@ -44,7 +44,7 @@ import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
 Works out of the box with default configuration. The `new URL(..., import.meta.url)` pattern is natively supported.
 
 ```ts
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 ```
 
 ### Next.js
@@ -54,7 +54,7 @@ For Next.js projects, ensure the SDK is only used on the client side:
 ```tsx
 'use client';
 
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 
 // Use inside a client component
 const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
@@ -66,7 +66,7 @@ For direct browser usage without a bundler:
 
 ```html
 <script type="module">
-  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk-legacy/dist/index.mjs';
 
   const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
 </script>
