@@ -527,22 +527,10 @@ class EkaScribe {
 
   async runSystemCompatibilityTest(
     callback: TCompatibilityCallback,
-    clientEndpoint?: string,
     sharedWorker?: SharedWorker
   ): Promise<TCompatibilityTestSummary> {
     try {
-      // Create new compatibility manager instance
-      // clientEndpoint is the base URL where SDK is hosted, worker URL will be constructed from it
-      this.compatibilityManager = new SystemCompatibilityManager(clientEndpoint);
-      // const workerUrl = new URL(
-      //   './worker.bundle.js', // Path relative to where this index.mjs file sits in dist
-      //   clientEndpoint
-      // );
-
-      // const sharedWorker = new SharedWorker(workerUrl.href, { name: 'EkaS3Worker' });
-      // console.log(sharedWorker, 'EkaS3Worker');
-
-      // sharedWorker.port.start();
+      this.compatibilityManager = new SystemCompatibilityManager();
 
       if (sharedWorker) {
         this.compatibilityManager.setCompatiblityTestSharedWorker(sharedWorker);

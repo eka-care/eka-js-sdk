@@ -25,13 +25,9 @@ const COMPATIBILITY_TEST_FOLDER = 'system-compatibility-test';
 class SystemCompatibilityManager {
   private testSharedWorker: SharedWorker | null = null;
   private microphoneStream: MediaStream | null = null;
-  private clientEndpoint: string;
   private awsConfigured: boolean = false;
 
-  constructor(clientEndpoint?: string) {
-    this.clientEndpoint = clientEndpoint || getSharedWorkerUrl();
-    console.log(this.clientEndpoint, 'client endpoint');
-  }
+  constructor() {}
 
   /**
    * Main orchestrator - runs all 5 compatibility tests sequentially
