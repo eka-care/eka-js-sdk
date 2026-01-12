@@ -88,20 +88,16 @@ class EkaScribe {
     access_token,
     env,
     clientId,
-    clientEndpoint,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
     clientId?: string;
-    clientEndpoint?: string;
   }): EkaScribe {
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
       ...(clientId ? { clientId } : {}),
     });
-
-    console.log(clientEndpoint, 'clientEndpoint');
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
@@ -126,12 +122,16 @@ class EkaScribe {
     });
   }
 
-  async initTransaction(request: TPostTransactionInitRequest) {
+  async initTransaction(request: TPostTransactionInitRequest, sharedWorkerUrl?: string) {
     // reinitiate all instances before starting a new transaction
     EkaScribeStore.resetStore();
 
     this.audioFileManagerInstance = new AudioFileManager();
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
+    if (sharedWorkerUrl) {
+      this.audioFileManagerInstance.createSharedWorkerInstance(sharedWorkerUrl);
+    }
 
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
@@ -564,10 +564,8 @@ export const getEkaScribeInstance = ({
   access_token,
   env,
   clientId,
-  clientEndpoint,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
-  clientEndpoint?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId, clientEndpoint });
+}) => EkaScribe.getInstance({ access_token, env, clientId });

@@ -103,20 +103,9 @@ class AudioFileManager {
     return this.audioChunks.length;
   }
 
-  createSharedWorkerInstance() {
+  createSharedWorkerInstance(sharedWorkerUrl: string) {
     try {
-      // new URL(relativeOrAbsolutePath, baseUrl)
-      // const worker = new SharedWorker(
-      //   'https://unpkg.com/@eka-care/ekascribe-ts-sdk@1.5.80/dist/shared-worker/s3-file-upload.js'
-      // );
-
-      const worker = new SharedWorker(new URL('../shared-worker/s3-file-upload.js'));
-
-      // const workerUrl = getSharedWorkerUrl();
-
-      // console.log(workerUrl, 'worker url');
-
-      // const worker = new SharedWorker(workerUrl);
+      const worker = new SharedWorker(sharedWorkerUrl);
 
       this.sharedWorkerInstance = worker;
 
@@ -468,29 +457,15 @@ class AudioFileManager {
   }
 
   async uploadAudioToS3({ audioFrames, fileName, chunkIndex }: TUploadAudioChunkParams) {
-    if (typeof SharedWorker === 'undefined' || !SharedWorker) {
+    if (typeof SharedWorker === 'undefined' || !SharedWorker || !this.sharedWorkerInstance) {
       // Shared Workers are not supported in this browser
+      // SharedWorker creation failed (likely due to CORS/same-origin policy)
       console.log('Shared Workers are NOT supported in this browser.');
 
       await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
     } else {
       // Shared Workers are supported
       console.log('Shared Workers are supported in this browser.');
-
-      if (!this.sharedWorkerInstance) {
-        const workerCreated = this.createSharedWorkerInstance();
-
-        console.log(workerCreated, 'worker created');
-        if (!workerCreated) {
-          // SharedWorker creation failed (likely due to CORS/same-origin policy)
-          // Fall back to non-worker upload
-          console.warn(
-            'Failed to create SharedWorker instance. Falling back to non-worker upload method.'
-          );
-          await this.uploadAudioToS3WithoutWorker({ audioFrames, fileName, chunkIndex });
-          return;
-        }
-      }
 
       await this.uploadAudioToS3WithWorker({ audioFrames, fileName, chunkIndex });
     }
