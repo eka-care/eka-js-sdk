@@ -196,7 +196,9 @@ const response = await ekascribe.initTransaction({
   },
   version: '1.0.0',
   additional_data: {},
-});
+},
+  sharedWorkerUrl: 'worker-url', // optional - see Shared Worker Configuration below
+);
 ```
 
 **Key Parameters:**
@@ -209,6 +211,7 @@ const response = await ekascribe.initTransaction({
 - `additional_data`: Optional - Pass any data you want to receive unchanged in the response
 - `transfer`: Audio mode. Use `vaded` for audio already processed with Voice Activity Detection (SDK does this by default); use `non-vaded` only if you are sending raw audio without VAD.
 - `model_type`: Transcription model choice. `pro` = most accurate; `lite` = lower latency, more performant.
+- `sharedWorkerUrl`: Optional - Custom URL for the shared worker script. See **Shared Worker Configuration** section below for usage details.
 
 - #### Sample Response:
 
@@ -245,6 +248,60 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 // Now you can retry the method call
 const response = await ekascribe.initTransaction({ ... });
 ```
+
+#### Shared Worker Configuration
+
+The SDK supports using a shared worker for efficient background audio file uploads. If you provide a `sharedWorkerUrl`, the SDK will use a shared worker for file uploads. If not provided, the SDK will use the main thread for file uploads.
+
+**Why use Shared Worker:**
+
+- **Better Performance**: Offloads file uploads to a background thread, keeping the main thread free for UI interactions
+- **Resource Efficiency**: A single shared worker instance can handle uploads across multiple tabs/windows
+- **Improved User Experience**: Prevents UI blocking during large file uploads
+
+**How to configure:**
+
+```ts
+// Step 1: Create a function to fetch and prepare the worker URL
+async function getSharedWorkerUrl() {
+  // Fetch the worker script from CDN (or your own hosting) - update the latest sdk version
+  const workerScriptResponse = await fetch(
+    'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk@2.0.48/dist/worker.bundle.js'
+  );
+  const workerScript = await workerScriptResponse.text();
+
+  // Create a blob from the worker script
+  const blob = new Blob([workerScript], { type: 'application/javascript' });
+
+  // Generate an object URL for the blob
+  const workerUrl = URL.createObjectURL(blob);
+
+  return workerUrl;
+}
+
+// Step 2: Use the worker URL in initTransaction
+const sharedWorkerUrl = await getSharedWorkerUrl();
+
+const response = await ekascribe.initTransaction(
+  {
+    mode: 'consultation',
+    input_language: ['en-IN'],
+    output_format_template: [{ template_id: 'your_template_id' }],
+    txn_id: 'unique-transaction-id',
+    transfer: 'vaded',
+    model_type: 'pro',
+    // ... other parameters
+  },
+  sharedWorkerUrl // Pass the custom worker URL;
+);
+```
+
+**Important notes:**
+
+- Make sure to use the correct SDK version in the CDN URL
+- The worker URL must be accessible from the same origin or have proper CORS headers
+- Remember to revoke the object URL when you're done: `URL.revokeObjectURL(workerUrl)`
+- If `sharedWorkerUrl` is not provided, the SDK will use the main thread for file uploads (no shared worker)
 
 ### 5. Start recording
 
