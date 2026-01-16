@@ -132,7 +132,12 @@ export type TPostTransactionInitRequest = {
   txn_id: string;
   input_language: string[];
   output_language?: string;
-  output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
+  output_format_template: {
+    template_id: string;
+    template_name?: string;
+    template_type?: string;
+    codification_needed?: boolean;
+  }[];
   transfer: string;
   auto_download?: boolean;
   model_training_consent?: boolean;
