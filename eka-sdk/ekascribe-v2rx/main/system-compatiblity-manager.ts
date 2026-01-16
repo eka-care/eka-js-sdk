@@ -12,7 +12,6 @@ import {
 } from '../constants/types';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_HOST, GET_S3_BUCKET_NAME } from '../fetch-client/helper';
-import { getSharedWorkerUrl } from '../utils/get-worker-url';
 import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-es6';
 import { getConfigV2Timezone } from '../api/config/get-voice-api-v2-config-timezone';
 
@@ -25,13 +24,9 @@ const COMPATIBILITY_TEST_FOLDER = 'system-compatibility-test';
 class SystemCompatibilityManager {
   private testSharedWorker: SharedWorker | null = null;
   private microphoneStream: MediaStream | null = null;
-  private clientEndpoint: string;
   private awsConfigured: boolean = false;
 
-  constructor(clientEndpoint?: string) {
-    this.clientEndpoint = clientEndpoint || getSharedWorkerUrl();
-    console.log(this.clientEndpoint, 'client endpoint');
-  }
+  constructor() {}
 
   /**
    * Main orchestrator - runs all 5 compatibility tests sequentially

@@ -88,20 +88,16 @@ class EkaScribe {
     access_token,
     env,
     clientId,
-    clientEndpoint,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
     clientId?: string;
-    clientEndpoint?: string;
   }): EkaScribe {
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
       ...(clientId ? { clientId } : {}),
     });
-
-    console.log(clientEndpoint, 'clientEndpoint');
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
@@ -126,12 +122,16 @@ class EkaScribe {
     });
   }
 
-  async initTransaction(request: TPostTransactionInitRequest) {
+  async initTransaction(request: TPostTransactionInitRequest, sharedWorkerUrl?: string) {
     // reinitiate all instances before starting a new transaction
     EkaScribeStore.resetStore();
 
     this.audioFileManagerInstance = new AudioFileManager();
     EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
+    if (sharedWorkerUrl) {
+      this.audioFileManagerInstance.createSharedWorkerInstance(sharedWorkerUrl);
+    }
 
     this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
     EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
@@ -335,7 +335,11 @@ class EkaScribe {
     }
   }
 
-  async pollSessionOutput(request: { txn_id: string; max_polling_time?: number }) {
+  async pollSessionOutput(request: {
+    txn_id: string;
+    max_polling_time?: number;
+    template_id?: string;
+  }) {
     const pollingResponse = await pollOutputSummary(request);
 
     return pollingResponse;
@@ -523,22 +527,10 @@ class EkaScribe {
 
   async runSystemCompatibilityTest(
     callback: TCompatibilityCallback,
-    clientEndpoint?: string,
     sharedWorker?: SharedWorker
   ): Promise<TCompatibilityTestSummary> {
     try {
-      // Create new compatibility manager instance
-      // clientEndpoint is the base URL where SDK is hosted, worker URL will be constructed from it
-      this.compatibilityManager = new SystemCompatibilityManager(clientEndpoint);
-      // const workerUrl = new URL(
-      //   './worker.bundle.js', // Path relative to where this index.mjs file sits in dist
-      //   clientEndpoint
-      // );
-
-      // const sharedWorker = new SharedWorker(workerUrl.href, { name: 'EkaS3Worker' });
-      // console.log(sharedWorker, 'EkaS3Worker');
-
-      // sharedWorker.port.start();
+      this.compatibilityManager = new SystemCompatibilityManager();
 
       if (sharedWorker) {
         this.compatibilityManager.setCompatiblityTestSharedWorker(sharedWorker);
@@ -560,10 +552,8 @@ export const getEkaScribeInstance = ({
   access_token,
   env,
   clientId,
-  clientEndpoint,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
-  clientEndpoint?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId, clientEndpoint });
+}) => EkaScribe.getInstance({ access_token, env, clientId });

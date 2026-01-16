@@ -36,7 +36,7 @@ Works out of the box - no configuration needed.
 
 ```ts
 // Just import and use
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 ```
 
 ### Webpack 5
@@ -44,7 +44,7 @@ import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
 Works out of the box with default configuration. The `new URL(..., import.meta.url)` pattern is natively supported.
 
 ```ts
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 ```
 
 ### Next.js
@@ -54,7 +54,7 @@ For Next.js projects, ensure the SDK is only used on the client side:
 ```tsx
 'use client';
 
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 
 // Use inside a client component
 const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
@@ -66,7 +66,7 @@ For direct browser usage without a bundler:
 
 ```html
 <script type="module">
-  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk-legacy/dist/index.mjs';
 
   const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
 </script>
@@ -137,7 +137,38 @@ const config = await ekascribe.getEkascribeConfig();
 }
 ```
 
-### 3. Init transaction
+### 3. Fetch user's favorite templates
+
+Get the list of templates marked as favorites by the user (configured via `my_templates` in the config).
+
+```ts
+const myTemplates = await ekascribe.getConfigMyTemplates();
+```
+
+- #### Sample Response:
+
+```ts
+{
+  "data": {
+    "my_templates": [
+      {
+        "id": "template_123",
+        "name": "General Consultation"
+      },
+      {
+        "id": "template_456",
+        "name": "Cardiology Template"
+      }
+    ],
+  },
+  "message": "Configuration fetched successfully",
+  "code": 200
+}
+```
+
+**Note:** The `my_templates` field contains templates that were previously saved using the `updateConfig()` method (see Templates SDK Methods section).
+
+### 4. Init transaction
 
 Initialize a transaction before starting recording. This sets up the session with your configuration.
 
@@ -211,7 +242,7 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.initTransaction({ ... });
 ```
 
-### 4. Start recording
+### 5. Start recording
 
 Start recording audio after initializing the transaction.
 
@@ -233,7 +264,7 @@ const response = await ekascribe.startRecording();
 }
 ```
 
-### 5. Pause recording
+### 6. Pause recording
 
 Pause the ongoing voice recording.
 
@@ -252,7 +283,7 @@ const response = await ekascribe.pauseRecording();
 }
 ```
 
-### 6. Resume recording
+### 7. Resume recording
 
 Resume a paused recording.
 
@@ -271,7 +302,7 @@ const response = await ekascribe.resumeRecording();
 }
 ```
 
-### 7. End recording
+### 8. End recording
 
 End the recording session. This method:
 
@@ -319,19 +350,23 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.endRecording();
 ```
 
-### 8. Get output recorded prescription
+### 9. Get output recorded prescription
 
-`pollSessionOutput({ txn_id, max_polling_time })`: SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
-
-Example (SDK-managed polling):
+The SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
 
 ```ts
 // Waits up to 2 minutes by default; override as needed
 const res = await ekascribe.pollSessionOutput({
   txn_id: 'transaction-id',
   max_polling_time: 2 * 60 * 1000, // optional
+  template_id: 'template-id', // optional
 });
 ```
+
+**Note:**
+
+1. On passing `template_id` in request params, the function will return output only for that specific template ID. If `template_id` is not passed, it will return all template responses generated for that `txn_id`.
+2. Use `onPartialResultCallback` (see Generic Callbacks section) before calling `pollSessionOutput` to receive real-time updates during polling, display partial transcription results, and improve user experience with processing progress indicators.
 
 Status codes to handle:
 
@@ -429,7 +464,7 @@ type TOutputSummary = {
 }
 ```
 
-### 9. Retry upload recording
+### 10. Retry upload recording
 
 Retry uploading failed audio files after `endRecording`.
 
@@ -469,7 +504,7 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.retryUploadRecording({ force_commit: true });
 ```
 
-### 10. Patch recording session status
+### 11. Patch recording session status
 
 Cancel or update the status of a recording session.
 
@@ -518,7 +553,7 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.patchSessionStatus({ ... });
 ```
 
-### 11. Commit transaction
+### 12. Commit transaction
 
 Call this if `endRecording` returns `error_code: 'txn_commit_failed'` or the transaction is not yet committed.
 
@@ -551,7 +586,7 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.commitTransactionCall();
 ```
 
-### 12. Stop transaction
+### 13. Stop transaction
 
 Use this method to stop a transaction that has not yet been stopped or returned a `txn_stop_failed` error in a previous step.
 
@@ -584,7 +619,7 @@ ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
 const response = await ekascribe.stopTransactionCall();
 ```
 
-### 13. Get previous sessions
+### 14. Get previous sessions
 
 Fetch previous sessions. `txn_count` controls how many sessions the API returns.
 
@@ -621,6 +656,49 @@ const sessions = await ekascribe.getSessionHistory({ txn_count: 10 }); // txn_co
   retrieved_count: 1
 }
 ```
+
+### 15. Convert response to other template post session
+
+Use this method to convert an existing transcription from a completed transaction into a different template format. This is useful when you want to reformat existing transcription data without re-recording.
+
+```ts
+const response = await ekascribe.postTransactionConvertToTemplate({
+  txn_id: 'transaction-id-123',
+  template_id: 'new-template-id',
+});
+```
+
+**Key Parameters:**
+
+- `txn_id`: The transaction ID of the completed session you want to convert
+- `template_id`: The ID of the template format you want to convert the transcription into
+
+- #### Sample Response:
+
+```ts
+{
+  status: 'success' | 'failed';
+  message: string;
+  txn_id: string;
+  template_id: string;
+  b_id: string;
+  code: number;
+  msg: string;
+  error?: {
+    code: string;
+    message: string;
+    display_message: string;
+  };
+}
+```
+
+**When to use:**
+
+- When you need to apply a different template to an existing transcription
+- To generate multiple template formats from the same recording session
+- After completing a session, when you want to see the output in a different template structure
+
+**Note:** After getting success response from this method, call `pollSessionOutput` (Point 9) to get the output for the new template_id.
 
 ## Templates SDK Methods
 
@@ -1160,6 +1238,57 @@ ekascribe.onUserSpeechCallback((isSpeech) => {
   }
 });
 ```
+
+### 3. Partial result callback
+
+This callback provides real-time partial results while polling for the final output. Use it to display intermediate transcription and template results to users before processing is complete.
+
+```ts
+ekascribe.onPartialResultCallback((partialData) => {
+  console.log('Partial result received:', partialData);
+
+  // Handle different poll statuses
+  switch (partialData.poll_status) {
+    case 'in-progress':
+      // Processing is still ongoing, display partial results
+      console.log('Processing...', partialData.response);
+      break;
+    case 'success':
+      // Final result received
+      console.log('Processing complete:', partialData.response);
+      break;
+    case 'failed':
+      // Processing failed
+      console.error('Processing failed:', partialData.message);
+      break;
+    case 'timeout':
+      // Polling timed out
+      console.warn('Polling timeout:', partialData.message);
+      break;
+  }
+});
+```
+
+- #### Callback Structure:
+
+```ts
+{
+  txn_id: string; // Transaction ID
+  response: TGetStatusApiResponse | null; // The response structure is the same as returned by `pollSessionOutput` method
+  status_code: number; // HTTP status code
+  message: string; // Status message
+  poll_status: 'in-progress' | 'success' | 'failed' | 'timeout'; // Current polling state
+}
+```
+
+**When to use:**
+
+- Set this callback before calling `pollSessionOutput` to receive real-time updates
+- Display partial transcription results to improve user experience
+- Show processing progress indicators
+- Handle intermediate template results
+
+**Note:** This callback is triggered multiple times during polling - once for each poll attempt until processing completes or times out.
 
 ### Error codes
 
