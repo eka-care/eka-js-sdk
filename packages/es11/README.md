@@ -180,7 +180,10 @@ Initialize a transaction before starting recording. This sets up the session wit
 const response = await ekascribe.initTransaction({
   mode: 'consultation',
   input_language: ['en-IN'],
-  output_format_template: [{ template_id: 'your_template_id' }],
+  output_format_template: [{
+    template_id: 'your_template_id',
+    codification_needed?: true    // optional
+  }],
   txn_id: 'unique-transaction-id',
   transfer: 'vaded' | 'non-vaded',
   model_type: 'pro' | 'lite',
