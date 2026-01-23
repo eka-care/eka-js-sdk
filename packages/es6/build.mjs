@@ -12,6 +12,7 @@ const sharedConfig = {
     'process.env.NODE_ENV': '"production"',
     'process.env.NODE_DEBUG': 'false',
     'process': '{"env": {}}',
+    'BUILD_TARGET_ES6': 'true',
   },
   banner: {
     js: `

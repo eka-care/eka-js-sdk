@@ -4,6 +4,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
   base: './',
+  define: {
+    // ES11 build - BUILD_TARGET_ES6 is undefined, so it will use ES11 implementation
+    'BUILD_TARGET_ES6': 'false',
+  },
   build: {
     target: 'es2020',
     lib: {
