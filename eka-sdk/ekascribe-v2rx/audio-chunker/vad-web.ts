@@ -4,6 +4,7 @@ import {
   LONG_SILENCE_THRESHOLD,
   OUTPUT_FORMAT,
   PRE_SPEECH_PAD_FRAMES,
+  SAMPLING_RATE,
   SDK_STATUS_CODE,
   SHORT_SILENCE_THRESHOLD,
 } from '../constants/constant';
@@ -217,20 +218,23 @@ class VadWebClient {
         frameSamples: this.frame_size,
         preSpeechPadFrames: this.speech_pad_frames,
         onFrameProcessed: (prob, frames) => {
+          audioFileManager?.incrementTotalRawSamples(frames);
+
+          audioBuffer?.append(frames);
+
           // Get callback dynamically to ensure it's always up to date
           const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
           if (vadFrameProcessedCallback) {
-            vadFrameProcessedCallback({ probabilities: prob, frame: frames });
+            const rawSampleDetails = audioFileManager?.getRawSampleDetails();
+            const totalSamples = rawSampleDetails?.totalRawSamples || 0;
+            const duration = totalSamples / SAMPLING_RATE;
+            vadFrameProcessedCallback({ probabilities: prob, frame: frames, duration });
           }
 
           // Only process frames internally when recording is active
           if (!this.recording_started) {
             return;
           }
-
-          audioFileManager?.incrementTotalRawSamples(frames);
-
-          audioBuffer?.append(frames);
 
           // Check if audio chunk needs to be clipped
           const { isSpeech } = prob;

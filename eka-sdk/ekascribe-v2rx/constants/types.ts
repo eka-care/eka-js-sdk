@@ -16,7 +16,7 @@ export type TGetConfigV2Response = {
       {
         id: string;
         name: string;
-      }
+      },
     ];
     user_details: {
       uuid: string;
@@ -460,6 +460,7 @@ export type TVadFrameProcessedCallback = (args: {
     isSpeech: number;
   };
   frame: Float32Array;
+  duration: number;
 }) => void;
 
 export type TCompatibilityTestResult = {
