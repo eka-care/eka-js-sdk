@@ -24,6 +24,7 @@ class VadWebClient {
   private frame_size: number;
   private speech_pad_frames: number;
   private micVad: MicVAD; // MicVad Object
+  private micStream: MediaStream | null = null;
   private is_vad_loading: boolean = true;
   private noSpeechStartTime: number | null = null;
   private recording_started: boolean = false;
@@ -51,6 +52,16 @@ class VadWebClient {
     this.frame_size = FRAME_SIZE;
     this.speech_pad_frames = PRE_SPEECH_PAD_FRAMES;
     this.micVad = {} as MicVAD;
+  }
+
+  private stopMicStream() {
+    try {
+      this.micStream?.getTracks?.().forEach((t) => t.stop());
+    } catch {
+      // ignore
+    } finally {
+      this.micStream = null;
+    }
   }
 
   /**
@@ -176,68 +187,94 @@ class VadWebClient {
   /**
    * initialize the VAD instance
    */
-  async initVad() {
+  async initVad(deviceId?: string) {
     const audioFileManager = EkaScribeStore.audioFileManagerInstance;
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     this.is_vad_loading = true;
 
-    const vad = await MicVAD.new({
-      frameSamples: this.frame_size,
-      preSpeechPadFrames: this.speech_pad_frames,
-      onFrameProcessed: (prob, frames) => {
-        // Get callback dynamically to ensure it's always up to date
-        const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
-        if (vadFrameProcessedCallback) {
-          vadFrameProcessedCallback({ probabilities: prob, frame: frames });
-        }
+    // If we're re-initializing, make sure we don't leak an existing stream.
+    this.stopMicStream();
 
-        // Only process frames internally when recording is active
-        if (!this.recording_started) {
-          return;
-        }
+    let selectedMicrophoneStream: MediaStream;
+    try {
+      selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+      });
+    } catch (e: any) {
+      // If the deviceId is invalid/unavailable, fall back to default mic.
+      if (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError') {
+        selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } else {
+        throw e;
+      }
+    }
 
-        audioFileManager?.incrementTotalRawSamples(frames);
+    this.micStream = selectedMicrophoneStream;
 
-        audioBuffer?.append(frames);
+    try {
+      const vad = await MicVAD.new({
+        stream: selectedMicrophoneStream,
+        frameSamples: this.frame_size,
+        preSpeechPadFrames: this.speech_pad_frames,
+        onFrameProcessed: (prob, frames) => {
+          // Get callback dynamically to ensure it's always up to date
+          const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
+          if (vadFrameProcessedCallback) {
+            vadFrameProcessedCallback({ probabilities: prob, frame: frames });
+          }
 
-        // Check if audio chunk needs to be clipped
-        const { isSpeech } = prob;
-        let vad_dec = 0;
-        if (isSpeech >= 0.5) {
-          vad_dec = 1;
-        }
+          // Only process frames internally when recording is active
+          if (!this.recording_started) {
+            return;
+          }
 
-        // Call the new checkNoSpeech function
-        this.checkNoSpeech(vad_dec);
+          audioFileManager?.incrementTotalRawSamples(frames);
 
-        const vadResponse = this.processVadFrame(vad_dec);
-        const is_clip_point = vadResponse[0];
+          audioBuffer?.append(frames);
 
-        if (is_clip_point) {
-          // audio chunk is of float32 Array <ArrayBuffer>
-          const activeAudioChunk = audioBuffer?.getAudioData();
-          this.processAudioChunk({ audioFrames: activeAudioChunk });
-        }
-      },
-      onSpeechStart: () => {
-        EkaScribeStore.userSpeechCallback?.(true);
-      },
-      onSpeechEnd: () => {
-        EkaScribeStore.userSpeechCallback?.(false);
-      },
-    });
+          // Check if audio chunk needs to be clipped
+          const { isSpeech } = prob;
+          let vad_dec = 0;
+          if (isSpeech >= 0.5) {
+            vad_dec = 1;
+          }
 
-    this.is_vad_loading = false;
-    this.micVad = vad;
+          // Call the new checkNoSpeech function
+          this.checkNoSpeech(vad_dec);
 
-    return this.is_vad_loading;
+          const vadResponse = this.processVadFrame(vad_dec);
+          const is_clip_point = vadResponse[0];
+
+          if (is_clip_point) {
+            // audio chunk is of float32 Array <ArrayBuffer>
+            const activeAudioChunk = audioBuffer?.getAudioData();
+            this.processAudioChunk({ audioFrames: activeAudioChunk });
+          }
+        },
+        onSpeechStart: () => {
+          EkaScribeStore.userSpeechCallback?.(true);
+        },
+        onSpeechEnd: () => {
+          EkaScribeStore.userSpeechCallback?.(false);
+        },
+      });
+
+      this.is_vad_loading = false;
+      this.micVad = vad;
+      return this.is_vad_loading;
+    } catch (e) {
+      // If MicVAD initialization fails, release the microphone.
+      this.stopMicStream();
+      this.is_vad_loading = false;
+      throw e;
+    }
   }
 
   /**
    * reinitialize the vad instance
    */
-  async reinitializeVad() {
-    const response = await this.initVad();
+  async reinitializeVad(deviceId?: string) {
+    const response = await this.initVad(deviceId);
     return response;
   }
 
@@ -289,7 +326,9 @@ class VadWebClient {
    * Start VAD
    */
   startVad() {
-    this.micVad.start();
+    if (this.micVad && typeof this.micVad.start === 'function') {
+      this.micVad.start();
+    }
     this.recording_started = true;
 
     // this.monitorAudioCapture();
@@ -299,7 +338,9 @@ class VadWebClient {
    * Pause VAD
    */
   pauseVad() {
-    this.micVad.pause();
+    if (this.micVad && typeof this.micVad.pause === 'function') {
+      this.micVad.pause();
+    }
     this.recording_started = false;
   }
 
@@ -311,6 +352,7 @@ class VadWebClient {
     if (this.micVad && typeof this.micVad.destroy === 'function') {
       this.micVad.destroy();
     }
+    this.stopMicStream();
     this.recording_started = false;
   }
 
@@ -327,6 +369,7 @@ class VadWebClient {
     if (this.micVad && typeof this.micVad.destroy === 'function') {
       this.micVad.destroy();
     }
+    this.stopMicStream();
 
     // Reset VAD state
     this.vad_past = [];
