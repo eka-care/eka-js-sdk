@@ -109,10 +109,9 @@ class AudioFileManager {
 
       this.sharedWorkerInstance = worker;
 
-      const onEventCallback = EkaScribeStore.eventCallback;
-
       this.sharedWorkerInstance.port.onmessage = async (event: MessageEvent) => {
         const workerResponse = event.data;
+        const onEventCallback = EkaScribeStore.eventCallback;
 
         switch (workerResponse.action) {
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
