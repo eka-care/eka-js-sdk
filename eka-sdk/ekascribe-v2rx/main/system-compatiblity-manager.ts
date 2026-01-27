@@ -591,7 +591,6 @@ class SystemCompatibilityManager {
           fileName,
           txnID,
           businessID,
-          is_shared_worker: false,
         });
         return !!result.success;
       }

@@ -1,6 +1,7 @@
 import { AwsClient } from 'aws4fetch';
-import s3RetryWrapper from './s3-retry-wrapper';
-import { getConfiguredAwsCredentials } from './configure-aws';
+import s3RetryWrapper, { RefreshTokenFn } from './s3-retry-wrapper';
+import { getConfiguredAwsCredentials, configureAWS } from './configure-aws';
+import postCogInit from '../api/post-cog-init';
 
 interface UploadParams {
   s3BucketName: string;
@@ -8,7 +9,7 @@ interface UploadParams {
   fileName: string;
   txnID: string;
   businessID: string;
-  is_shared_worker?: boolean;
+  refreshTokenFn?: RefreshTokenFn;
 }
 
 interface UploadResult {
@@ -18,35 +19,66 @@ interface UploadResult {
   code?: number;
 }
 
+// Default token refresh function for main thread - calls cog API
+const defaultRefreshTokenFn: RefreshTokenFn = async () => {
+  try {
+    const cogResponse = await postCogInit();
+    const { credentials, code: cogStatus } = cogResponse as any;
+
+    if (cogStatus === 401) {
+      console.error('[refreshToken] Auth token expired');
+      return false;
+    }
+
+    if (credentials) {
+      configureAWS({
+        accessKeyId: credentials.AccessKeyId,
+        secretKey: credentials.SecretKey,
+        sessionToken: credentials.SessionToken,
+      });
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('[refreshToken] Failed to refresh tokens:', error);
+    return false;
+  }
+};
+
 const pushFilesToS3V2 = async ({
   s3BucketName,
   fileBlob,
   fileName,
   txnID,
   businessID,
-  is_shared_worker = false,
+  refreshTokenFn = defaultRefreshTokenFn,
 }: UploadParams): Promise<UploadResult> => {
   try {
-    const configuredCredentials = getConfiguredAwsCredentials();
-
-    if (!configuredCredentials) {
-      throw new Error('AWS credentials are not configured. Call postCogInit/configureAWS first.');
-    }
-
-    const { accessKeyId, secretKey: secretAccessKey, sessionToken } = configuredCredentials;
-
-    const aws = new AwsClient({
-      accessKeyId,
-      secretAccessKey,
-      sessionToken,
-      region: 'ap-south-1',
-      service: 's3',
-    });
-
     const url = `https://${s3BucketName}.s3.ap-south-1.amazonaws.com/${fileName}`;
 
+    // uploadCall creates a fresh AWS client on each attempt to use latest credentials
     const uploadCall = (): Promise<Response> =>
       new Promise((resolve, reject) => {
+        const configuredCredentials = getConfiguredAwsCredentials();
+
+        if (!configuredCredentials) {
+          reject(
+            new Error('AWS credentials are not configured. Call postCogInit/configureAWS first.')
+          );
+          return;
+        }
+
+        const { accessKeyId, secretKey: secretAccessKey, sessionToken } = configuredCredentials;
+
+        const aws = new AwsClient({
+          accessKeyId,
+          secretAccessKey,
+          sessionToken,
+          region: 'ap-south-1',
+          service: 's3',
+        });
+
         aws
           .fetch(url, {
             method: 'PUT',
@@ -62,9 +94,7 @@ const pushFilesToS3V2 = async ({
               const error = {
                 statusCode: response.status,
                 message: response.statusText,
-                // Normalise shape so s3RetryWrapper can treat this as an expired token
-                // (matches legacy AWS SDK error.code === 'ExpiredToken' handling).
-                code: 'ExpiredToken',
+                code: response.status === 403 ? 'ExpiredToken' : 'UploadError',
               };
               reject(error);
               return;
@@ -74,30 +104,17 @@ const pushFilesToS3V2 = async ({
           .catch(reject);
       });
 
-    // Retry upload with s3RetryWrapper
-    const result = await s3RetryWrapper<Response>(uploadCall, 3, 2000, 0, is_shared_worker);
+    const result = await s3RetryWrapper<Response>(uploadCall, {
+      maxRetries: 3,
+      delay: 2000,
+      refreshTokenFn,
+    });
 
     const etag = result.headers.get('ETag');
     return { success: etag || 'Upload successful' };
   } catch (error: any) {
     const err = JSON.stringify(error, null, 2);
     console.error('pushFilesToS3V2 error =>', err);
-
-    if (error.statusCode === 401 || error.code === 'AuthTokenExpired') {
-      return {
-        error: 'Authentication token expired. Please call updateAuthTokens with a new token.',
-        errorCode: 'AuthTokenExpired',
-        code: 401,
-      };
-    }
-
-    if (error.statusCode && error.statusCode >= 400) {
-      return {
-        error: `Expired token! ${err}`,
-        errorCode: 'ExpiredToken',
-        code: error.statusCode || error.code,
-      };
-    }
 
     return {
       error: `Something went wrong! ${err}`,

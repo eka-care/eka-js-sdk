@@ -8,6 +8,7 @@ import pushFileToS3 from '../aws-services/upload-file-to-s3-es11';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
+import { RefreshTokenFn } from '../aws-services/s3-retry-wrapper';
 
 // onconnect - to establish communication channel with the main thread
 // eslint-disable-next-line
@@ -18,6 +19,31 @@ onconnect = function (event: MessageEvent) {
 
   let uploadRequestReceived: number = 0;
   let uploadRequestCompleted: number = 0;
+
+  // Store pending token refresh requests
+  let tokenRefreshResolver: ((value: boolean) => void) | null = null;
+
+  // Create a refreshTokenFn that communicates with main thread
+  const createRefreshTokenFn = (): RefreshTokenFn => {
+    return () =>
+      new Promise<boolean>((resolve) => {
+        tokenRefreshResolver = resolve;
+
+        // Request token refresh from main thread
+        workerPort.postMessage({
+          action: SHARED_WORKER_ACTION.REQUEST_TOKEN_REFRESH,
+        });
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          if (tokenRefreshResolver === resolve) {
+            console.error('[SharedWorker] Token refresh timeout');
+            tokenRefreshResolver = null;
+            resolve(false);
+          }
+        }, 10000);
+      });
+  };
 
   // onmessage - to handle messages from the main thread
   workerPort.onmessage = async function (event) {
@@ -60,6 +86,37 @@ onconnect = function (event: MessageEvent) {
         return;
       }
 
+      case SHARED_WORKER_ACTION.TOKEN_REFRESH_SUCCESS: {
+        // Main thread has refreshed tokens - configure AWS with new credentials
+        const { accessKeyId, secretKey, sessionToken } = workerData.payload || {};
+
+        if (accessKeyId && secretKey && sessionToken) {
+          configureAWS({
+            accessKeyId,
+            secretKey,
+            sessionToken,
+          });
+        }
+
+        // Resolve the pending token refresh promise
+        if (tokenRefreshResolver) {
+          tokenRefreshResolver(true);
+          tokenRefreshResolver = null;
+        }
+        return;
+      }
+
+      case SHARED_WORKER_ACTION.TOKEN_REFRESH_ERROR: {
+        // Main thread failed to refresh tokens
+        console.error('[SharedWorker] Token refresh failed:', workerData.error);
+
+        if (tokenRefreshResolver) {
+          tokenRefreshResolver(false);
+          tokenRefreshResolver = null;
+        }
+        return;
+      }
+
       case SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER: {
         const { fileName, audioFrames, txnID, businessID, fileBlob, s3BucketName } =
           workerData.payload;
@@ -84,7 +141,7 @@ onconnect = function (event: MessageEvent) {
           fileName,
           txnID,
           businessID,
-          is_shared_worker: true,
+          refreshTokenFn: createRefreshTokenFn(),
         })
           .then((response) => {
             uploadRequestCompleted++;
@@ -102,6 +159,15 @@ onconnect = function (event: MessageEvent) {
           .catch((error) => {
             console.error(error, 'shared worker - file upload');
             uploadRequestCompleted++;
+            workerPort.postMessage({
+              action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_ERROR,
+              error: error?.message || 'Upload failed',
+              requestBody: {
+                ...workerData.payload,
+                fileBlob: audioBlob,
+                compressedAudioBuffer,
+              },
+            });
           });
 
         return;

@@ -32,13 +32,11 @@ export const getFilesS3 = async ({
         });
       });
 
-    // retry upload with s3RetryWrapper
-    const result = await s3RetryWrapper<AWS.S3.GetObjectOutput>(
-      getFileCall,
-      maxPollingTime,
-      1000,
-      0
-    );
+    // retry with s3RetryWrapper
+    const result = await s3RetryWrapper<AWS.S3.GetObjectOutput>(getFileCall, {
+      maxRetries: maxPollingTime,
+      delay: 1000,
+    });
 
     return {
       response: result,

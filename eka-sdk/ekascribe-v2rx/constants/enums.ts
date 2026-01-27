@@ -51,6 +51,9 @@ export enum SHARED_WORKER_ACTION {
   WAIT_FOR_ALL_UPLOADS = 'wait_for_all_uploads',
   WAIT_FOR_ALL_UPLOADS_SUCCESS = 'wait_for_all_uploads_success',
   WAIT_FOR_ALL_UPLOADS_ERROR = 'wait_for_all_uploads_error',
+  REQUEST_TOKEN_REFRESH = 'request_token_refresh',
+  TOKEN_REFRESH_SUCCESS = 'token_refresh_success',
+  TOKEN_REFRESH_ERROR = 'token_refresh_error',
 }
 
 export enum CALLBACK_TYPE {

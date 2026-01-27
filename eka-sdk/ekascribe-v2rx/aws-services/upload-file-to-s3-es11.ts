@@ -1,6 +1,22 @@
 // @ts-nocheck
 import * as AWS from 'aws-sdk';
-import s3RetryWrapper from './s3-retry-wrapper';
+import s3RetryWrapper, { RefreshTokenFn } from './s3-retry-wrapper';
+
+interface UploadParams {
+  s3BucketName: string;
+  fileBlob: Blob;
+  fileName: string;
+  txnID: string;
+  businessID: string;
+  refreshTokenFn?: RefreshTokenFn;
+}
+
+interface UploadResult {
+  success?: string;
+  error?: string;
+  errorCode?: string;
+  code?: number;
+}
 
 const pushFileToS3 = async ({
   s3BucketName,
@@ -8,20 +24,8 @@ const pushFileToS3 = async ({
   fileName,
   txnID,
   businessID,
-  is_shared_worker = false,
-}: {
-  s3BucketName: string;
-  fileBlob: Blob;
-  fileName: string;
-  txnID: string;
-  businessID: string;
-  is_shared_worker?: boolean;
-}): Promise<{
-  success?: string;
-  error?: string;
-  errorCode?: string;
-  code?: number;
-}> => {
+  refreshTokenFn,
+}: UploadParams): Promise<UploadResult> => {
   try {
     const requestBody: AWS.S3.PutObjectRequest = {
       Bucket: s3BucketName,
@@ -46,36 +50,16 @@ const pushFileToS3 = async ({
         });
       });
 
-    // retry upload with s3RetryWrapper
-    const result = await s3RetryWrapper<AWS.S3.ManagedUpload.SendData>(
-      uploadCall,
-      3,
-      2000,
-      0,
-      is_shared_worker
-    );
+    const result = await s3RetryWrapper<AWS.S3.ManagedUpload.SendData>(uploadCall, {
+      maxRetries: 3,
+      delay: 2000,
+      refreshTokenFn,
+    });
 
-    // Return success with the data
     return { success: result.ETag || 'Upload successful' };
   } catch (error) {
     const err = JSON.stringify(error, null, 2);
-    console.error('pushFilesToS3V2 error =>', err);
-
-    if (error.statusCode === 401 || error.code === 'AuthTokenExpired') {
-      return {
-        error: 'Authentication token expired. Please call updateAuthTokens with a new token.',
-        errorCode: 'AuthTokenExpired',
-        code: 401,
-      };
-    }
-
-    if (error.statusCode && error.statusCode >= 400) {
-      return {
-        error: `Expired token! ${err}`,
-        errorCode: 'ExpiredToken',
-        code: error.statusCode || error.code,
-      };
-    }
+    console.error('pushFileToS3 error =>', err);
 
     return {
       error: `Something went wrong! ${err}`,

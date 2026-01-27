@@ -545,6 +545,12 @@ class EkaScribe {
       throw error;
     }
   }
+
+  async destroySharedWorker () {
+    if (this.audioFileManagerInstance) {
+      this.audioFileManagerInstance.terminateSharedWorkerInstance();
+    }
+  }
 }
 
 // Export the singleton instance getter with optional initialization
