@@ -1219,7 +1219,7 @@
     core-js "^3.38.0"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "2.0.64"
+  version "2.1.1"
   resolved "file:packages/es11"
   dependencies:
     webpack "^5.104.1"

@@ -4,10 +4,7 @@ if (typeof window === 'undefined') {
 }
 
 import { configureAWS } from '../aws-services/configure-aws';
-import {
-  uploadFileToS3Worker,
-  RefreshCredentialsFn,
-} from '../aws-services/s3-upload-service';
+import { uploadFileToS3Worker, RefreshCredentialsFn } from '../aws-services/s3-upload-service';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
@@ -22,36 +19,44 @@ onconnect = function (event: MessageEvent) {
   let uploadRequestReceived: number = 0;
   let uploadRequestCompleted: number = 0;
 
-  // Store pending token refresh requests
-  let tokenRefreshResolver: ((value: boolean) => void) | null = null;
+  // Store ALL pending token refresh resolvers (to handle concurrent requests)
+  let pendingTokenRefreshResolvers: Array<(value: boolean) => void> = [];
+  let isTokenRefreshInProgress: boolean = false;
 
   // Create a refreshCredentialsFn that communicates with main thread
+  // Handles multiple concurrent refresh requests by queuing resolvers
   const createRefreshCredentialsFn = (): RefreshCredentialsFn => {
     return () =>
       new Promise<boolean>((resolve) => {
-        tokenRefreshResolver = resolve;
+        // Add this resolver to the queue
+        pendingTokenRefreshResolvers.push(resolve);
 
-        // Request token refresh from main thread
-        workerPort.postMessage({
-          action: SHARED_WORKER_ACTION.REQUEST_TOKEN_REFRESH,
-        });
+        // Only send one request to main thread, others will wait
+        if (!isTokenRefreshInProgress) {
+          isTokenRefreshInProgress = true;
 
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          if (tokenRefreshResolver === resolve) {
-            console.error('[SharedWorker] Token refresh timeout');
-            tokenRefreshResolver = null;
-            resolve(false);
-          }
-        }, 10000);
+          // Request token refresh from main thread
+          workerPort.postMessage({
+            action: SHARED_WORKER_ACTION.REQUEST_TOKEN_REFRESH,
+          });
+
+          // Timeout after 10 seconds - resolve all pending with false
+          setTimeout(() => {
+            if (isTokenRefreshInProgress) {
+              console.error('[SharedWorker] Token refresh timeout');
+              isTokenRefreshInProgress = false;
+              // Resolve ALL pending requests with false
+              pendingTokenRefreshResolvers.forEach((r) => r(false));
+              pendingTokenRefreshResolvers = [];
+            }
+          }, 10000);
+        }
       });
   };
 
   // onmessage - to handle messages from the main thread
   workerPort.onmessage = async function (event) {
     const workerData = event.data;
-
-    console.log(workerData, 'shared worker message received');
 
     switch (workerData.action) {
       case SHARED_WORKER_ACTION.TEST_WORKER: {
@@ -100,11 +105,10 @@ onconnect = function (event: MessageEvent) {
           });
         }
 
-        // Resolve the pending token refresh promise
-        if (tokenRefreshResolver) {
-          tokenRefreshResolver(true);
-          tokenRefreshResolver = null;
-        }
+        // Resolve ALL pending token refresh promises
+        isTokenRefreshInProgress = false;
+        pendingTokenRefreshResolvers.forEach((resolver) => resolver(true));
+        pendingTokenRefreshResolvers = [];
         return;
       }
 
@@ -112,10 +116,10 @@ onconnect = function (event: MessageEvent) {
         // Main thread failed to refresh tokens
         console.error('[SharedWorker] Token refresh failed:', workerData.error);
 
-        if (tokenRefreshResolver) {
-          tokenRefreshResolver(false);
-          tokenRefreshResolver = null;
-        }
+        // Resolve ALL pending token refresh promises with false
+        isTokenRefreshInProgress = false;
+        pendingTokenRefreshResolvers.forEach((resolver) => resolver(false));
+        pendingTokenRefreshResolvers = [];
         return;
       }
 
