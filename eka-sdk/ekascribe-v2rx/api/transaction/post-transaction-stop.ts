@@ -33,7 +33,7 @@ async function postTransactionStop({
     };
     return res;
   } catch (error) {
-    console.error('%c Line:52 🥖 postTransactionInit -> error', 'color:#f5ce50', error);
+    console.error('%c Line:52 🥖 postTransactionStop -> error', 'color:#f5ce50', error);
     return {
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Something went wrong! ${error}`,

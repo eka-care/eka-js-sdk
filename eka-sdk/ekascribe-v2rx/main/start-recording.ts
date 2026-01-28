@@ -3,7 +3,7 @@ import { ERROR_CODE } from '../constants/enums';
 import { TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
-const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
+const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordingResponse> => {
   try {
     const vadInstance = EkaScribeStore.vadInstance;
 
@@ -19,14 +19,14 @@ const startVoiceRecording = async (): Promise<TStartRecordingResponse> => {
       };
     }
 
-    await vadInstance?.initVad();
+    await vadInstance?.initVad(microphoneID);
 
     const micVad = vadInstance?.getMicVad();
     const isVadLoading = vadInstance?.isVadLoading();
 
     if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
       // retry initiating vad once and if still is in loading return error
-      const reinitializeVadResponse = await vadInstance?.reinitializeVad();
+      const reinitializeVadResponse = await vadInstance?.reinitializeVad(microphoneID);
       if (reinitializeVadResponse) {
         return {
           error_code: ERROR_CODE.VAD_NOT_INITIALIZED,

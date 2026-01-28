@@ -109,10 +109,9 @@ class AudioFileManager {
 
       this.sharedWorkerInstance = worker;
 
-      const onEventCallback = EkaScribeStore.eventCallback;
-
       this.sharedWorkerInstance.port.onmessage = async (event: MessageEvent) => {
         const workerResponse = event.data;
+        const onEventCallback = EkaScribeStore.eventCallback;
 
         switch (workerResponse.action) {
           case SHARED_WORKER_ACTION.CONFIGURE_AWS_SUCCESS: {
@@ -134,6 +133,51 @@ class AudioFileManager {
                 status: 'error',
                 message: workerResponse.message,
                 timestamp: new Date().toISOString(),
+              });
+            }
+            return;
+          }
+
+          case SHARED_WORKER_ACTION.REQUEST_TOKEN_REFRESH: {
+            // Worker requested token refresh - call cog API and send back credentials
+            console.log('[AudioFileManager] Worker requested token refresh');
+            try {
+              const response = await postCogInit();
+              const { credentials, is_session_expired } = response;
+
+              if (is_session_expired || !credentials) {
+                this.sharedWorkerInstance?.port.postMessage({
+                  action: SHARED_WORKER_ACTION.TOKEN_REFRESH_ERROR,
+                  error: 'Session expired or no credentials',
+                });
+                return;
+              }
+
+              const { AccessKeyId, SecretKey, SessionToken } = credentials;
+
+              // Also update main thread credentials
+              configureAWS({
+                accessKeyId: AccessKeyId,
+                secretKey: SecretKey,
+                sessionToken: SessionToken,
+              });
+
+              // Send refreshed credentials to worker
+              this.sharedWorkerInstance?.port.postMessage({
+                action: SHARED_WORKER_ACTION.TOKEN_REFRESH_SUCCESS,
+                payload: {
+                  accessKeyId: AccessKeyId,
+                  secretKey: SecretKey,
+                  sessionToken: SessionToken,
+                },
+              });
+
+              console.log('[AudioFileManager] Token refresh successful, sent to worker');
+            } catch (error) {
+              console.error('[AudioFileManager] Token refresh failed:', error);
+              this.sharedWorkerInstance?.port.postMessage({
+                action: SHARED_WORKER_ACTION.TOKEN_REFRESH_ERROR,
+                error: error instanceof Error ? error.message : 'Token refresh failed',
               });
             }
             return;
@@ -218,13 +262,6 @@ class AudioFileManager {
                   response: workerResponse.response.error || 'Upload failed',
                 };
               }
-
-              // call COG if S3 throws ExpiredToken error
-              if (workerResponse.response.errorCode === 'ExpiredToken') {
-                this.setupAWSConfiguration({
-                  is_shared_worker: true,
-                });
-              }
             }
           }
         }
@@ -247,6 +284,13 @@ class AudioFileManager {
         console.error('Error creating shared worker instance:', error);
       }
       return false;
+    }
+  }
+
+  terminateSharedWorkerInstance() {
+    if (this.sharedWorkerInstance) {
+      this.sharedWorkerInstance.port.close();
+      this.sharedWorkerInstance = null;
     }
   }
 
@@ -337,7 +381,6 @@ class AudioFileManager {
       fileName: s3FileName,
       txnID: this.txnID,
       businessID: this.businessID,
-      is_shared_worker: false,
     }).then((response) => {
       // callback
       if (response.success) {
@@ -673,7 +716,6 @@ class AudioFileManager {
               fileName: `${this.filePath}/${fileName}`,
               txnID: this.txnID,
               businessID: this.businessID,
-              is_shared_worker: false,
             }).then((response) => {
               if (response.success) {
                 this.successfulUploads.push(fileName);

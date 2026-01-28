@@ -1,69 +1,52 @@
-import postCogInit from '../api/post-cog-init';
-import { configureAWS } from './configure-aws';
+export type RefreshTokenFn = () => Promise<boolean>;
 
-async function s3RetryWrapper<T>(
-  s3Fn: () => Promise<T>,
-  maxRetryCount: number,
-  delay: number,
-  retryAttempt: number,
-  is_shared_worker = false
-): Promise<T> {
-  try {
-    return await s3Fn();
-  } catch (error) {
-    console.log(JSON.stringify(error, null, 2), 'file upload - s3RetryWrapper - error');
-    if (retryAttempt >= maxRetryCount) {
-      throw error;
-    }
+interface RetryOptions {
+  maxRetries: number;
+  delay: number;
+  refreshTokenFn?: RefreshTokenFn;
+}
 
-    if (is_shared_worker) {
-      // eslint-disable-next-line
-      // @ts-ignore
-      if (error.statusCode >= 400) {
-        throw error;
+async function s3RetryWrapper<T>(s3Fn: () => Promise<T>, options: RetryOptions): Promise<T> {
+  const { maxRetries, delay, refreshTokenFn } = options;
+
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await s3Fn();
+    } catch (error: any) {
+      lastError = error;
+      console.log(
+        `[s3RetryWrapper] Attempt ${attempt + 1}/${maxRetries + 1} failed:`,
+        JSON.stringify(error, null, 2)
+      );
+
+      // If we've exhausted all retries, throw
+      if (attempt >= maxRetries) {
+        break;
       }
-    } else {
-      // eslint-disable-next-line
-      // @ts-ignore
-      const errorCode = error.code;
-      // eslint-disable-next-line
-      // @ts-ignore
-      const statusCode = error.statusCode;
 
-      // Normalise detection of expired/invalid credentials:
-      // - Legacy AWS SDK path sets error.code === 'ExpiredToken'
-      // - aws4 path (V2) sets both error.code === 'ExpiredToken' and statusCode >= 400
-      if (errorCode === 'ExpiredToken' || statusCode >= 400) {
+      if (refreshTokenFn) {
+        console.log('[s3RetryWrapper] Auth error detected, refreshing tokens...');
         try {
-          const cogResponse = await postCogInit();
-          const { credentials, code: cogStatus } = cogResponse as any;
-
-          // Surface auth expiry to caller so it can be handled in the right context (e.g., main thread).
-          if (cogStatus === 401) {
-            const authError: any = new Error('Auth token expired');
-            authError.statusCode = 401;
-            authError.code = 'AuthTokenExpired';
-            throw authError;
+          const refreshed = await refreshTokenFn();
+          if (!refreshed) {
+            console.log('[s3RetryWrapper] Token refresh failed, not retrying');
+            break;
           }
-
-          if (credentials) {
-            configureAWS({
-              accessKeyId: credentials.AccessKeyId,
-              secretKey: credentials.SecretKey,
-              sessionToken: credentials.SessionToken,
-            });
-          }
-        } catch (cogError) {
-          throw cogError;
+          console.log('[s3RetryWrapper] Tokens refreshed, retrying upload...');
+        } catch (refreshError) {
+          console.error('[s3RetryWrapper] Token refresh error:', refreshError);
+          break;
         }
       }
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
-
-    await new Promise((resolve) => setTimeout(resolve, delay));
-
-    // Retry the operation
-    return s3RetryWrapper(s3Fn, maxRetryCount, delay, retryAttempt + 1);
   }
+
+  throw lastError;
 }
 
 export default s3RetryWrapper;

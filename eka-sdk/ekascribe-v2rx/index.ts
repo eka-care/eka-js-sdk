@@ -151,8 +151,8 @@ class EkaScribe {
     return initTransactionResponse;
   }
 
-  async startRecording() {
-    const startResponse = await startVoiceRecording();
+  async startRecording(microphoneID?: string) {
+    const startResponse = await startVoiceRecording(microphoneID);
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
     return startResponse;
   }
@@ -543,6 +543,12 @@ class EkaScribe {
     } catch (error) {
       console.error('Error running compatibility test:', error);
       throw error;
+    }
+  }
+
+  async destroySharedWorker () {
+    if (this.audioFileManagerInstance) {
+      this.audioFileManagerInstance.terminateSharedWorkerInstance();
     }
   }
 }
