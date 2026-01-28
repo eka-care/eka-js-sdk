@@ -66,6 +66,8 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     const audioInfo = fileManagerInstance?.audioChunks;
     const audioFiles = audioInfo.map((audio) => audio.fileName);
 
+    console.log(audioFiles, 'Audio files to be committed, - endVoiceRecording - SDLK');
+
     // call stop txn api
     if (EkaScribeStore.sessionStatus[txnID].api?.status === 'init') {
       const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({
@@ -112,6 +114,8 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
 
     const failedFiles = fileManagerInstance.getFailedUploads() || [];
     let retryFailedFiles: string[] = [];
+
+    console.log(failedFiles, 'Failed files before retry - endVoiceRecording - SDLK');
 
     // retry upload once if there are any failed uploads
     if (failedFiles.length > 0) {

@@ -1,6 +1,6 @@
 {
   "name": "eka-js-sdk",
-  "version": "1.5.79",
+  "version": "1.5.80",
   "private": true,
   "workspaces": [
     "packages/*"
