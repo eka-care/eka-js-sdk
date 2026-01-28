@@ -4,11 +4,13 @@ if (typeof window === 'undefined') {
 }
 
 import { configureAWS } from '../aws-services/configure-aws';
-import pushFileToS3 from '../aws-services/upload-file-to-s3-es11';
+import {
+  uploadFileToS3Worker,
+  RefreshCredentialsFn,
+} from '../aws-services/s3-upload-service';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { SHARED_WORKER_ACTION } from '../constants/enums';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
-import { RefreshTokenFn } from '../aws-services/s3-retry-wrapper';
 
 // onconnect - to establish communication channel with the main thread
 // eslint-disable-next-line
@@ -23,8 +25,8 @@ onconnect = function (event: MessageEvent) {
   // Store pending token refresh requests
   let tokenRefreshResolver: ((value: boolean) => void) | null = null;
 
-  // Create a refreshTokenFn that communicates with main thread
-  const createRefreshTokenFn = (): RefreshTokenFn => {
+  // Create a refreshCredentialsFn that communicates with main thread
+  const createRefreshCredentialsFn = (): RefreshCredentialsFn => {
     return () =>
       new Promise<boolean>((resolve) => {
         tokenRefreshResolver = resolve;
@@ -123,7 +125,7 @@ onconnect = function (event: MessageEvent) {
         uploadRequestReceived++;
 
         let audioBlob: Blob;
-        let compressedAudioBuffer: Uint8Array[];
+        let compressedAudioBuffer: Uint8Array[] | undefined;
 
         if (fileBlob) {
           audioBlob = fileBlob;
@@ -135,40 +137,30 @@ onconnect = function (event: MessageEvent) {
           });
         }
 
-        await pushFileToS3({
-          s3BucketName,
-          fileBlob: audioBlob,
-          fileName,
-          txnID,
-          businessID,
-          refreshTokenFn: createRefreshTokenFn(),
-        })
-          .then((response) => {
-            uploadRequestCompleted++;
-            // postMessage - to send messages back to the main thread
-            workerPort.postMessage({
-              action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS,
-              response,
-              requestBody: {
-                ...workerData.payload,
-                fileBlob: audioBlob,
-                compressedAudioBuffer,
-              },
-            });
-          })
-          .catch((error) => {
-            console.error(error, 'shared worker - file upload');
-            uploadRequestCompleted++;
-            workerPort.postMessage({
-              action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_ERROR,
-              error: error?.message || 'Upload failed',
-              requestBody: {
-                ...workerData.payload,
-                fileBlob: audioBlob,
-                compressedAudioBuffer,
-              },
-            });
-          });
+        // Use uploadFileToS3Worker directly - handles credentials and retry internally
+        const response = await uploadFileToS3Worker(
+          {
+            s3BucketName,
+            fileBlob: audioBlob,
+            fileName,
+            txnID,
+            businessID,
+          },
+          createRefreshCredentialsFn()
+        );
+
+        uploadRequestCompleted++;
+
+        // Send response back to main thread
+        workerPort.postMessage({
+          action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS,
+          response,
+          requestBody: {
+            ...workerData.payload,
+            fileBlob: audioBlob,
+            compressedAudioBuffer,
+          },
+        });
 
         return;
       }

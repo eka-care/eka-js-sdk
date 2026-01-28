@@ -12,7 +12,7 @@ import {
 } from '../constants/types';
 import fetchWrapper from '../fetch-client';
 import { GET_EKA_HOST, GET_S3_BUCKET_NAME } from '../fetch-client/helper';
-import pushFilesToS3V2 from '../aws-services/upload-file-to-s3-es6';
+import { uploadFileToS3 } from '../aws-services/s3-upload-service';
 import { getConfigV2Timezone } from '../api/config/get-voice-api-v2-config-timezone';
 
 // Constants
@@ -585,7 +585,7 @@ class SystemCompatibilityManager {
         );
         return !!result.success;
       } else {
-        const result = await pushFilesToS3V2({
+        const result = await uploadFileToS3({
           s3BucketName,
           fileBlob: dummyFile,
           fileName,
