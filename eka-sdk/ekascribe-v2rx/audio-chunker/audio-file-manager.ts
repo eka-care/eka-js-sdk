@@ -481,38 +481,73 @@ class AudioFileManager {
 
   /**
    * Wait for all upload promises to complete
+   * @param timeoutMs - Maximum time to wait in milliseconds (default: 30 seconds)
+   * @param pollIntervalMs - Interval between polls in milliseconds (default: 500ms)
    */
-  async waitForAllUploads(): Promise<void> {
+  async waitForAllUploads(timeoutMs: number = 10000, pollIntervalMs: number = 500): Promise<void> {
     if (this.sharedWorkerInstance) {
-      return new Promise((resolve, reject) => {
-        // one-time message handler to listen for the response
+      return new Promise((resolve) => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+        let pollTimeoutId: ReturnType<typeof setTimeout>;
+
+        const cleanup = () => {
+          clearTimeout(timeoutId);
+          clearTimeout(pollTimeoutId);
+          this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+        };
+
+        // Overall timeout - resolve even if not all uploads complete
+        timeoutId = setTimeout(() => {
+          console.warn(
+            `[AudioFileManager] waitForAllUploads timed out after ${timeoutMs}ms. ` +
+              `Completed: ${this.successfulUploads.length}/${this.audioChunks.length}`
+          );
+          cleanup();
+          resolve(); // Resolve instead of reject to allow flow to continue
+        }, timeoutMs);
+
         const messageHandler = (event: MessageEvent) => {
           if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS) {
-            this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+            cleanup();
             resolve();
           } else if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_ERROR) {
             const { uploadRequestReceived } = event.data.response || {};
 
             if (uploadRequestReceived === 0) {
-              this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
-              reject();
+              cleanup();
+              resolve(); // No uploads were requested, resolve successfully
+              return;
             }
 
-            this.sharedWorkerInstance?.port.postMessage({
-              action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
-            });
+            // Poll again after interval
+            pollTimeoutId = setTimeout(() => {
+              this.sharedWorkerInstance?.port.postMessage({
+                action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
+              });
+            }, pollIntervalMs);
           }
         };
 
-        // one-time listener
         this.sharedWorkerInstance?.port.addEventListener('message', messageHandler);
 
+        // Initial poll
         this.sharedWorkerInstance?.port.postMessage({
           action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
         });
       });
     } else {
-      await Promise.allSettled(this.uploadPromises);
+      // For main thread, use Promise.race with timeout
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.warn(
+            `[AudioFileManager] waitForAllUploads timed out after ${timeoutMs}ms. ` +
+              `Completed: ${this.successfulUploads.length}/${this.audioChunks.length}`
+          );
+          resolve();
+        }, timeoutMs);
+      });
+
+      await Promise.race([Promise.allSettled(this.uploadPromises), timeoutPromise]);
     }
   }
 

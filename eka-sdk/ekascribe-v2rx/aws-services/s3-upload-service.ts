@@ -180,7 +180,7 @@ export async function uploadFileToS3(
   params: S3UploadParams,
   options: S3UploadOptions = {}
 ): Promise<S3UploadResult> {
-  const { maxRetries = 3, initialDelay = 2000 } = options;
+  const { maxRetries = 3, initialDelay = 1000 } = options;
 
   let lastError: ErrorInfo | null = null;
 
@@ -250,10 +250,10 @@ export async function uploadFileToS3(
         };
       }
 
-      // Exponential backoff: 2s, 4s, 8s
-      // const delay = initialDelay * Math.pow(2, attempt);
-      console.log(`[S3UploadService] Waiting ${initialDelay}ms before retry...`);
-      await new Promise((resolve) => setTimeout(resolve, initialDelay));
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = initialDelay * Math.pow(2, attempt);
+      console.log(`[S3UploadService] Waiting ${delay}ms before retry...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -278,7 +278,7 @@ export async function uploadFileToS3Worker(
   refreshCredentialsFn: RefreshCredentialsFn,
   options: S3UploadOptions = {}
 ): Promise<S3UploadResult> {
-  const { maxRetries = 3, initialDelay = 2000 } = options;
+  const { maxRetries = 3, initialDelay = 1000 } = options;
 
   let lastError: ErrorInfo | null = null;
 
@@ -337,10 +337,10 @@ export async function uploadFileToS3Worker(
       console.log(`[S3UploadService:Worker] Requesting credential refresh from main thread...`);
       await refreshCredentialsFn();
 
-      // Exponential backoff: 2s, 4s, 8s
-      // const delay = initialDelay * Math.pow(2, attempt);
-      console.log(`[S3UploadService:Worker] Waiting ${initialDelay}ms before retry...`);
-      await new Promise((resolve) => setTimeout(resolve, initialDelay));
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = initialDelay * Math.pow(2, attempt);
+      console.log(`[S3UploadService:Worker] Waiting ${delay}ms before retry...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
