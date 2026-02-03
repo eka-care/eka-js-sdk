@@ -766,6 +766,105 @@ const response = await ekascribe.postTransactionConvertToTemplate({
 
 **Note:** After getting success response from this method, call `pollSessionOutput` (Point 9) to get the output for the new template_id.
 
+### 16. Convert transcription to template
+
+Use this method to convert a transcription text to a specific template format.
+
+```ts
+const response = await ekascribe.convertTranscriptionToTemplate({
+  txn_id: 'transaction-id-123',
+  template_id: 'target-template-id',
+  transcript: 'custom transcript text',
+});
+```
+
+**Key Parameters:**
+
+- `txn_id`: The transaction ID of the session
+- `template_id`: The ID of the template format you want to convert to
+- `transcript`: Custom transcript text to use for conversion
+
+- #### Sample Response:
+
+```ts
+{
+  status: 'success' | 'failed';
+  message: string;
+  txn_id: string;
+  template_id: string;
+  b_id: string;
+  code: number;
+  msg: string;
+  error?: { code: string; message: string; display_message: string };
+}
+```
+
+### 17. Update result summary
+
+Use this method to update/edit the result summary (template output) for a transaction.
+
+```ts
+const response = await ekascribe.updateResultSummary({
+  txnId: 'transaction-id-123',
+  data: [
+    {
+      'template-id': 'template-123',
+      data: 'Updated template output content', // Base64 Encoded data
+    },
+  ],
+});
+```
+
+**Key Parameters:**
+
+- `txnId`: The transaction ID
+- `data`: Array of objects containing `template-id` and the updated `data` base64 encoded data
+
+- #### Sample Response:
+
+```ts
+{
+  status: string;
+  message: string;
+  txn_id: string;
+  b_id: string;
+  code: number;
+  error?: { code: string; message: string; display_message: string };
+}
+```
+
+### 18. Run system compatibility test
+
+Use this method to run a comprehensive system compatibility test to ensure the user's browser and device support all SDK features.
+
+```ts
+const summary = await ekascribe.runSystemCompatibilityTest(
+  (testResult) => {
+    // Callback receives individual test results
+    console.log('Test:', testResult.name, 'Result:', testResult.status);
+  },
+  sharedWorker // Optional: SharedWorker instance for testing worker compatibility
+);
+```
+
+- #### Sample Response:
+
+```ts
+{
+  // TCompatibilityTestSummary
+  microphone: { status: 'pass' | 'fail'; message?: string };
+  audioContext: { status: 'pass' | 'fail'; message?: string };
+  sharedWorker: { status: 'pass' | 'fail'; message?: string };
+  // ... other compatibility tests
+}
+```
+
+**When to use:**
+
+- Before starting a recording session to ensure user's system is compatible
+- To provide user feedback about missing permissions or unsupported features
+- During onboarding to identify potential issues
+
 ## Templates SDK Methods
 
 ### 1. Get All Templates
@@ -1193,6 +1292,57 @@ ekascribe.updateAuthTokens({ access_token: 'new_access_token' });
 - When `eventCallback` returns `error.code: 401` in `file_upload_status`
 - Before token expiration to prevent upload failures
 
+### 9. Reset Singleton Instance
+
+Use this method to completely reset the singleton instance. Useful for testing or when you need to reinitialize the SDK with different configuration.
+
+```ts
+ekascribe.resetInstance();
+```
+
+**Note:** After calling this method, you'll need to call `getEkaScribeInstance()` again to get a new instance.
+
+### 10. Configure VAD Constants
+
+Use this method to customize Voice Activity Detection parameters for your specific use case.
+
+```ts
+ekascribe.configureVadConstants({
+  pref_length: 10, // Preferred chunk length in seconds
+  desp_length: 5, // Desperation chunk length in seconds
+  max_length: 30, // Maximum chunk length in seconds
+  sr: 16000, // Sample rate in Hz
+  frame_size: 512, // Frame size in samples
+  pre_speech_pad_frames: 10, // Pre-speech padding frames count
+  short_thsld: 0.5, // Short silence threshold in seconds
+  long_thsld: 0.8, // Long silence threshold in seconds
+});
+```
+
+**Key Parameters:**
+
+- `pref_length`: Preferred audio chunk length before clipping (in seconds)
+- `desp_length`: Desperation length - will clip even if not ideal (in seconds)
+- `max_length`: Maximum audio chunk length (in seconds)
+- `sr`: Sample rate in Hz (typically 16000)
+- `frame_size`: VAD frame size in samples
+- `pre_speech_pad_frames`: Number of frames to include before speech starts
+- `short_thsld`: Short silence threshold for clipping decisions (in seconds)
+- `long_thsld`: Long silence threshold for clipping decisions (in seconds)
+
+### 11. Destroy Shared Worker
+
+Use this method to terminate the shared worker instance and free up resources.
+
+```ts
+await ekascribe.destroySharedWorker();
+```
+
+**When to use:**
+
+- When cleaning up resources after the SDK is no longer needed
+- Before reinitializing with a new shared worker configuration
+
 ## Generic Callbacks
 
 ### 1. Event callback
@@ -1355,6 +1505,26 @@ ekascribe.onPartialResultCallback((partialData) => {
 - Handle intermediate template results
 
 **Note:** This callback is triggered multiple times during polling - once for each poll attempt until processing completes or times out.
+
+### 4. VAD frames callback
+
+This callback is triggered when VAD (Voice Activity Detection) processes audio frames. Use it to access raw audio frame data for custom processing.
+
+```ts
+ekascribe.onVadFramesCallback((framesData) => {
+  console.log('VAD frames received:', framesData);
+});
+```
+
+### 5. VAD frame processed callback
+
+This callback is triggered after VAD has finished processing a frame. Use it to track VAD processing progress.
+
+```ts
+ekascribe.onVadFrameProcessedCallback((processedData) => {
+  console.log('VAD frame processed:', processedData);
+});
+```
 
 ### Error codes
 
