@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk-legacy",
-  "version": "2.0.28",
+  "version": "2.0.29",
   "description": "EkaScribe TypeScript SDK - ES6/ES2015 build with polyfills for legacy browser support",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

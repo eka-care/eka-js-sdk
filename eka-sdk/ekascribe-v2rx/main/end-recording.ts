@@ -18,6 +18,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     vadInstance.pauseVad();
+    vadInstance.destroyVad();
     EkaScribeStore.sessionStatus[txnID] = {
       ...EkaScribeStore.sessionStatus[txnID],
       vad: {
