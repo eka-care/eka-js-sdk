@@ -11,16 +11,21 @@ export type TPollingResponse = {
   errorCode?: string;
 };
 
+import { TPartialResultCallback } from '../constants/types';
+
 export const pollOutputSummary = async ({
   txn_id,
   max_polling_time = 2 * 60 * 1000,
   template_id,
+  onPartialResultCb,
 }: {
   txn_id: string;
   max_polling_time?: number;
   template_id?: string;
+  onPartialResultCb?: TPartialResultCallback;
 }): Promise<TPollingResponse> => {
-  const onPartialResultCallback = EkaScribeStore.partialResultCallback;
+  // Use passed callback, fallback to store callback for backwards compatibility
+  const onPartialResultCallback = onPartialResultCb ?? EkaScribeStore.partialResultCallback;
 
   const createResponse = (
     status_code: number,

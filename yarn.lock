@@ -1213,13 +1213,13 @@
   integrity sha512-4B4OijXeVNOPZlYA2oEwWOTkzyltLao+xbotHQeqN++Rv27Y6s818+n2Qkp8q+Fxhn0t/5lA5X1Mxktud8eayQ==
 
 "@eka-care/ekascribe-ts-sdk-legacy@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es6":
-  version "2.0.28"
+  version "2.0.30"
   resolved "file:packages/es6"
   dependencies:
     core-js "^3.38.0"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "2.1.2"
+  version "2.1.4"
   resolved "file:packages/es11"
   dependencies:
     webpack "^5.104.1"

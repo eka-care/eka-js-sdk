@@ -339,6 +339,7 @@ class EkaScribe {
     txn_id: string;
     max_polling_time?: number;
     template_id?: string;
+    onPartialResultCb?: TPartialResultCallback;
   }) {
     const pollingResponse = await pollOutputSummary(request);
 
@@ -546,7 +547,7 @@ class EkaScribe {
     }
   }
 
-  async destroySharedWorker () {
+  async destroySharedWorker() {
     if (this.audioFileManagerInstance) {
       this.audioFileManagerInstance.terminateSharedWorkerInstance();
     }
