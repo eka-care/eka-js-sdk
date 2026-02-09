@@ -69,7 +69,14 @@ import postConvertTranscriptionToTemplate from './api/templates/post-convert-tra
 import { getVoiceApiV3StatusTranscript } from './api/transaction/get-voice-api-v3-status-transcript';
 import { pollOutputSummary } from './main/poll-output-summary';
 import SystemCompatibilityManager from './main/system-compatiblity-manager';
-import { TCompatibilityCallback, TCompatibilityTestSummary } from './constants/types';
+import {
+  TCompatibilityCallback,
+  TCompatibilityTestSummary,
+  TGetDoctorHeaderFooterRequest,
+  TGetDoctorClinicsRequest,
+} from './constants/types';
+import { getDoctorHeaderFooter } from './api/profile/get-doctor-header-footer';
+import { getDoctorClinics } from './api/profile/get-doctor-clinics';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -551,6 +558,16 @@ class EkaScribe {
     if (this.audioFileManagerInstance) {
       this.audioFileManagerInstance.terminateSharedWorkerInstance();
     }
+  }
+
+  async getDoctorHeaderFooter(request: TGetDoctorHeaderFooterRequest) {
+    const headerFooterResponse = await getDoctorHeaderFooter(request);
+    return headerFooterResponse;
+  }
+
+  async getDoctorClinics(request: TGetDoctorClinicsRequest) {
+    const clinicsResponse = await getDoctorClinics(request);
+    return clinicsResponse;
   }
 }
 

@@ -5,6 +5,7 @@ const DEV = {
   EKA_VOICE_HOST_V3: 'https://api.dev.eka.care/voice/api/v3',
   COOK_V1: ' https://deepthought-genai.dev.eka.care/api/v1',
   EKA_HOST: 'https://api.dev.eka.care',
+  PARCHI_HOST: 'https://parchi.dev.eka.care',
   S3_BUCKET_NAME: 'm-pp-voice2rx',
 };
 
@@ -15,6 +16,7 @@ const PROD = {
   EKA_VOICE_HOST_V3: 'https://api.eka.care/voice/api/v3',
   COOK_V1: ' https://cook.eka.care/api/v1',
   EKA_HOST: 'https://api.eka.care',
+  PARCHI_HOST: 'https://parchi.eka.care',
   S3_BUCKET_NAME: 'm-prod-voice-record',
 };
 
@@ -51,6 +53,7 @@ export const GET_EKA_VOICE_HOST_V3 = () => envVar.EKA_VOICE_HOST_V3;
 export const GET_COOK_HOST_V1 = () => envVar.COOK_V1;
 export const GET_COG_HOST = () => envVar.COG_HOST;
 export const GET_EKA_HOST = () => envVar.EKA_HOST;
+export const GET_PARCHI_HOST = () => envVar.PARCHI_HOST;
 export const GET_CURRENT_ENV = (): 'PROD' | 'DEV' => (envVar === PROD ? 'PROD' : 'DEV');
 
 export default setEnv;

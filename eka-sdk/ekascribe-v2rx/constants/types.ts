@@ -16,7 +16,7 @@ export type TGetConfigV2Response = {
       {
         id: string;
         name: string;
-      },
+      }
     ];
     user_details: {
       uuid: string;
@@ -30,6 +30,7 @@ export type TGetConfigV2Response = {
       'w-n': string;
       'b-id': string;
       is_paid_doc: boolean;
+      oid: string;
     };
     selected_preferences?: TSelectedPreferences;
     clinic_name?: string;
@@ -490,3 +491,50 @@ export type TPartialResultCallback = (data: {
   message: string;
   poll_status: 'in-progress' | 'success' | 'failed' | 'timeout';
 }) => void;
+
+export type TGetDoctorHeaderFooterRequest = {
+  doctor_oid: string;
+  clinic_id?: string;
+};
+
+export type TDoctorHeaderFooterInfo = {
+  _id: string | null;
+  clinic_id: string | null;
+  doctor_id: string | null;
+  type: string | null;
+  header_img: string | null;
+  header_height: string | null;
+  header_top_margin: string | null;
+  footer_img: string | null;
+  footer_height: string | null;
+  margin_left: string | null;
+  margin_right: string | null;
+  page_size: string | null;
+  show_eka_logo: boolean | null;
+  show_name_in_signature: boolean | null;
+  show_not_valid_for_medical_legal_purpose_message: boolean | null;
+  show_page_number: boolean | null;
+  show_prescription_id: boolean | null;
+  show_signature: boolean | null;
+};
+
+export type TGetDoctorHeaderFooterResponse = {
+  data: TDoctorHeaderFooterInfo | null;
+  code: number;
+  message?: string;
+};
+
+export type TGetDoctorClinicsRequest = {
+  doctor_id: string;
+};
+
+export type TClinicInfo = {
+  clinic_id: string;
+  name: string;
+};
+
+export type TGetDoctorClinicsResponse = {
+  data: TClinicInfo[] | null;
+  code: number;
+  message?: string;
+};
