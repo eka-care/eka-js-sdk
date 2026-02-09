@@ -16,7 +16,7 @@ export type TGetConfigV2Response = {
       {
         id: string;
         name: string;
-      },
+      }
     ];
     user_details: {
       uuid: string;
@@ -30,6 +30,7 @@ export type TGetConfigV2Response = {
       'w-n': string;
       'b-id': string;
       is_paid_doc: boolean;
+      oid: string;
     };
     selected_preferences?: TSelectedPreferences;
     clinic_name?: string;
