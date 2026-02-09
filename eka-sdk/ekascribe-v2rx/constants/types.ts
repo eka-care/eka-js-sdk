@@ -522,3 +522,18 @@ export type TGetDoctorHeaderFooterResponse = {
   code: number;
   message?: string;
 };
+
+export type TGetDoctorClinicsRequest = {
+  doctor_id: string;
+};
+
+export type TClinicInfo = {
+  clinic_id: string;
+  name: string;
+};
+
+export type TGetDoctorClinicsResponse = {
+  data: TClinicInfo[] | null;
+  code: number;
+  message?: string;
+};

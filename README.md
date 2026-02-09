@@ -1212,6 +1212,49 @@ const headerFooter = await ekascribe.getDoctorHeaderFooter({
 }
 ```
 
+### 10. Get Doctor Clinics
+
+Use this method to retrieve the list of clinics associated with a specific doctor.
+
+```ts
+const clinics = await ekascribe.getDoctorClinics({
+  doctor_id: '161459684229004',
+});
+```
+
+**Key Parameters:**
+
+- `doctor_id`: The doctor's ID (required)
+
+- #### Response type:
+
+```ts
+{
+  data: [
+    {
+      clinic_id: string;   // Clinic ID
+      name: string;        // Clinic name
+    }
+  ] | null;
+  code: number;
+  message?: string;
+}
+```
+
+- #### Example Response:
+
+```ts
+{
+  data: [
+    {
+      clinic_id: "60532c7fcb46901ba3a3e477",
+      name: "Litl Smiles Multispeciality Clinic"
+    }
+  ],
+  code: 200
+}
+```
+
 ## Generic Callbacks
 
 ### 1. Event callback

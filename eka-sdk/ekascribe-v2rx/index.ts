@@ -73,8 +73,10 @@ import {
   TCompatibilityCallback,
   TCompatibilityTestSummary,
   TGetDoctorHeaderFooterRequest,
+  TGetDoctorClinicsRequest,
 } from './constants/types';
 import { getDoctorHeaderFooter } from './api/profile/get-doctor-header-footer';
+import { getDoctorClinics } from './api/profile/get-doctor-clinics';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -561,6 +563,11 @@ class EkaScribe {
   async getDoctorHeaderFooter(request: TGetDoctorHeaderFooterRequest) {
     const headerFooterResponse = await getDoctorHeaderFooter(request);
     return headerFooterResponse;
+  }
+
+  async getDoctorClinics(request: TGetDoctorClinicsRequest) {
+    const clinicsResponse = await getDoctorClinics(request);
+    return clinicsResponse;
   }
 }
 
