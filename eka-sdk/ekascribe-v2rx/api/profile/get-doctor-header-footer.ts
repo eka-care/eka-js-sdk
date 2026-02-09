@@ -7,6 +7,11 @@ import {
 import fetchWrapper from '../../fetch-client';
 import { GET_PARCHI_HOST } from '../../fetch-client/helper';
 
+const DEFAULT_HEADER_IMAGE = 'https://cdn.eka.care/vagus/cmlf0ip4a00000td1dmth2wk3.png';
+const DEFAULT_FOOTER_IMAGE = 'https://cdn.eka.care/vagus/cmlf0j9ea00010td1h3mi6zqk.png';
+const DEFAULT_HEADER_HEIGHT = '3cm';
+const DEFAULT_FOOTER_HEIGHT = '3.5cm';
+
 type TTemplateV2 = {
   _id: string;
   clinicId: string;
@@ -37,35 +42,48 @@ type TDoctorProfileResponse = {
   };
 };
 
-const extractHeaderFooterInfo = (
-  template: TTemplateV2 | undefined
-): TDoctorHeaderFooterInfo | null => {
-  if (!template) {
-    return null;
-  }
+const getDefaultHeaderFooterInfo = (): TDoctorHeaderFooterInfo => ({
+  _id: null,
+  clinic_id: null,
+  doctor_id: null,
+  type: null,
+  header_img: DEFAULT_HEADER_IMAGE,
+  header_height: DEFAULT_HEADER_HEIGHT,
+  header_top_margin: null,
+  footer_img: DEFAULT_FOOTER_IMAGE,
+  footer_height: DEFAULT_FOOTER_HEIGHT,
+  margin_left: null,
+  margin_right: null,
+  page_size: null,
+  show_eka_logo: null,
+  show_name_in_signature: null,
+  show_not_valid_for_medical_legal_purpose_message: null,
+  show_page_number: null,
+  show_prescription_id: null,
+  show_signature: null,
+});
 
-  return {
-    _id: template._id || null,
-    clinic_id: template.clinicId || null,
-    doctor_id: template.docid || null,
-    type: template.type || null,
-    header_img: template.header_img || null,
-    header_height: template.header_height || null,
-    header_top_margin: template.header_top_margin || null,
-    footer_img: template.footer_img || null,
-    footer_height: template.footer_height || null,
-    margin_left: template.margin_left || null,
-    margin_right: template.margin_right || null,
-    page_size: template.page_size || null,
-    show_eka_logo: template.show_eka_logo ?? null,
-    show_name_in_signature: template.show_name_in_signature ?? null,
-    show_not_valid_for_medical_legal_purpose_message:
-      template.show_not_valid_for_medical_legal_purpose_message ?? null,
-    show_page_number: template.show_page_number ?? null,
-    show_prescription_id: template.show_prescription_id ?? null,
-    show_signature: template.show_signature ?? null,
-  };
-};
+const extractHeaderFooterInfo = (template: TTemplateV2): TDoctorHeaderFooterInfo => ({
+  _id: template._id || null,
+  clinic_id: template.clinicId || null,
+  doctor_id: template.docid || null,
+  type: template.type || null,
+  header_img: template.header_img || DEFAULT_HEADER_IMAGE,
+  header_height: template.header_height || DEFAULT_HEADER_HEIGHT,
+  header_top_margin: template.header_top_margin || null,
+  footer_img: template.footer_img || DEFAULT_FOOTER_IMAGE,
+  footer_height: template.footer_height || DEFAULT_FOOTER_HEIGHT,
+  margin_left: template.margin_left || null,
+  margin_right: template.margin_right || null,
+  page_size: template.page_size || null,
+  show_eka_logo: template.show_eka_logo ?? null,
+  show_name_in_signature: template.show_name_in_signature ?? null,
+  show_not_valid_for_medical_legal_purpose_message:
+    template.show_not_valid_for_medical_legal_purpose_message ?? null,
+  show_page_number: template.show_page_number ?? null,
+  show_prescription_id: template.show_prescription_id ?? null,
+  show_signature: template.show_signature ?? null,
+});
 
 export const getDoctorHeaderFooter = async ({
   doctor_oid,
@@ -90,9 +108,8 @@ export const getDoctorHeaderFooter = async ({
 
     if (!templates || templates.length === 0) {
       return {
-        data: null,
+        data: getDefaultHeaderFooterInfo(),
         code: response.status,
-        message: 'No templates found for this doctor',
       };
     }
 
@@ -101,9 +118,8 @@ export const getDoctorHeaderFooter = async ({
 
     if (printTemplates.length === 0) {
       return {
-        data: null,
+        data: getDefaultHeaderFooterInfo(),
         code: response.status,
-        message: 'No PRINT templates found for this doctor',
       };
     }
 
@@ -129,17 +145,16 @@ export const getDoctorHeaderFooter = async ({
       }
     }
 
-    // 3. Return null if no matching template found
+    // 3. Return defaults if no matching template found
     return {
-      data: null,
+      data: getDefaultHeaderFooterInfo(),
       code: response.status,
-      message: 'No matching template found for the specified or default clinic',
     };
   } catch (error) {
     console.error('Error in getDoctorHeaderFooter api: ', error);
 
     return {
-      data: null,
+      data: getDefaultHeaderFooterInfo(),
       code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
       message: `Failed to fetch doctor header/footer, ${error}`,
     };
