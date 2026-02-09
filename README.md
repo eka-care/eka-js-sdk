@@ -1133,6 +1133,85 @@ ekascribe.updateAuthTokens({ access_token: 'new_access_token' });
 - When `eventCallback` returns `error.code: 401` in `file_upload_status`
 - Before token expiration to prevent upload failures
 
+### 9. Get Doctor Header and Footer
+
+Use this method to retrieve the header and footer images for a doctor's prescription template.
+
+```ts
+const headerFooter = await ekascribe.getDoctorHeaderFooter({
+  doctor_oid: '161459684229004',
+  clinic_id: '60532c7fcb46901ba3a3e477', // optional
+});
+```
+
+**Key Parameters:**
+
+- `doctor_oid`: The doctor's OID (required)
+- `clinic_id`: The clinic ID (optional) - if provided, returns header/footer for this specific clinic
+
+**Selection Logic:**
+
+1. If `clinic_id` is provided and a matching PRINT template exists, returns that template's header/footer
+2. Otherwise, looks for the doctor's default clinic and returns its header/footer
+3. If no matching template is found, returns `null`
+
+- #### Response type:
+
+```ts
+{
+  data: {
+    _id: string | null;                                        // Template ID
+    clinic_id: string | null;                                  // Clinic ID
+    doctor_id: string | null;                                  // Doctor ID
+    type: string | null;                                       // Template type (e.g., "PRINT")
+    header_img: string | null;                                 // URL of the header image
+    header_height: string | null;                              // Height of the header (e.g., "5cm")
+    header_top_margin: string | null;                          // Top margin for header (e.g., "0.5cm")
+    footer_img: string | null;                                 // URL of the footer image
+    footer_height: string | null;                              // Height of the footer (e.g., "6.7cm")
+    margin_left: string | null;                                // Left margin (e.g., "1.27cm")
+    margin_right: string | null;                               // Right margin (e.g., "1.27cm")
+    page_size: string | null;                                  // Page size (e.g., "A4")
+    show_eka_logo: boolean | null;                             // Show Eka logo on prescription
+    show_name_in_signature: boolean | null;                    // Show name in signature
+    show_not_valid_for_medical_legal_purpose_message: boolean | null; // Show disclaimer message
+    show_page_number: boolean | null;                          // Show page numbers
+    show_prescription_id: boolean | null;                      // Show prescription ID
+    show_signature: boolean | null;                            // Show signature
+  } | null;
+  code: number;
+  message?: string;
+}
+```
+
+- #### Example Response:
+
+```ts
+{
+  data: {
+    _id: "64b8e093efdee1eaaf052e3e",
+    clinic_id: "60532c7fcb46901ba3a3e477",
+    doctor_id: "161459684229004",
+    type: "PRINT",
+    header_img: "https://rafale-assets.eka.care/161459684229004-60532c7fcb46901ba3a3e477-header.png",
+    header_height: "5cm",
+    header_top_margin: "0.5cm",
+    footer_img: "https://rafale-assets.eka.care/161459684229004-60532c7fcb46901ba3a3e477-footer.png",
+    footer_height: "6.7cm",
+    margin_left: "1.27cm",
+    margin_right: "1.27cm",
+    page_size: "A4",
+    show_eka_logo: true,
+    show_name_in_signature: true,
+    show_not_valid_for_medical_legal_purpose_message: true,
+    show_page_number: true,
+    show_prescription_id: true,
+    show_signature: true
+  },
+  code: 200
+}
+```
+
 ## Generic Callbacks
 
 ### 1. Event callback
