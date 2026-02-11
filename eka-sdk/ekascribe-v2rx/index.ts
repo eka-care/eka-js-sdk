@@ -95,15 +95,18 @@ class EkaScribe {
     access_token,
     env,
     clientId,
+    flavour,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
     clientId?: string;
+    flavour?: string;
   }): EkaScribe {
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
       ...(clientId ? { clientId } : {}),
+      ...(flavour ? { flavour } : {}),
     });
 
     if (!EkaScribe.instance) {
@@ -576,8 +579,10 @@ export const getEkaScribeInstance = ({
   access_token,
   env,
   clientId,
+  flavour,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId });
+  flavour?: string;
+}) => EkaScribe.getInstance({ access_token, env, clientId, flavour });

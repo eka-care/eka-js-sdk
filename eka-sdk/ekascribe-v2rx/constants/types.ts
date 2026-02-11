@@ -519,7 +519,7 @@ export type TDoctorHeaderFooterInfo = {
 };
 
 export type TGetDoctorHeaderFooterResponse = {
-  data: TDoctorHeaderFooterInfo | null;
+  data: TDoctorHeaderFooterInfo;
   code: number;
   message?: string;
 };

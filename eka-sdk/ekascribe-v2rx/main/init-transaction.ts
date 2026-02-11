@@ -2,7 +2,7 @@ import postTransactionInit from '../api/transaction/post-transaction-init';
 import { SDK_STATUS_CODE } from '../constants/constant';
 import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TPostTransactionInitRequest, TStartRecordingResponse } from '../constants/types';
-import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
+import setEnv, { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import EkaScribeStore from '../store/store';
 
 const initialiseTransaction = async (
@@ -32,6 +32,10 @@ const initialiseTransaction = async (
       // s3 file path format: <date>/txnID
       const filePath = `${year}${month}${day}/${txn_id}`;
       EkaScribeStore.sessionBucketPath = filePath;
+
+      setEnv({
+        flavour: request.flavour,
+      });
 
       const txnInitResponse = await postTransactionInit({
         ...request,
