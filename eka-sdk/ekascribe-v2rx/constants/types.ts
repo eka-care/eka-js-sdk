@@ -30,6 +30,7 @@ export type TGetConfigV2Response = {
       'w-n': string;
       'b-id': string;
       is_paid_doc: boolean;
+      is_eka_doc: boolean;
       oid: string;
     };
     selected_preferences?: TSelectedPreferences;
@@ -519,7 +520,7 @@ export type TDoctorHeaderFooterInfo = {
 };
 
 export type TGetDoctorHeaderFooterResponse = {
-  data: TDoctorHeaderFooterInfo | null;
+  data: TDoctorHeaderFooterInfo;
   code: number;
   message?: string;
 };
