@@ -23,15 +23,18 @@ const PROD = {
 let envVar = PROD;
 let client_id = 'doc-web';
 let auth: string;
+let header_flavour: string;
 
 const setEnv = ({
   env,
   clientId,
   auth_token,
+  flavour,
 }: {
   env?: 'PROD' | 'DEV';
   clientId?: string;
   auth_token?: string;
+  flavour?: string;
 }) => {
   if (env) {
     envVar = env === 'PROD' ? PROD : DEV;
@@ -42,11 +45,16 @@ const setEnv = ({
   if (auth_token) {
     auth = auth_token;
   }
+
+  if (flavour) {
+    header_flavour = flavour;
+  }
 };
 
 export const GET_S3_BUCKET_NAME = () => envVar.S3_BUCKET_NAME;
 export const GET_CLIENT_ID = () => client_id;
 export const GET_AUTH_TOKEN = () => auth;
+export const GET_FLAVOUR = () => header_flavour;
 export const GET_EKA_VOICE_HOST_V1 = () => envVar.EKA_VOICE_HOST_V1;
 export const GET_EKA_VOICE_HOST_V2 = () => envVar.EKA_VOICE_HOST_V2;
 export const GET_EKA_VOICE_HOST_V3 = () => envVar.EKA_VOICE_HOST_V3;

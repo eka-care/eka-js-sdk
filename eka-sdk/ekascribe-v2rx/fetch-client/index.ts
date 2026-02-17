@@ -1,4 +1,4 @@
-import { GET_CLIENT_ID, GET_AUTH_TOKEN } from './helper';
+import { GET_CLIENT_ID, GET_AUTH_TOKEN, GET_FLAVOUR } from './helper';
 import EkaScribeStore from '../store/store';
 import { CALLBACK_TYPE } from '../constants/enums';
 
@@ -23,6 +23,10 @@ export default async function fetchWrapper(
 
     if (!newHeaders.get('client-id')) {
       newHeaders.set('client-id', GET_CLIENT_ID());
+    }
+
+    if (!newHeaders.get('flavour')) {
+      newHeaders.set('flavour', GET_FLAVOUR());
     }
 
     if (!newHeaders.get('auth') && GET_AUTH_TOKEN()) {
