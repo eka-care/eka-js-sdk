@@ -5,6 +5,15 @@
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.esm.js",
+      "default": "./dist/index.js"
+    },
+    "./worker": "./dist/worker.bundle.js"
+  },
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
   "keywords": [
@@ -21,7 +30,7 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn clean && node build.mjs && tsc --project ./tsconfig.json --emitDeclarationOnly && cp -R ../../eka-sdk/ekascribe-v2rx/shared-worker dist",
+    "build": "yarn clean && node build.mjs && dts-bundle-generator --project ./tsconfig.json --no-check -o dist/index.d.ts ../../eka-sdk/ekascribe-v2rx/index.ts",
     "prepublishOnly": "yarn build"
   },
   "publishConfig": {
