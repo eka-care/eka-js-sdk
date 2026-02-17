@@ -5,6 +5,7 @@ import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk-legacy';
 export class EkaScribeService {
   private sdk: ReturnType<typeof getEkaScribeInstance> | null = null;
   private txnId = '';
+  private currentWorkerUrl: string | null = null;
 
   /** Initialise the singleton SDK instance */
   init(accessToken: string, env: 'DEV' | 'PROD' = 'DEV'): void {
@@ -15,14 +16,31 @@ export class EkaScribeService {
     });
   }
 
+  /** Fetch worker script from CDN and create a blob URL */
+  private async createSharedWorkerUrl(): Promise<string> {
+    // Revoke previous blob URL to prevent memory leaks
+    if (this.currentWorkerUrl) {
+      URL.revokeObjectURL(this.currentWorkerUrl);
+      this.currentWorkerUrl = null;
+    }
+
+    const response = await fetch(
+      'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk-legacy@2.0.30/dist/worker.bundle.js'
+    );
+    const workerScript = await response.text();
+    const blob = new Blob([workerScript], { type: 'application/javascript' });
+    this.currentWorkerUrl = URL.createObjectURL(blob);
+
+    return this.currentWorkerUrl;
+  }
+
   /** Create a transaction, optionally start the shared-worker */
   async initTransaction(txnId: string): Promise<any> {
     if (!this.sdk) throw new Error('SDK not initialised — call init() first');
 
     this.txnId = txnId;
 
-    // Point the SDK at the worker bundle served from /assets
-    const workerUrl = `${window.location.origin}/assets/worker.bundle.js`;
+    const workerUrl = await this.createSharedWorkerUrl();
 
     return this.sdk.initTransaction(
       {
@@ -82,6 +100,10 @@ export class EkaScribeService {
   reset(): void {
     if (this.sdk) {
       this.sdk.resetEkaScribe();
+    }
+    if (this.currentWorkerUrl) {
+      URL.revokeObjectURL(this.currentWorkerUrl);
+      this.currentWorkerUrl = null;
     }
     this.sdk = null;
     this.txnId = '';
