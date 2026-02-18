@@ -330,18 +330,18 @@ class VadWebClient {
    * Start VAD
    */
   startVad() {
+    if (this.recording_started) return;
     if (this.micVad && typeof this.micVad.start === 'function') {
       this.micVad.start();
     }
     this.recording_started = true;
-
-    // this.monitorAudioCapture();
   }
 
   /**
    * Pause VAD
    */
   pauseVad() {
+    if (!this.recording_started) return;
     if (this.micVad && typeof this.micVad.pause === 'function') {
       this.micVad.pause();
     }

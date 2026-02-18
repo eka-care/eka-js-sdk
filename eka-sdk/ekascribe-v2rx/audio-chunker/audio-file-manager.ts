@@ -31,6 +31,7 @@ class AudioFileManager {
   private totalInsertedFrames: number = 0;
   private businessID: string = '';
   private sharedWorkerInstance: SharedWorker | null = null;
+  private waitAbortController: AbortController | null = null;
 
   initialiseClassInstance() {
     this.audioChunks = [];
@@ -199,7 +200,9 @@ class AudioFileManager {
             }
 
             if (workerResponse.response.success) {
-              this.successfulUploads.push(fileName);
+              if (!this.successfulUploads.includes(fileName)) {
+                this.successfulUploads.push(fileName);
+              }
 
               // remove audioFrames if file uploaded successfully
               if (chunkIndex !== -1) {
@@ -335,7 +338,9 @@ class AudioFileManager {
       businessID: this.businessID,
     }).then((response) => {
       if (response.success) {
-        this.successfulUploads.push(fileName);
+        if (!this.successfulUploads.includes(fileName)) {
+          this.successfulUploads.push(fileName);
+        }
 
         // update file status if file uploaded successfully
         if (chunkIndex !== -1) {
@@ -486,14 +491,23 @@ class AudioFileManager {
    */
   async waitForAllUploads(timeoutMs: number = 10000, pollIntervalMs: number = 500): Promise<void> {
     if (this.sharedWorkerInstance) {
+      // Abort any previous waitForAllUploads listeners to prevent accumulation
+      this.waitAbortController?.abort();
+      this.waitAbortController = new AbortController();
+      const { signal } = this.waitAbortController;
+
       return new Promise((resolve) => {
         let timeoutId: ReturnType<typeof setTimeout>;
         let pollTimeoutId: ReturnType<typeof setTimeout>;
+        let resolved = false;
 
         const cleanup = () => {
+          if (resolved) return;
+          resolved = true;
           clearTimeout(timeoutId);
           clearTimeout(pollTimeoutId);
-          this.sharedWorkerInstance?.port.removeEventListener('message', messageHandler);
+          this.waitAbortController?.abort();
+          this.waitAbortController = null;
         };
 
         // Overall timeout - resolve even if not all uploads complete
@@ -507,6 +521,7 @@ class AudioFileManager {
         }, timeoutMs);
 
         const messageHandler = (event: MessageEvent) => {
+          if (resolved) return;
           if (event.data.action === SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS_SUCCESS) {
             cleanup();
             resolve();
@@ -521,14 +536,16 @@ class AudioFileManager {
 
             // Poll again after interval
             pollTimeoutId = setTimeout(() => {
-              this.sharedWorkerInstance?.port.postMessage({
-                action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
-              });
+              if (!resolved) {
+                this.sharedWorkerInstance?.port.postMessage({
+                  action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
+                });
+              }
             }, pollIntervalMs);
           }
         };
 
-        this.sharedWorkerInstance?.port.addEventListener('message', messageHandler);
+        this.sharedWorkerInstance?.port.addEventListener('message', messageHandler, { signal });
 
         // Initial poll
         this.sharedWorkerInstance?.port.postMessage({
@@ -656,7 +673,9 @@ class AudioFileManager {
               businessID: this.businessID,
             }).then((response) => {
               if (response.success) {
-                this.successfulUploads.push(fileName);
+                if (!this.successfulUploads.includes(fileName)) {
+                  this.successfulUploads.push(fileName);
+                }
 
                 if (onEventCallback) {
                   onEventCallback({

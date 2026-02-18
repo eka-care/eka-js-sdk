@@ -7,11 +7,26 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
   try {
     const vadInstance = EkaScribeStore.vadInstance;
 
-    const navigatorPermissionResponse = await navigator.permissions.query({
-      name: 'microphone' as PermissionName,
-    });
+    if (!vadInstance) {
+      return {
+        error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
+        status_code: SDK_STATUS_CODE.FORBIDDEN,
+        message: 'VAD instance is not initialized. Initialize transaction first.',
+      };
+    }
 
-    if (navigatorPermissionResponse.state !== 'granted') {
+    let permissionGranted = true;
+    try {
+      const navigatorPermissionResponse = await navigator.permissions.query({
+        name: 'microphone' as PermissionName,
+      });
+      permissionGranted = navigatorPermissionResponse.state === 'granted';
+    } catch {
+      // Safari doesn't support permissions.query for microphone - let getUserMedia handle it
+      permissionGranted = true;
+    }
+
+    if (!permissionGranted) {
       return {
         error_code: ERROR_CODE.MICROPHONE,
         status_code: SDK_STATUS_CODE.FORBIDDEN,
@@ -19,14 +34,14 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
       };
     }
 
-    await vadInstance?.initVad(microphoneID);
+    await vadInstance.initVad(microphoneID);
 
-    const micVad = vadInstance?.getMicVad();
-    const isVadLoading = vadInstance?.isVadLoading();
+    const micVad = vadInstance.getMicVad();
+    const isVadLoading = vadInstance.isVadLoading();
 
-    if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
+    if (isVadLoading || !micVad || typeof micVad.start !== 'function') {
       // retry initiating vad once and if still is in loading return error
-      const reinitializeVadResponse = await vadInstance?.reinitializeVad(microphoneID);
+      const reinitializeVadResponse = await vadInstance.reinitializeVad(microphoneID);
       if (reinitializeVadResponse) {
         return {
           error_code: ERROR_CODE.VAD_NOT_INITIALIZED,
@@ -36,9 +51,16 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
       }
     }
 
-    vadInstance?.startVad();
+    vadInstance.startVad();
 
     const txn_id = EkaScribeStore.txnID;
+    if (!txn_id) {
+      return {
+        error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
+        message: 'Transaction not initialized. Call initTransaction first.',
+      };
+    }
     EkaScribeStore.sessionStatus[txn_id] = {
       ...EkaScribeStore.sessionStatus[txn_id],
       vad: {
@@ -51,8 +73,23 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
       status_code: SDK_STATUS_CODE.SUCCESS,
       txn_id,
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error('%c Line:102 🍇 startRecording err', 'color:#b03734', err);
+
+    // Detect microphone permission denial from getUserMedia (Safari + all browsers)
+    const isMicError =
+      err?.name === 'NotAllowedError' ||
+      err?.name === 'PermissionDeniedError' ||
+      err?.name === 'NotFoundError';
+
+    if (isMicError) {
+      return {
+        error_code: ERROR_CODE.MICROPHONE,
+        status_code: SDK_STATUS_CODE.FORBIDDEN,
+        message: 'Microphone access is required to start recording. Please recheck access.',
+      };
+    }
+
     return {
       error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
