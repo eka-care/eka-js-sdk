@@ -280,172 +280,68 @@ const startSeconds = seconds.toFixed(6).padStart(9, '0'); // "SS.ffffff" format
 
 ---
 
-### 8. Fire-and-Forget Upload in pauseRecording
 
-**File:** `eka-sdk/ekascribe-v2rx/main/pause-recording.ts:54-58`
-
-**Buggy Code:**
-```typescript
-fileManagerInstance.uploadAudioToS3({
-  audioFrames,
-  fileName,
-  chunkIndex: audioChunkLength - 1,
-});  // No await, fire and forget
-```
-
-**What Could Go Wrong:**
-- Upload promise is not awaited
-- If upload fails, user won't know
-- Chunk marked pending forever with no error callback
-- Later `endRecording()` waits indefinitely or fails
-
-**Fix:**
-```typescript
-try {
-  await fileManagerInstance.uploadAudioToS3({
-    audioFrames,
-    fileName,
-    chunkIndex: audioChunkLength - 1,
-  });
-} catch (error) {
-  console.error('Failed to upload audio chunk on pause:', error);
-  // Notify via callback
-}
-```
-
----
-
-### 9. Worker Upload Promises Not Tracked
+### 9. Worker Upload Tracking — Not a Bug (By Design)
 
 **File:** `eka-sdk/ekascribe-v2rx/audio-chunker/audio-file-manager.ts:409-453`
 
-**Buggy Code:**
-```typescript
-private uploadAudioChunkInWorker({...}): { success: boolean; fileName: string } {
-  this.sharedWorkerInstance?.port.postMessage({
-    action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
-    payload: { ... },
-  });
+**Status:** Not a bug. The fire-and-forget pattern in `uploadAudioChunkInWorker` is **intentional**.
 
-  return {
-    success: true,
-    fileName,
-  };  // Returns immediately without waiting for worker response
-}
-```
+**How tracking works:**
+1. `uploadAudioChunkInWorker()` sends message to worker, returns immediately (non-blocking)
+2. Worker uploads file, sends back `UPLOAD_FILE_WITH_WORKER_SUCCESS/ERROR`
+3. `onmessage` handler in `createSharedWorkerInstance()` updates `successfulUploads` and `audioChunks[i].status`
+4. `endRecording()` calls `waitForAllUploads()` (10s timeout) as a first-pass wait
+5. After timeout/completion, `getFailedUploads()` catches any chunk where `status != 'success'` (including still-pending)
+6. `retryFailedUploads()` re-uploads those chunks
+7. If retry also fails → user gets `AUDIO_UPLOAD_FAILED` error with `failed_files` list
+8. Commit only includes `successfullyUploadedAudioFiles` (line 138-141 in end-recording.ts)
 
-**What Could Go Wrong:**
-- Function returns before worker even receives the message
-- Promise never created for worker uploads
-- `waitForAllUploads()` cannot wait for these uploads
-- `endRecording()` proceeds before worker uploads complete
-- Transaction committed with missing audio files
-
-**Fix:**
-```typescript
-private async uploadAudioChunkInWorker({...}): Promise<{ success: boolean; fileName: string }> {
-  return new Promise((resolve, reject) => {
-    const messageId = crypto.randomUUID();
-
-    const handler = (event: MessageEvent) => {
-      if (event.data.messageId === messageId) {
-        this.sharedWorkerInstance?.port.removeEventListener('message', handler);
-        if (event.data.success) {
-          resolve({ success: true, fileName });
-        } else {
-          reject(new Error(event.data.error));
-        }
-      }
-    };
-
-    this.sharedWorkerInstance?.port.addEventListener('message', handler);
-    this.sharedWorkerInstance?.port.postMessage({
-      action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER,
-      payload: { ..., messageId },
-    });
-  });
-}
-```
+**Minor edge case:** A chunk still `'pending'` (worker still uploading from first attempt) may get retried unnecessarily — causing a duplicate upload. This is harmless because:
+- S3 PUT to the same key is idempotent
+- `successfulUploads` dedup (fix #3) prevents double-counting
 
 ---
 
-### 10. Race Condition in Token Refresh Timeout
+### 10. Token Refresh Timeout Race — Not a Bug (Safe by Design)
 
 **File:** `eka-sdk/ekascribe-v2rx/shared-worker/s3-file-upload.ts:43-52`
 
-**Buggy Code:**
-```typescript
-if (!isTokenRefreshInProgress) {
-  isTokenRefreshInProgress = true;
+**Status:** Not a bug. No double-resolution occurs.
 
-  workerPort.postMessage({
-    action: SHARED_WORKER_ACTION.REQUEST_TOKEN_REFRESH,
-  });
+**Why it's safe:**
+The timeout (line 44-52) sets `isTokenRefreshInProgress = false` and clears `pendingTokenRefreshResolvers = []`. If `TOKEN_REFRESH_SUCCESS` arrives after timeout:
+1. `isTokenRefreshInProgress` is already `false` → line 109 sets it `false` again (no-op)
+2. `pendingTokenRefreshResolvers` is already `[]` → line 110 iterates empty array (no-op)
+3. No resolver is called twice. No double-resolution.
 
-  setTimeout(() => {
-    if (isTokenRefreshInProgress) {
-      console.error('[SharedWorker] Token refresh timeout');
-      isTokenRefreshInProgress = false;
-      pendingTokenRefreshResolvers.forEach((r) => r(false));
-      pendingTokenRefreshResolvers = [];
-    }
-  }, 10000);
-}
-```
-
-**What Could Go Wrong:**
-- Timeout fires at 10s, resolves all pending requests with `false`
-- If main thread sends `TOKEN_REFRESH_SUCCESS` at 10.1s, handler resolves again with `true`
-- Resolvers called twice with different values
-- Upload thinks refresh failed when it actually succeeded
-- Possible unhandled promise rejection
-
-**Fix:**
-```typescript
-setTimeout(() => {
-  if (isTokenRefreshInProgress) {
-    isTokenRefreshInProgress = false;
-    const resolvers = [...pendingTokenRefreshResolvers];
-    pendingTokenRefreshResolvers = [];  // Clear BEFORE resolving
-    resolvers.forEach((r) => r(false));
-  }
-}, 10000);
-```
+The only real consequence: if refresh succeeds just after timeout, credentials ARE configured (line 101-105) but the uploads that were waiting already received `false`. They'll retry on next upload attempt with the now-valid credentials — which is correct behavior.
 
 ---
 
-### 11. Invalid TXN_ID Access Without Validation
+### 11. Stale Worker Upload Counter on Retry
 
-**File:** `eka-sdk/ekascribe-v2rx/main/start-recording.ts:41-47`
+**File:** `eka-sdk/ekascribe-v2rx/shared-worker/s3-file-upload.ts:19-20`
 
-**Buggy Code:**
+**Code:**
 ```typescript
-const txn_id = EkaScribeStore.txnID;
-EkaScribeStore.sessionStatus[txn_id] = {
-  ...EkaScribeStore.sessionStatus[txn_id],
-  vad: {
-    status: 'start',
-  },
-};
+let uploadRequestReceived: number = 0;
+let uploadRequestCompleted: number = 0;
 ```
 
-**What Could Go Wrong:**
-- If `initTransaction()` was never called, `txnID` is empty string `''`
-- `sessionStatus['']` is accessed and modified
-- Multiple sessions accidentally share state under empty string key
-- Two concurrent sessions corrupt each other's state
+**What happens:**
+1. Initial recording: 5 chunks sent → `uploadRequestReceived = 5`
+2. 4 complete, 1 still uploading → `uploadRequestCompleted = 4`
+3. `waitForAllUploads` times out (5 !== 4)
+4. `endRecording` retries the 1 failed chunk → sends it to worker again
+5. Now `uploadRequestReceived = 6`, `uploadRequestCompleted = 4`
+6. Retry's `waitForAllUploads` polls worker → `6 !== 4` → keeps polling
+7. Original upload (attempt 1) completes → `uploadRequestCompleted = 5` → still `6 !== 5`
+8. Retry upload (attempt 2) completes → `uploadRequestCompleted = 6` → match! resolves
 
-**Fix:**
-```typescript
-const txn_id = EkaScribeStore.txnID;
-if (!txn_id) {
-  return {
-    error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
-    status_code: SDK_STATUS_CODE.TXN_ERROR,
-    message: 'Transaction not initialized. Call initTransaction first.',
-  };
-}
-```
+**Impact:** The retry's `waitForAllUploads` must wait for BOTH the original in-flight upload AND the retry to complete, even though they're the same file. On slow networks this could exceed the 10s timeout, triggering `AUDIO_UPLOAD_FAILED` even though the file eventually uploads successfully via one of the two attempts.
+
+**Not a data-loss bug** — the upload still happens, S3 is idempotent, and the `onmessage` handler will update the chunk status. But the user may see a false `AUDIO_UPLOAD_FAILED` error when the upload actually succeeds moments later.
 
 ---
 
@@ -741,50 +637,51 @@ static getEkaScribeInstance({ access_token, env, clientId }): EkaScribe {
 
 ## Summary Table
 
-| # | Issue | Severity | File | Impact |
-|---|-------|----------|------|--------|
-| 1 | Missing VAD null check | CRITICAL | start-recording.ts:22-37 | Silent initialization failure |
-| 2 | Race condition in VAD state | CRITICAL | vad-web.ts:332-349 | Audio frames processed incorrectly |
-| 3 | Duplicate success tracking | CRITICAL | audio-file-manager.ts:659 | Wrong file count, duplicate uploads |
-| 4 | Memory leak in listeners | CRITICAL | audio-file-manager.ts:531 | Unbounded memory growth |
-| 5 | Undefined session access | HIGH | index.ts:244-246 | TypeError crashes SDK |
-| 6 | Safari permissions unsupported | HIGH | start-recording.ts:10-20 | 30%+ mobile users blocked |
-| 7 | Timestamp overflow | HIGH | audio-buffer-manager.ts:93-119 | Malformed timestamps |
-| 8 | Fire-and-forget upload | HIGH | pause-recording.ts:54-58 | Silent upload failures |
-| 9 | Worker uploads not tracked | HIGH | audio-file-manager.ts:409-453 | Premature transaction commit |
-| 10 | Token refresh race | HIGH | s3-file-upload.ts:43-52 | Double promise resolution |
-| 11 | Empty TXN_ID validation | HIGH | start-recording.ts:41-47 | Cross-session state corruption |
-| 12 | Callback exception uncaught | HIGH | vad-web.ts:220-232 | Recording crash on bad callback |
-| 13 | Unbounded silence accumulation | MEDIUM | vad-web.ts:150-178 | Unpredictable silence detection |
-| 14 | Missing chunk error recovery | MEDIUM | vad-web.ts:288-327 | Silent chunk upload failure |
-| 15 | Invalid MicVAD check | MEDIUM | start-recording.ts:27 | Unnecessary retries |
-| 16 | Resource leak on VAD failure | MEDIUM | vad-web.ts:199-274 | Mic locked after error |
-| 17 | Division by zero potential | MEDIUM | audio-buffer-manager.ts:14-23 | Memory exhaustion |
-| 18 | Singleton parameter mismatch | MEDIUM | index.ts | Wrong environment used |
+| # | Issue | Severity | Status | File | Impact |
+|---|-------|----------|--------|------|--------|
+| 1 | Missing VAD null check | CRITICAL | **FIXED** | start-recording.ts | Silent initialization failure |
+| 2 | Race condition in VAD state | CRITICAL | **FIXED** | vad-web.ts | Rapid pause/resume race condition |
+| 3 | Duplicate success tracking | CRITICAL | **FIXED** | audio-file-manager.ts | Wrong file count in commit |
+| 4 | Memory leak in listeners | CRITICAL | **FIXED** | audio-file-manager.ts | Unbounded memory growth |
+| 5 | Undefined session access | HIGH | **FIXED** | index.ts:244-246 | TypeError crashes SDK |
+| 6 | Safari permissions unsupported | HIGH | **FIXED** (in #1) | start-recording.ts | 30%+ mobile users blocked |
+| 7 | Timestamp overflow | HIGH | **FIXED** | audio-buffer-manager.ts | Malformed timestamps for long recordings |
+| 8 | Fire-and-forget upload | ~~HIGH~~ | **Not a bug** | pause-recording.ts | By design — non-blocking, tracked via retry |
+| 9 | Worker uploads not tracked | ~~HIGH~~ | **Not a bug** | audio-file-manager.ts | By design — tracked via onmessage + retry |
+| 10 | Token refresh race | ~~HIGH~~ | **Not a bug** | s3-file-upload.ts | Safe — no double-resolution occurs |
+| 11 | Empty TXN_ID validation | HIGH | **FIXED** (in #1) | start-recording.ts | Cross-session state corruption |
+| 11b | Stale worker upload counter | HIGH | **FIXED** | s3-file-upload.ts:19-20 | False AUDIO_UPLOAD_FAILED on slow networks |
+| 12 | Callback exception uncaught | HIGH | **FIXED** | vad-web.ts:220-232 | Recording crash on bad callback |
+| 13 | Unbounded silence accumulation | MEDIUM | Open | vad-web.ts:150-178 | Unpredictable silence detection |
+| 14 | Missing chunk error recovery | MEDIUM | Open | vad-web.ts:288-327 | Silent chunk upload failure |
+| 15 | Invalid MicVAD check | MEDIUM | **FIXED** (in #1) | start-recording.ts | Unnecessary retries |
+| 16 | Resource leak on VAD failure | MEDIUM | Open | vad-web.ts:199-274 | Mic locked after error |
+| 17 | Division by zero potential | MEDIUM | Open | audio-buffer-manager.ts | Memory exhaustion |
+| 18 | Singleton parameter mismatch | MEDIUM | Open | index.ts | Wrong environment used |
 
 ---
 
 ## Recommended Fix Priority
 
-### Immediate (Before Next Release)
-- [ ] Fix #1: Add VAD null check
-- [ ] Fix #4: Remove accumulated event listeners
-- [ ] Fix #5: Add session status validation
-- [ ] Fix #6: Add Safari permissions fallback
-- [ ] Fix #11: Validate TXN_ID before use
+### DONE (Fixed in this session)
+- [x] Fix #1: VAD null check + Safari permissions fallback + TXN_ID validation + MicVAD check
+- [x] Fix #2: Idempotency guards on startVad/pauseVad
+- [x] Fix #3: Dedup successfulUploads at all 3 push sites
+- [x] Fix #4: AbortController-based listener cleanup in waitForAllUploads
+- [x] Fix #5: Session status null guard in commitTransactionCall
+- [x] Fix #7: Timestamp padStart fixed to `padStart(9, '0')` for proper SS.ffffff format
+- [x] Fix #11b: Added RESET_UPLOAD_COUNTERS worker action, sent before retries
+- [x] Fix #12: All user callbacks wrapped in try-catch (vadFrameProcessed, userSpeech, vadFrames)
 
-### Short-term (Next Sprint)
-- [ ] Fix #2: Make VAD start/pause async-aware
-- [ ] Fix #3: Deduplicate success tracking
-- [ ] Fix #8: Await pause upload
-- [ ] Fix #9: Track worker upload promises
-- [ ] Fix #12: Wrap user callbacks in try-catch
+### Not Bugs (Reclassified after thorough review)
+- ~~Fix #8~~: Fire-and-forget pause upload — intentional non-blocking pattern
+- ~~Fix #9~~: Worker upload tracking — handled via onmessage + endRecording retry flow
+- ~~Fix #10~~: Token refresh timeout — safe, no double-resolution
 
-### Medium-term (Planned)
-- [ ] Fix #7: Handle long recording timestamps
-- [ ] Fix #10: Fix token refresh race condition
-- [ ] Fix #13-18: Address remaining edge cases
+### Remaining (Open MEDIUM issues)
+- [ ] Fix #13-14: Silence accumulation + chunk error recovery
+- [ ] Fix #16-18: Resource leak, division by zero, singleton mismatch
 
 ---
 
-*Generated from comprehensive codebase analysis*
+*Generated from comprehensive codebase analysis. Last updated with fixes and reclassifications.*

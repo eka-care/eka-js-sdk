@@ -623,6 +623,11 @@ class AudioFileManager {
     }
 
     if (this.sharedWorkerInstance) {
+      // Reset worker counters so waitForAllUploads only tracks retry uploads
+      this.sharedWorkerInstance.port.postMessage({
+        action: SHARED_WORKER_ACTION.RESET_UPLOAD_COUNTERS,
+      });
+
       // Worker handles credentials automatically via REQUEST_TOKEN_REFRESH
       this.audioChunks.forEach((chunk, index) => {
         const { fileName, fileBlob, status, audioFrames } = chunk;

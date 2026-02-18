@@ -54,6 +54,7 @@ export enum SHARED_WORKER_ACTION {
   REQUEST_TOKEN_REFRESH = 'request_token_refresh',
   TOKEN_REFRESH_SUCCESS = 'token_refresh_success',
   TOKEN_REFRESH_ERROR = 'token_refresh_error',
+  RESET_UPLOAD_COUNTERS = 'reset_upload_counters',
 }
 
 export enum CALLBACK_TYPE {

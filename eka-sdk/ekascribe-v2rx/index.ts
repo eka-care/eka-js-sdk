@@ -244,9 +244,18 @@ class EkaScribe {
       const onEventCallback = EkaScribeStore.eventCallback;
       let txnCommitMsg = '';
 
+      const sessionInfo = EkaScribeStore.sessionStatus[txnID];
+      if (!sessionInfo?.api?.status) {
+        return {
+          error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+          status_code: SDK_STATUS_CODE.TXN_ERROR,
+          message: 'Transaction not initialized.',
+        };
+      }
+
       if (
-        EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
-        EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+        sessionInfo.api.status === 'stop' ||
+        sessionInfo.api.status === 'commit'
       ) {
         const audioInfo = this.audioFileManagerInstance?.audioChunks.filter(
           (file) => file.status === 'success'

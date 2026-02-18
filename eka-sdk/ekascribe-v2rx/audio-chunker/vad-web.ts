@@ -90,12 +90,16 @@ class VadWebClient {
             now - this.lastWarningTime >= this.warningCooldownPeriod
           ) {
             if (onVadCallback) {
-              onVadCallback({
-                message:
-                  'No audio detected for a while. Please talk or stop the recording if done.',
-                error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
-                status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-              });
+              try {
+                onVadCallback({
+                  message:
+                    'No audio detected for a while. Please talk or stop the recording if done.',
+                  error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
+                  status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+                });
+              } catch (error) {
+                console.error('[EkaScribe] Error in vadFramesCallback:', error);
+              }
             }
             this.lastWarningTime = now;
             // Reset the silence timer to start counting the next 10 seconds
@@ -108,11 +112,15 @@ class VadWebClient {
       this.noSpeechStartTime = null;
       this.lastWarningTime = null;
       if (onVadCallback) {
-        onVadCallback({
-          message: 'Audio captured. Recording continues.',
-          error_code: ERROR_CODE.SPEECH_DETECTED,
-          status_code: SDK_STATUS_CODE.SUCCESS,
-        });
+        try {
+          onVadCallback({
+            message: 'Audio captured. Recording continues.',
+            error_code: ERROR_CODE.SPEECH_DETECTED,
+            status_code: SDK_STATUS_CODE.SUCCESS,
+          });
+        } catch (error) {
+          console.error('[EkaScribe] Error in vadFramesCallback:', error);
+        }
       }
     }
   }
@@ -225,10 +233,14 @@ class VadWebClient {
           // Get callback dynamically to ensure it's always up to date
           const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
           if (vadFrameProcessedCallback) {
-            const rawSampleDetails = audioFileManager?.getRawSampleDetails();
-            const totalSamples = rawSampleDetails?.totalRawSamples || 0;
-            const duration = totalSamples / SAMPLING_RATE;
-            vadFrameProcessedCallback({ probabilities: prob, frame: frames, duration });
+            try {
+              const rawSampleDetails = audioFileManager?.getRawSampleDetails();
+              const totalSamples = rawSampleDetails?.totalRawSamples || 0;
+              const duration = totalSamples / SAMPLING_RATE;
+              vadFrameProcessedCallback({ probabilities: prob, frame: frames, duration });
+            } catch (error) {
+              console.error('[EkaScribe] Error in vadFrameProcessedCallback:', error);
+            }
           }
 
           // Only process frames internally when recording is active
@@ -256,10 +268,18 @@ class VadWebClient {
           }
         },
         onSpeechStart: () => {
-          EkaScribeStore.userSpeechCallback?.(true);
+          try {
+            EkaScribeStore.userSpeechCallback?.(true);
+          } catch (error) {
+            console.error('[EkaScribe] Error in userSpeechCallback:', error);
+          }
         },
         onSpeechEnd: () => {
-          EkaScribeStore.userSpeechCallback?.(false);
+          try {
+            EkaScribeStore.userSpeechCallback?.(false);
+          } catch (error) {
+            console.error('[EkaScribe] Error in userSpeechCallback:', error);
+          }
         },
       });
 

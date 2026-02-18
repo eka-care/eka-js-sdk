@@ -169,6 +169,12 @@ onconnect = function (event: MessageEvent) {
         return;
       }
 
+      case SHARED_WORKER_ACTION.RESET_UPLOAD_COUNTERS: {
+        uploadRequestReceived = 0;
+        uploadRequestCompleted = 0;
+        return;
+      }
+
       case SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS: {
         if (uploadRequestReceived === uploadRequestCompleted) {
           workerPort.postMessage({
