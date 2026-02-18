@@ -404,6 +404,7 @@ export type TPostV1ConvertToTemplateRequest = {
   txn_id: string;
   template_id: string;
   transcript?: string;
+  target_language?: string;
 };
 
 export type TPostV1ConvertToTemplateResponse = {

@@ -496,8 +496,8 @@ class EkaScribe {
     return templateSectionsResponse;
   }
 
-  async postTransactionConvertToTemplate({ txn_id, template_id }: TPostV1ConvertToTemplateRequest) {
-    const convertToTemplateResponse = await postV1ConvertToTemplate({ txn_id, template_id });
+  async postTransactionConvertToTemplate(request: TPostV1ConvertToTemplateRequest) {
+    const convertToTemplateResponse = await postV1ConvertToTemplate(request);
     return convertToTemplateResponse;
   }
 
