@@ -278,10 +278,7 @@ class EkaScribe {
         sessionInfo.api.status === API_STATUS.STOP ||
         sessionInfo.api.status === API_STATUS.COMMIT
       ) {
-        const audioInfo = this.audioFileManagerInstance?.audioChunks.filter(
-          (file) => file.status === 'success'
-        );
-        const audioFiles = audioInfo.map((audio) => audio.fileName);
+        const audioFiles = this.audioFileManagerInstance.getSuccessfulAudioFileNames();
 
         const { message, code: txnCommitStatusCode } = await postTransactionCommit({
           audioFiles,
@@ -309,14 +306,7 @@ class EkaScribe {
           };
         }
 
-        EkaScribeStore.sessionStatus[txnID] = {
-          ...EkaScribeStore.sessionStatus[txnID],
-          api: {
-            status: API_STATUS.COMMIT,
-            code: txnCommitStatusCode,
-            response: txnCommitMsg,
-          },
-        };
+        EkaScribeStore.updateApiStatus(txnID, API_STATUS.COMMIT, txnCommitStatusCode, txnCommitMsg);
       } else {
         // transaction is not stopped or committed
         return {

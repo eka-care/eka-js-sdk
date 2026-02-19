@@ -13,12 +13,7 @@ const resumeVoiceRecording = (): TPauseRecordingResponse => {
 
     vadInstance.startVad();
     const txn_id = EkaScribeStore.txnID;
-    EkaScribeStore.sessionStatus[txn_id] = {
-      ...EkaScribeStore.sessionStatus[txn_id],
-      vad: {
-        status: VAD_STATUS.RESUME,
-      },
-    };
+    EkaScribeStore.updateVadStatus(txn_id, VAD_STATUS.RESUME);
 
     return {
       status_code: SDK_STATUS_CODE.SUCCESS,

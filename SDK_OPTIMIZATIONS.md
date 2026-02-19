@@ -215,9 +215,27 @@ None of these are bugs or performance issues — they're API design improvements
 - **File:** `aws-services/s3-retry-wrapper.ts`
 - **Status:** Deleted. Confirmed via grep that it was not imported anywhere. Also deleted `get-files-s3.ts` which was its only consumer and itself unused.
 
-### 31-34. Code Duplication Items — `VALID (future)`
+### 31. Duplicate Timestamp Formatting — `NOT AN ISSUE`
 
-- Duplicate timestamp formatting (#31), repeated state spread patterns (#32), duplicate audioChunks mapping (#33), repeated callback construction (#34) — all valid DRY improvements for future refactoring. Not bugs or performance issues.
+- Only 1 occurrence exists (`calculateChunkTimestamps` in `audio-buffer-manager.ts`). Not actually duplicated.
+
+### 32. Repeated State Spread Operations — `FIXED`
+
+- **Files:** `store/store.ts`, `start-recording.ts`, `pause-recording.ts`, `resume-recording.ts`, `end-recording.ts`, `retry-upload-recording.ts`, `index.ts`
+- **Issue:** 8 occurrences of `EkaScribeStore.sessionStatus[txnID] = { ...EkaScribeStore.sessionStatus[txnID], api/vad: {...} }` spread pattern.
+- **Fix:** Added `updateApiStatus(txnID, status, code, response?)` and `updateVadStatus(txnID, status)` helper methods to `EkaScribeStore`. Replaced all spread call sites.
+
+### 33. Duplicate AudioChunks Mapping — `FIXED`
+
+- **Files:** `audio-file-manager.ts`, `end-recording.ts`, `retry-upload-recording.ts`, `index.ts`
+- **Issue:** 3 occurrences of `.audioChunks.filter(f => f.status === 'success').map(a => a.fileName)`.
+- **Fix:** Added `getSuccessfulAudioFileNames()` method to `AudioFileManager`. Replaced all filter→map call sites.
+
+### 34. Repeated Callback Construction — `FIXED`
+
+- **File:** `audio-file-manager.ts`
+- **Issue:** 10 occurrences of `FILE_UPLOAD_STATUS` callback construction with identical boilerplate (`callback_type`, `timestamp`, `if (onEventCallback)` guard).
+- **Fix:** Added private `emitUploadEvent(status, message, data?, error?)` helper to `AudioFileManager`. Replaced all 10 callback constructions.
 
 ---
 
@@ -246,6 +264,9 @@ None of these are bugs or performance issues — they're API design improvements
 | **19** | `any` types (~13 instances) | Replaced with `unknown`, `Record<string, unknown>`, proper type narrowing |
 | **22** | Magic strings for states | Created `API_STATUS` + `VAD_STATUS` enums, replaced all literals in 7 files |
 | **24** | Missing type exports | Re-exported 45+ types and 10 enums from `index.ts` |
+| **32** | Repeated state spread | Added `updateApiStatus()`/`updateVadStatus()` helpers to `EkaScribeStore` |
+| **33** | Duplicate audioChunks mapping | Added `getSuccessfulAudioFileNames()` to `AudioFileManager` |
+| **34** | Repeated callback construction | Added `emitUploadEvent()` helper to `AudioFileManager` |
 | **35** | Polling without delay | Restored 1-second delay in `poll-output-summary.ts` |
 
 ### Reclassified as Not an Issue
@@ -265,6 +286,7 @@ None of these are bugs or performance issues — they're API design improvements
 | **18** | Timestamp recalculation | Called once per chunk, trivial cost |
 | **20** | Swallowed errors | All 3 are intentional with explanatory comments |
 | **21** | No centralized logger | console.log stripped in prod (#7); console.error/warn preserved |
+| **31** | Duplicate timestamp formatting | Only 1 occurrence — not actually duplicated |
 
 ### Genuine Future Improvements (not urgent)
 
@@ -273,7 +295,6 @@ None of these are bugs or performance issues — they're API design improvements
 | **11** | Lazy-load optional modules (templates, translate) | Next major version |
 | **23** | Standardize API return types | Next major version |
 | **25-29** | API design improvements | Next major version |
-| **31-34** | DRY refactoring | Low |
 
 ---
 

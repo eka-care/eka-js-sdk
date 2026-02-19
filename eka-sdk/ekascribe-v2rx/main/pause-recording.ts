@@ -16,12 +16,7 @@ const pauseVoiceRecording = (): TPauseRecordingResponse => {
     vadInstance.pauseVad();
 
     const txn_id = EkaScribeStore.txnID;
-    EkaScribeStore.sessionStatus[txn_id] = {
-      ...EkaScribeStore.sessionStatus[txn_id],
-      vad: {
-        status: VAD_STATUS.PAUSE,
-      },
-    };
+    EkaScribeStore.updateVadStatus(txn_id, VAD_STATUS.PAUSE);
 
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
       const audioFrames = audioBufferInstance.getAudioData();

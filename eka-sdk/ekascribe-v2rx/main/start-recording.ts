@@ -61,12 +61,7 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
         message: 'Transaction not initialized. Call initTransaction first.',
       };
     }
-    EkaScribeStore.sessionStatus[txn_id] = {
-      ...EkaScribeStore.sessionStatus[txn_id],
-      vad: {
-        status: VAD_STATUS.START,
-      },
-    };
+    EkaScribeStore.updateVadStatus(txn_id, VAD_STATUS.START);
 
     return {
       message: 'Recording started successfully.',

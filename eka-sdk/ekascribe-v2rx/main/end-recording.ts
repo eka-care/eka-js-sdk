@@ -19,12 +19,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
 
     vadInstance.pauseVad();
     vadInstance.destroyVad();
-    EkaScribeStore.sessionStatus[txnID] = {
-      ...EkaScribeStore.sessionStatus[txnID],
-      vad: {
-        status: VAD_STATUS.STOP,
-      },
-    };
+    EkaScribeStore.updateVadStatus(txnID, VAD_STATUS.STOP);
 
     // upload last audio chunk
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
@@ -96,14 +91,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         };
       }
 
-      EkaScribeStore.sessionStatus[txnID] = {
-        ...EkaScribeStore.sessionStatus[txnID],
-        api: {
-          status: API_STATUS.STOP,
-          code: txnStopStatusCode,
-          response: txnStopMsg,
-        },
-      };
+      EkaScribeStore.updateApiStatus(txnID, API_STATUS.STOP, txnStopStatusCode, txnStopMsg);
     } else if (EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.NOT_INITIALIZED) {
       // transaction is not initialised
       return {
@@ -135,10 +123,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     // call commit transaction api
-    const successfullyUploadedAudioInfo = audioInfo.filter((file) => file.status === 'success');
-    const successfullyUploadedAudioFiles = successfullyUploadedAudioInfo.map(
-      (file) => file.fileName
-    );
+    const successfullyUploadedAudioFiles = fileManagerInstance.getSuccessfulAudioFileNames();
     if (
       EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.STOP ||
       EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.COMMIT
@@ -168,14 +153,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         };
       }
 
-      EkaScribeStore.sessionStatus[txnID] = {
-        ...EkaScribeStore.sessionStatus[txnID],
-        api: {
-          status: API_STATUS.COMMIT,
-          code: txnCommitStatusCode,
-          response: txnCommitMsg,
-        },
-      };
+      EkaScribeStore.updateApiStatus(txnID, API_STATUS.COMMIT, txnCommitStatusCode, txnCommitMsg);
     } else {
       // transaction is not stopped or committed
       return {

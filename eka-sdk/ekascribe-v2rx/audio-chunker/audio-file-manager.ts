@@ -2,7 +2,7 @@ import postCogInit from '../api/post-cog-init';
 import { uploadFileToS3 } from '../aws-services/s3-upload-service';
 import { AUDIO_EXTENSION_TYPE_MAP, OUTPUT_FORMAT } from '../constants/constant';
 import { CALLBACK_TYPE, SHARED_WORKER_ACTION } from '../constants/enums';
-import { TAudioChunksInfo } from '../constants/types';
+import { TAudioChunksInfo, TEventCallbackData } from '../constants/types';
 import { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import EkaScribeStore from '../store/store';
 import compressAudioToMp3 from '../utils/compress-mp3-audio';
@@ -45,6 +45,30 @@ class AudioFileManager {
 
   constructor() {
     this.initialiseClassInstance();
+  }
+
+  private emitUploadEvent({
+    status,
+    message,
+    data,
+    error,
+  }: {
+    status: 'info' | 'success' | 'error';
+    message: string;
+    data?: TEventCallbackData;
+    error?: { code: number; msg: string; details?: unknown };
+  }): void {
+    const onEventCallback = EkaScribeStore.eventCallback;
+    if (onEventCallback) {
+      onEventCallback({
+        callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
+        status,
+        message,
+        timestamp: new Date().toISOString(),
+        ...(data && { data }),
+        ...(error && { error }),
+      });
+    }
   }
 
   /**
@@ -184,12 +208,10 @@ class AudioFileManager {
               compressedAudioBuffer,
             } = workerResponse.requestBody;
 
-            if (onEventCallback && compressedAudioBuffer) {
-              onEventCallback({
-                callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
+            if (compressedAudioBuffer) {
+              this.emitUploadEvent({
                 status: 'info',
                 message: 'Audioframes of chunk to store in IDB',
-                timestamp: new Date().toISOString(),
                 data: {
                   success: this.successfulUploads.length,
                   total: this.audioChunks.length,
@@ -215,37 +237,26 @@ class AudioFileManager {
                 };
               }
 
-              if (onEventCallback) {
-                onEventCallback({
-                  callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-                  status: 'success',
-                  message: workerResponse.response.success,
-                  timestamp: new Date().toISOString(),
-                  data: {
-                    success: this.successfulUploads.length,
-                    total: this.audioChunks.length,
-                    is_uploaded: true,
-                  },
-                });
-              }
+              this.emitUploadEvent({
+                status: 'success',
+                message: workerResponse.response.success,
+                data: {
+                  success: this.successfulUploads.length,
+                  total: this.audioChunks.length,
+                  is_uploaded: true,
+                },
+              });
             } else {
-              if (onEventCallback) {
-                onEventCallback({
-                  callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-                  status: 'error',
-                  message: workerResponse.response.error || 'Upload failed',
-                  timestamp: new Date().toISOString(),
-                  error: {
-                    code: workerResponse.response.code,
-                    msg: workerResponse.response.error,
-                    details: workerResponse.response.errorCode,
-                  },
-                  data: {
-                    fileName,
-                    is_uploaded: false,
-                  },
-                });
-              }
+              this.emitUploadEvent({
+                status: 'error',
+                message: workerResponse.response.error || 'Upload failed',
+                data: { fileName, is_uploaded: false },
+                error: {
+                  code: workerResponse.response.code,
+                  msg: workerResponse.response.error,
+                  details: workerResponse.response.errorCode,
+                },
+              });
 
               // store that audioFrames in audioChunks
               if (chunkIndex !== -1) {
@@ -309,23 +320,16 @@ class AudioFileManager {
       type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
     });
 
-    const onEventCallback = EkaScribeStore.eventCallback;
-
-    if (onEventCallback) {
-      onEventCallback({
-        callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-        status: 'info',
-        message:
-          'Audio chunks count to display success/total file count and to store chunks in IDB',
-        timestamp: new Date().toISOString(),
-        data: {
-          success: this.successfulUploads.length,
-          total: this.audioChunks.length,
-          fileName,
-          chunkData: compressedAudioBuffer,
-        },
-      });
-    }
+    this.emitUploadEvent({
+      status: 'info',
+      message: 'Audio chunks count to display success/total file count and to store chunks in IDB',
+      data: {
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+        fileName,
+        chunkData: compressedAudioBuffer,
+      },
+    });
 
     const s3BucketName = GET_S3_BUCKET_NAME();
 
@@ -353,19 +357,15 @@ class AudioFileManager {
           };
         }
 
-        if (onEventCallback) {
-          onEventCallback({
-            callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-            status: 'success',
-            message: response.success,
-            timestamp: new Date().toISOString(),
-            data: {
-              success: this.successfulUploads.length,
-              total: this.audioChunks.length,
-              is_uploaded: true,
-            },
-          });
-        }
+        this.emitUploadEvent({
+          status: 'success',
+          message: response.success,
+          data: {
+            success: this.successfulUploads.length,
+            total: this.audioChunks.length,
+            is_uploaded: true,
+          },
+        });
       } else {
         if (chunkIndex !== -1) {
           this.audioChunks[chunkIndex] = {
@@ -377,23 +377,16 @@ class AudioFileManager {
           };
         }
 
-        if (onEventCallback) {
-          onEventCallback({
-            callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-            status: 'error',
-            message: response.error || 'Upload failed',
-            timestamp: new Date().toISOString(),
-            error: {
-              code: response.code || 500,
-              msg: response.error || 'Upload failed',
-              details: response.errorCode,
-            },
-            data: {
-              fileName,
-              is_uploaded: false,
-            },
-          });
-        }
+        this.emitUploadEvent({
+          status: 'error',
+          message: response.error || 'Upload failed',
+          data: { fileName, is_uploaded: false },
+          error: {
+            code: response.code || 500,
+            msg: response.error || 'Upload failed',
+            details: response.errorCode,
+          },
+        });
       }
 
       return response;
@@ -420,20 +413,15 @@ class AudioFileManager {
     fileName: string;
   }> {
     const s3FileName = `${this.filePath}/${fileName}`;
-    const onEventCallback = EkaScribeStore.eventCallback;
 
-    if (onEventCallback) {
-      onEventCallback({
-        callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-        status: 'info',
-        message: 'Audio chunks count to display success/total file count',
-        timestamp: new Date().toISOString(),
-        data: {
-          success: this.successfulUploads.length,
-          total: this.audioChunks.length,
-        },
-      });
-    }
+    this.emitUploadEvent({
+      status: 'info',
+      message: 'Audio chunks count to display success/total file count',
+      data: {
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+      },
+    });
 
     const s3BucketName = GET_S3_BUCKET_NAME();
 
@@ -578,6 +566,15 @@ class AudioFileManager {
   }
 
   /**
+   * Get file names of all successfully uploaded audio chunks
+   */
+  getSuccessfulAudioFileNames(): string[] {
+    return this.audioChunks
+      .filter((chunk) => chunk.status === 'success')
+      .map((chunk) => chunk.fileName);
+  }
+
+  /**
    * Get list of all failed files
    */
   getFailedUploads(): string[] {
@@ -608,21 +605,16 @@ class AudioFileManager {
       return [];
     }
 
-    const onEventCallback = EkaScribeStore.eventCallback;
     const s3BucketName = GET_S3_BUCKET_NAME();
 
-    if (onEventCallback) {
-      onEventCallback({
-        callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-        status: 'info',
-        message: 'Retrying failed uploads',
-        timestamp: new Date().toISOString(),
-        data: {
-          success: this.successfulUploads.length,
-          total: this.audioChunks.length,
-        },
-      });
-    }
+    this.emitUploadEvent({
+      status: 'info',
+      message: 'Retrying failed uploads',
+      data: {
+        success: this.successfulUploads.length,
+        total: this.audioChunks.length,
+      },
+    });
 
     if (this.sharedWorkerInstance) {
       // Reset worker counters so waitForAllUploads only tracks retry uploads
@@ -684,20 +676,16 @@ class AudioFileManager {
                   this.successfulUploads.push(fileName);
                 }
 
-                if (onEventCallback) {
-                  onEventCallback({
-                    callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-                    status: 'success',
-                    message: 'File uploaded successfully',
-                    timestamp: new Date().toISOString(),
-                    data: {
-                      success: this.successfulUploads.length,
-                      total: this.audioChunks.length,
-                      fileName,
-                      is_uploaded: true,
-                    },
-                  });
-                }
+                this.emitUploadEvent({
+                  status: 'success',
+                  message: 'File uploaded successfully',
+                  data: {
+                    success: this.successfulUploads.length,
+                    total: this.audioChunks.length,
+                    fileName,
+                    is_uploaded: true,
+                  },
+                });
 
                 this.audioChunks[index] = {
                   ...this.audioChunks[index],
@@ -708,22 +696,15 @@ class AudioFileManager {
                 };
               } else {
                 // Upload failed - update chunk status
-                if (onEventCallback) {
-                  onEventCallback({
-                    callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-                    status: 'error',
-                    message: response.error || 'Upload failed',
-                    timestamp: new Date().toISOString(),
-                    error: {
-                      code: response.code || 500,
-                      msg: response.error || 'Upload failed',
-                    },
-                    data: {
-                      fileName,
-                      is_uploaded: false,
-                    },
-                  });
-                }
+                this.emitUploadEvent({
+                  status: 'error',
+                  message: response.error || 'Upload failed',
+                  data: { fileName, is_uploaded: false },
+                  error: {
+                    code: response.code || 500,
+                    msg: response.error || 'Upload failed',
+                  },
+                });
               }
 
               return response;
