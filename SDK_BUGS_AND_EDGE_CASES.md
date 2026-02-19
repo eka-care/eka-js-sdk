@@ -387,203 +387,100 @@ if (vadFrameProcessedCallback) {
 
 ### 13. Unbounded Silence Duration Accumulation
 
-**File:** `eka-sdk/ekascribe-v2rx/audio-chunker/vad-web.ts:150-178`
+**File:** `eka-sdk/ekascribe-v2rx/audio-chunker/vad-web.ts:150-156`
 
-**Buggy Code:**
+**The Problem:**
+
+`sil_duration_acc` is a frame counter that increments by 1 for every silent frame. It's only reset to 0 when either (a) speech is detected or (b) a clip point is created. In a quiet environment (e.g., doctor leaves mic on after consultation), this counter grows indefinitely.
+
+**Why it matters:**
+
+The counter is used in `Math.floor(this.sil_duration_acc / 2)` to calculate clip offset — but that's already capped by `Math.min(..., 5)`, so the clip logic is safe. However, the `max_length_samples` hard cutoff (25s) will force a clip point, resetting the counter. So in practice, the counter can't grow beyond ~25s worth of frames between clip points.
+
+The real risk is a defensive one: if any future code reads `sil_duration_acc` without the `Math.min` cap, the unbounded value could cause unexpected behavior. Capping it at 2x max chunk length costs nothing and prevents this.
+
+**Fix Applied:**
 ```typescript
-const sample_passed: number = this.vad_past.length - this.last_clip_index;
-
-if (sample_passed > this.pref_length_samples) {
-  if (this.sil_duration_acc > this.long_thsld) {
-    this.last_clip_index =
-      this.vad_past.length - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-  }
-}
-```
-
-**What Could Go Wrong:**
-- `sil_duration_acc` is never bounded
-- In very quiet environment, silence accumulates for hours
-- No overflow checks - can become NaN or Infinity
-- Silence detection logic becomes unpredictable
-
-**Fix:**
-```typescript
-const MAX_SILENCE_ACC = this.max_length_samples * 2;
-this.sil_duration_acc = Math.min(this.sil_duration_acc, MAX_SILENCE_ACC);
+// In processVadFrame, when incrementing silence:
+this.sil_duration_acc = Math.min(this.sil_duration_acc + 1, this.max_length_samples * 2);
 ```
 
 ---
 
 ### 14. Missing Chunk Upload Error Recovery
 
-**File:** `eka-sdk/ekascribe-v2rx/audio-chunker/vad-web.ts:288-327`
+**File:** `eka-sdk/ekascribe-v2rx/audio-chunker/vad-web.ts:308-347`
 
-**Buggy Code:**
+**The Problem:**
+
+In `processAudioChunk()`, a chunk is registered in `audioChunks` with `status: 'pending'` and the audio buffer is reset **before** `uploadAudioToS3()` is awaited. If `uploadAudioToS3` throws synchronously (e.g., SharedWorker unavailable AND main-thread upload throws), the catch block only does `console.error`. The chunk remains with `status: 'pending'` — neither marked as `'failure'` nor reported to the client.
+
+**How the existing retry flow handles this (partially):**
+
+`endRecording()` → `getFailedUploads()` catches any chunk where `status !== 'success'` (including `'pending'`), so the chunk WILL be retried. The gap is: the client has no visibility into the failure until `endRecording` runs. For long recordings, a chunk could silently fail early and the developer won't know until minutes later.
+
+**Fix Applied:**
 ```typescript
-async processAudioChunk({ audioFrames }: { audioFrames?: Float32Array }) {
-  // ...
-  try {
-    const chunkInfo: TAudioChunksInfo = { ... };
-    const audioChunkLength = audioFileManager.updateAudioInfo(chunkInfo);
-
-    audioFileManager?.incrementInsertedSamples(...);
-    audioBuffer.resetBufferState();
-
-    await audioFileManager.uploadAudioToS3({ ... });
-  } catch (error) {
-    console.error('Error uploading audio chunk:', error);
-    // NO RECOVERY: chunk already added, buffer reset, but upload failed
-  }
-}
-```
-
-**What Could Go Wrong:**
-- Chunk added to `audioChunks` list before upload
-- Buffer is reset before upload completes
-- If upload fails, chunk is marked but never uploaded
-- No retry mechanism, user unaware of failure
-
-**Fix:**
-```typescript
-try {
-  await audioFileManager.uploadAudioToS3({...});
 } catch (error) {
-  console.error('Error uploading audio chunk:', error);
+  console.error('[EkaScribe] Error uploading audio chunk:', error);
 
-  // Mark chunk as failed for retry
-  if (audioChunkLength - 1 >= 0) {
-    audioFileManager.audioChunks[audioChunkLength - 1].status = 'failure';
+  // Mark chunk as failed so endRecording's retry flow picks it up
+  const failedChunk = audioFileManager.audioChunks.find((c) => c.fileName === fileName);
+  if (failedChunk) {
+    failedChunk.status = 'failure';
   }
 
-  // Notify callback
+  // Notify client immediately via event callback
   const onEventCallback = EkaScribeStore.eventCallback;
   if (onEventCallback) {
-    onEventCallback({
-      callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
-      status: 'error',
-      message: `Failed to upload chunk: ${error}`,
-    });
+    try {
+      onEventCallback({
+        callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
+        status: 'error',
+        message: `Failed to upload chunk ${fileName}: ${error}`,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (cbError) {
+      console.error('[EkaScribe] Error in eventCallback:', cbError);
+    }
   }
 }
 ```
 
 ---
 
-### 15. Invalid MicVAD Object Check
+### 15. Resource Leak if MicVAD Initialization Fails — **FIXED** (in #1)
 
-**File:** `eka-sdk/ekascribe-v2rx/main/start-recording.ts:27`
-
-**Buggy Code:**
-```typescript
-const micVad = vadInstance?.getMicVad();
-const isVadLoading = vadInstance?.isVadLoading();
-
-if (isVadLoading || !micVad || Object.keys(micVad).length === 0) {
-  // Retry
-}
-```
-
-**What Could Go Wrong:**
-- `Object.keys(micVad).length === 0` is unreliable
-- A valid MicVAD may have 0 enumerable keys but still work
-- Causes unnecessary retries
-- User experiences unexplained delays
-
-**Fix:**
-```typescript
-// Check for required methods instead of key count
-if (!micVad || typeof micVad.start !== 'function' || typeof micVad.pause !== 'function') {
-  // Retry - VAD not properly initialized
-}
-```
+Already fixed. `initVad()` now calls `this.stopMicStream()` at the top before acquiring a new stream, and has a catch block that cleans up on any failure.
 
 ---
 
-### 16. Resource Leak if MicVAD Initialization Fails
-
-**File:** `eka-sdk/ekascribe-v2rx/audio-chunker/vad-web.ts:199-274`
-
-**Buggy Code:**
-```typescript
-let selectedMicrophoneStream: MediaStream;
-try {
-  selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({...});
-} catch (e: any) {
-  if (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError') {
-    selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } else {
-    throw e;
-  }
-}
-
-this.micStream = selectedMicrophoneStream;
-
-try {
-  const vad = await MicVAD.new({...});
-  this.micVad = vad;
-} catch (e) {
-  this.stopMicStream();
-  throw e;
-}
-```
-
-**What Could Go Wrong:**
-- If error occurs between stream assignment and VAD creation
-- Old stream may not be cleaned up before new one assigned
-- Microphone resource locked indefinitely
-- Mobile users must refresh browser to use mic again
-
-**Fix:**
-```typescript
-// Clean up existing stream first
-this.stopMicStream();
-
-let selectedMicrophoneStream: MediaStream;
-try {
-  selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({...});
-  this.micStream = selectedMicrophoneStream;
-
-  const vad = await MicVAD.new({...});
-  this.micVad = vad;
-} catch (e) {
-  this.stopMicStream();  // Always cleanup on any failure
-  throw e;
-}
-```
-
----
-
-### 17. Division by Zero in AudioBufferManager
+### 16. Zero-Size Buffer in AudioBufferManager
 
 **File:** `eka-sdk/ekascribe-v2rx/audio-chunker/audio-buffer-manager.ts:14-23`
 
-**Buggy Code:**
-```typescript
-constructor(samplingRate: number, allocationTimeInSeconds: number) {
-  this.samplingRate = samplingRate;
-  this.incrementalAllocationSize = Math.floor(samplingRate * allocationTimeInSeconds);
-  this.buffer = new Float32Array(this.incrementalAllocationSize);
-}
-```
+**The Problem:**
 
-**What Could Go Wrong:**
-- If `allocationTimeInSeconds` is 0 or `samplingRate` is 0
-- `incrementalAllocationSize` becomes 0
-- Creates `new Float32Array(0)` - valid but useless
-- Any audio append triggers buffer expansion
-- Potential infinite loop or memory exhaustion
+If `samplingRate` or `allocationTimeInSeconds` is 0, `incrementalAllocationSize` becomes 0. This creates a `Float32Array(0)` — a valid but useless buffer. Every `append()` call triggers `expandBuffer()`, which does `buffer.length + 0 = 0`, so the buffer never actually grows. Audio frames are silently lost.
 
-**Fix:**
+**Why it's unlikely but worth guarding:**
+
+The constructor is only called from `initTransaction` in `index.ts` with hardcoded constants (`SAMPLING_RATE = 16000`, `AUDIO_BUFFER_SIZE_IN_S = 30`). No user input can make these 0. But a future refactor that makes these configurable (e.g., `configureVadConstants`) could introduce this silently. The guard is defense-in-depth.
+
+**Fix Applied:**
 ```typescript
 constructor(samplingRate: number, allocationTimeInSeconds: number) {
   if (samplingRate <= 0 || allocationTimeInSeconds <= 0) {
-    throw new Error('samplingRate and allocationTimeInSeconds must be positive');
+    throw new Error(
+      `[EkaScribe] Invalid AudioBufferManager params: samplingRate=${samplingRate}, ` +
+      `allocationTime=${allocationTimeInSeconds}. Both must be positive.`
+    );
   }
 
   this.samplingRate = samplingRate;
 
-  const minAllocationSize = Math.floor(samplingRate * 0.1); // Minimum 100ms
+  // Minimum 100ms worth of samples to prevent zero-size expansions
+  const minAllocationSize = Math.floor(samplingRate * 0.1);
   this.incrementalAllocationSize = Math.max(
     Math.floor(samplingRate * allocationTimeInSeconds),
     minAllocationSize
@@ -595,41 +492,45 @@ constructor(samplingRate: number, allocationTimeInSeconds: number) {
 
 ---
 
-### 18. Singleton getInstance with Different Parameters
+### 17. Silent Environment/ClientId Switch via getInstance
 
 **File:** `eka-sdk/ekascribe-v2rx/index.ts` (getInstance pattern)
 
-**Buggy Code:**
-```typescript
-static getEkaScribeInstance({ access_token, env, clientId }): EkaScribe {
-  if (!EkaScribe.instance) {
-    EkaScribe.instance = new EkaScribe({ access_token, env, clientId });
-  }
-  return EkaScribe.instance;
-}
-```
+**The Problem:**
 
-**What Could Go Wrong:**
-- First call creates instance with `env: 'production'`
-- Second call with `env: 'staging'` returns production instance
-- Different clients in same app get wrong environment
-- Silent configuration mismatch
+`getInstance()` calls `setEnv()` on **every** invocation, even when an instance already exists. `setEnv()` mutates module-level variables (`envVar`, `client_id`, `auth`) in `fetch-client/helper.ts`. This means a second call with different `env` **does** silently switch the environment for all subsequent API calls — including any in-flight recording session.
 
-**Fix:**
+**Why the original bug doc description was inaccurate:**
+
+The original doc said "second call returns production instance" — that's misleading. The env IS actually changed (via `setEnv`), so the instance now points to the new env. The real danger is **mid-session env switching**: you could be recording and uploading audio to S3 prod, then someone calls `getInstance({ env: 'DEV' })`, and suddenly the commit call goes to the dev API — causing the session to fail or data to land in the wrong environment.
+
+**Fix Applied — Auto-reset on config change:**
+
+If `env` or `clientId` differs from the current config, the old instance is fully cleaned up (`resetEkaScribe()` — destroys VAD, closes mic stream, resets audio buffers, clears store) and a fresh instance is created. A `console.warn` is logged so developers know the reset happened.
+
+Token-only changes (`access_token`) do NOT trigger a reset — this is the normal token refresh flow and should be seamless.
+
 ```typescript
-static getEkaScribeInstance({ access_token, env, clientId }): EkaScribe {
-  if (EkaScribe.instance) {
-    // Warn if parameters differ
-    if (EkaScribe.instance.env !== env || EkaScribe.instance.clientId !== clientId) {
-      console.warn(
-        'EkaScribe instance already exists with different configuration. ' +
-        'Call resetInstance() first to change configuration.'
-      );
+if (EkaScribe.instance) {
+  const envChanging = env && GET_CURRENT_ENV() !== env;
+  const clientChanging = clientId && GET_CLIENT_ID() !== clientId;
+
+  if (envChanging || clientChanging) {
+    console.warn(`[EkaScribe] Configuration changed (...). Resetting instance.`);
+
+    try {
+      EkaScribe.instance.resetEkaScribe(); // cleanup VAD, mic, buffers, store
+    } catch {
+      // sub-instances may not exist if initTransaction was never called
     }
-  } else {
-    EkaScribe.instance = new EkaScribe({ access_token, env, clientId });
+    EkaScribe.instance = null;
   }
-  return EkaScribe.instance;
+}
+
+setEnv({ ... }); // Apply new config
+
+if (!EkaScribe.instance) {
+  EkaScribe.instance = new EkaScribe(); // Fresh instance with new config
 }
 ```
 
@@ -652,12 +553,11 @@ static getEkaScribeInstance({ access_token, env, clientId }): EkaScribe {
 | 11 | Empty TXN_ID validation | HIGH | **FIXED** (in #1) | start-recording.ts | Cross-session state corruption |
 | 11b | Stale worker upload counter | HIGH | **FIXED** | s3-file-upload.ts:19-20 | False AUDIO_UPLOAD_FAILED on slow networks |
 | 12 | Callback exception uncaught | HIGH | **FIXED** | vad-web.ts:220-232 | Recording crash on bad callback |
-| 13 | Unbounded silence accumulation | MEDIUM | Open | vad-web.ts:150-178 | Unpredictable silence detection |
-| 14 | Missing chunk error recovery | MEDIUM | Open | vad-web.ts:288-327 | Silent chunk upload failure |
-| 15 | Invalid MicVAD check | MEDIUM | **FIXED** (in #1) | start-recording.ts | Unnecessary retries |
-| 16 | Resource leak on VAD failure | MEDIUM | Open | vad-web.ts:199-274 | Mic locked after error |
-| 17 | Division by zero potential | MEDIUM | Open | audio-buffer-manager.ts | Memory exhaustion |
-| 18 | Singleton parameter mismatch | MEDIUM | Open | index.ts | Wrong environment used |
+| 13 | Unbounded silence accumulation | MEDIUM | **FIXED** | vad-web.ts:150-156 | Capped at 2x max chunk length |
+| 14 | Missing chunk error recovery | MEDIUM | **FIXED** | vad-web.ts:308-347 | Chunk now marked 'failure' + client notified |
+| 15 | Resource leak on VAD failure | MEDIUM | **FIXED** (in #1) | vad-web.ts:199-274 | Mic stream cleanup on init failure |
+| 16 | Zero-size buffer potential | MEDIUM | **FIXED** | audio-buffer-manager.ts:14-23 | Throws on invalid params + min 100ms allocation |
+| 17 | Silent env/clientId switch | MEDIUM | **FIXED** | index.ts (getInstance) | Auto-reset instance on env/clientId change |
 
 ---
 
@@ -678,10 +578,12 @@ static getEkaScribeInstance({ access_token, env, clientId }): EkaScribe {
 - ~~Fix #9~~: Worker upload tracking — handled via onmessage + endRecording retry flow
 - ~~Fix #10~~: Token refresh timeout — safe, no double-resolution
 
-### Remaining (Open MEDIUM issues)
-- [ ] Fix #13-14: Silence accumulation + chunk error recovery
-- [ ] Fix #16-18: Resource leak, division by zero, singleton mismatch
+### MEDIUM fixes (all done)
+- [x] Fix #13: Silence accumulation capped at `max_length_samples * 2`
+- [x] Fix #14: Failed chunks marked `'failure'` + client notified via `eventCallback`
+- [x] Fix #16: AudioBufferManager throws on invalid params, enforces min 100ms allocation
+- [x] Fix #17: `getInstance()` auto-resets instance on env/clientId change (clean slate)
 
 ---
 
-*Generated from comprehensive codebase analysis. Last updated with fixes and reclassifications.*
+*All issues resolved. 15 fixes applied, 3 reclassified as not-a-bug.*

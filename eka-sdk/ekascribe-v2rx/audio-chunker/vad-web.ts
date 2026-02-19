@@ -9,7 +9,7 @@ import {
   SHORT_SILENCE_THRESHOLD,
 } from '../constants/constant';
 import EkaScribeStore from '../store/store';
-import { ERROR_CODE } from '../constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo } from '../constants/types';
 
 class VadWebClient {
@@ -148,7 +148,8 @@ class VadWebClient {
 
     if (this.vad_past.length > 0) {
       if (vad_frame === 0) {
-        this.sil_duration_acc += 1;
+        // Cap at 2x max chunk length to prevent unbounded growth in silent environments
+        this.sil_duration_acc = Math.min(this.sil_duration_acc + 1, this.max_length_samples * 2);
       }
       if (vad_frame === 1) {
         this.sil_duration_acc = 0;
@@ -342,7 +343,28 @@ class VadWebClient {
         chunkIndex: audioChunkLength - 1,
       });
     } catch (error) {
-      console.error('Error uploading audio chunk:', error);
+      console.error('[EkaScribe] Error uploading audio chunk:', error);
+
+      // Mark chunk as failed so endRecording's retry flow picks it up
+      const failedChunk = audioFileManager.audioChunks.find((c) => c.fileName === fileName);
+      if (failedChunk) {
+        failedChunk.status = 'failure';
+      }
+
+      // Notify client about the chunk failure
+      const onEventCallback = EkaScribeStore.eventCallback;
+      if (onEventCallback) {
+        try {
+          onEventCallback({
+            callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
+            status: 'error',
+            message: `Failed to upload chunk ${fileName}: ${error}`,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (cbError) {
+          console.error('[EkaScribe] Error in eventCallback:', cbError);
+        }
+      }
     }
   }
 

@@ -36,7 +36,7 @@ import {
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
-import setEnv from './fetch-client/helper';
+import setEnv, { GET_CURRENT_ENV, GET_CLIENT_ID } from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
 import resumeVoiceRecording from './main/resume-recording';
@@ -102,6 +102,29 @@ class EkaScribe {
     clientId?: string;
     flavour?: string;
   }): EkaScribe {
+    // If env or clientId is changing, reset the instance for a clean slate
+    if (EkaScribe.instance) {
+      const envChanging = env && GET_CURRENT_ENV() !== env;
+      const clientChanging = clientId && GET_CLIENT_ID() !== clientId;
+
+      if (envChanging || clientChanging) {
+        console.warn(
+          `[EkaScribe] Configuration changed` +
+            `${envChanging ? ` (env: ${GET_CURRENT_ENV()} → ${env})` : ''}` +
+            `${clientChanging ? ` (clientId: ${GET_CLIENT_ID()} → ${clientId})` : ''}` +
+            `. Resetting instance.`
+        );
+
+        // Clean up old instance (VAD, mic stream, audio buffers, worker)
+        try {
+          EkaScribe.instance.resetEkaScribe();
+        } catch {
+          // Ignore — sub-instances may not be initialized if initTransaction was never called
+        }
+        EkaScribe.instance = null;
+      }
+    }
+
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),

@@ -12,10 +12,20 @@ class AudioBufferManager {
    * @param allocationTimeInSeconds - The size of each incremental allocation in seconds
    */
   constructor(samplingRate: number, allocationTimeInSeconds: number) {
+    if (samplingRate <= 0 || allocationTimeInSeconds <= 0) {
+      throw new Error(
+        `[EkaScribe] Invalid AudioBufferManager params: samplingRate=${samplingRate}, allocationTime=${allocationTimeInSeconds}. Both must be positive.`
+      );
+    }
+
     this.samplingRate = samplingRate;
 
-    // Calculate the size of each incremental allocation in samples
-    this.incrementalAllocationSize = Math.floor(samplingRate * allocationTimeInSeconds);
+    // Calculate the size of each incremental allocation in samples (minimum 100ms worth)
+    const minAllocationSize = Math.floor(samplingRate * 0.1);
+    this.incrementalAllocationSize = Math.max(
+      Math.floor(samplingRate * allocationTimeInSeconds),
+      minAllocationSize
+    );
 
     // Initialize buffer with the first allocation block
     this.buffer = new Float32Array(this.incrementalAllocationSize);
