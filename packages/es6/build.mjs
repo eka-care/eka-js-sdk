@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 
 const sharedConfig = {
-  entryPoints: ['../../eka-sdk/ekascribe-v2rx/index.ts'],
+  entryPoints: ['./entry.ts'],
   bundle: true,
   platform: 'browser',
   target: ['es6'],

@@ -13,9 +13,9 @@ import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo } from '../constants/types';
 
 class VadWebClient {
-  private vad_past: number[];
+  private vad_frame_count: number; // replaces vad_past[] — only .length was ever used
   private last_clip_index: number;
-  private clip_points: number[];
+  private last_clip_point: number; // replaces clip_points[] — only last element was ever read
   private sil_duration_acc: number;
   private pref_length_samples: number;
   private desp_length_samples: number;
@@ -41,9 +41,9 @@ class VadWebClient {
    */
 
   constructor(pref_length: number, desp_length: number, max_length: number, sr: number) {
-    this.vad_past = [];
+    this.vad_frame_count = 0;
     this.last_clip_index = 0;
-    this.clip_points = [0];
+    this.last_clip_point = 0;
     this.sil_duration_acc = 0;
     this.pref_length_samples = pref_length * sr;
     this.desp_length_samples = desp_length * sr;
@@ -146,7 +146,7 @@ class VadWebClient {
   processVadFrame(vad_frame: number): [boolean, number] {
     let is_clip_point_frame: boolean = false;
 
-    if (this.vad_past.length > 0) {
+    if (this.vad_frame_count > 0) {
       if (vad_frame === 0) {
         // Cap at 2x max chunk length to prevent unbounded growth in silent environments
         this.sil_duration_acc = Math.min(this.sil_duration_acc + 1, this.max_length_samples * 2);
@@ -156,13 +156,13 @@ class VadWebClient {
       }
     }
 
-    const sample_passed: number = this.vad_past.length - this.last_clip_index;
+    const sample_passed: number = this.vad_frame_count - this.last_clip_index;
 
     if (sample_passed > this.pref_length_samples) {
       if (this.sil_duration_acc > this.long_thsld) {
         this.last_clip_index =
-          this.vad_past.length - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.clip_points.push(this.last_clip_index);
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
         this.sil_duration_acc = 0;
         is_clip_point_frame = true;
       }
@@ -171,27 +171,27 @@ class VadWebClient {
     if (sample_passed > this.desp_length_samples) {
       if (this.sil_duration_acc > this.shor_thsld) {
         this.last_clip_index =
-          this.vad_past.length - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.clip_points.push(this.last_clip_index);
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
         this.sil_duration_acc = 0;
         is_clip_point_frame = true;
       }
     }
 
     if (sample_passed >= this.max_length_samples) {
-      this.last_clip_index = this.vad_past.length;
-      this.clip_points.push(this.last_clip_index);
+      this.last_clip_index = this.vad_frame_count;
+      this.last_clip_point = this.last_clip_index;
       this.sil_duration_acc = 0;
       is_clip_point_frame = true;
     }
 
-    this.vad_past.push(vad_frame);
+    this.vad_frame_count++;
 
     if (is_clip_point_frame) {
-      return [true, this.clip_points[this.clip_points.length - 1]];
+      return [true, this.last_clip_point];
     }
 
-    return [false, this.clip_points[this.clip_points.length - 1]];
+    return [false, this.last_clip_point];
   }
 
   /**
@@ -418,9 +418,9 @@ class VadWebClient {
     this.stopMicStream();
 
     // Reset VAD state
-    this.vad_past = [];
+    this.vad_frame_count = 0;
     this.last_clip_index = 0;
-    this.clip_points = [0];
+    this.last_clip_point = 0;
     this.sil_duration_acc = 0;
     this.noSpeechStartTime = null;
     this.lastWarningTime = null;
