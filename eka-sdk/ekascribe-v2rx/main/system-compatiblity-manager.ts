@@ -144,7 +144,7 @@ class SystemCompatibilityManager {
 
     try {
       const { browser, version } = this.detectBrowser();
-      const deviceMemory = (navigator as any).deviceMemory;
+      const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const systemTime = new Date();
       const systemTimeISO = systemTime.toISOString();
@@ -276,7 +276,7 @@ class SystemCompatibilityManager {
           'Microphone access is enabled and working.',
           { permission: 'granted', deviceId }
         );
-      } catch (permissionError: any) {
+      } catch (permissionError: unknown) {
         return this.handleMicrophoneError(permissionError);
       }
     } catch (error) {
@@ -293,7 +293,7 @@ class SystemCompatibilityManager {
   /**
    * Handle microphone permission errors
    */
-  private handleMicrophoneError(error: any): TCompatibilityTestResult {
+  private handleMicrophoneError(error: unknown): TCompatibilityTestResult {
     const testType = COMPATIBILITY_TEST_TYPE.MICROPHONE;
     const errorMap: Record<string, { message: string; permission: string }> = {
       NotAllowedError: { message: 'Microphone permission denied', permission: 'denied' },
@@ -301,7 +301,10 @@ class SystemCompatibilityManager {
       NotFoundError: { message: 'No microphone found', permission: 'denied' },
     };
 
-    const errorInfo = errorMap[error.name] || {
+    const errorName = error instanceof DOMException ? error.name : '';
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    const errorInfo = errorMap[errorName] || {
       message: 'Error accessing microphone',
       permission: 'prompt',
     };
@@ -311,7 +314,7 @@ class SystemCompatibilityManager {
       COMPATIBILITY_TEST_STATUS.ERROR,
       errorInfo.message,
       { permission: errorInfo.permission },
-      error.message
+      errorMessage
     );
   }
 
@@ -662,7 +665,7 @@ class SystemCompatibilityManager {
     test_type: string,
     status: COMPATIBILITY_TEST_STATUS,
     message: string,
-    data?: any,
+    data?: Record<string, unknown>,
     error?: string
   ): TCompatibilityTestResult {
     const result: TCompatibilityTestResult = {

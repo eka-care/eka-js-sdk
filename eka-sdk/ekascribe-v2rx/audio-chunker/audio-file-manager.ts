@@ -500,6 +500,7 @@ class AudioFileManager {
         let timeoutId: ReturnType<typeof setTimeout>;
         let pollTimeoutId: ReturnType<typeof setTimeout>;
         let resolved = false;
+        let currentInterval = pollIntervalMs;
 
         const cleanup = () => {
           if (resolved) return;
@@ -534,14 +535,15 @@ class AudioFileManager {
               return;
             }
 
-            // Poll again after interval
+            // Poll again with exponential backoff (500ms → 750ms → 1125ms → ... capped at 3s)
             pollTimeoutId = setTimeout(() => {
               if (!resolved) {
                 this.sharedWorkerInstance?.port.postMessage({
                   action: SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS,
                 });
               }
-            }, pollIntervalMs);
+            }, currentInterval);
+            currentInterval = Math.min(currentInterval * 1.5, 3000);
           }
         };
 

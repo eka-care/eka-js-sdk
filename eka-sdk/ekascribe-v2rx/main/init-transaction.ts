@@ -1,6 +1,6 @@
 import postTransactionInit from '../api/transaction/post-transaction-init';
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TPostTransactionInitRequest, TStartRecordingResponse } from '../constants/types';
 import setEnv, { GET_S3_BUCKET_NAME } from '../fetch-client/helper';
 import EkaScribeStore from '../store/store';
@@ -20,7 +20,7 @@ const initialiseTransaction = async (
     if (
       !sessionStatus[txn_id] ||
       Object.keys(sessionStatus[txn_id]).length === 0 ||
-      sessionStatus[txn_id].api?.status === 'na'
+      sessionStatus[txn_id].api?.status === API_STATUS.NOT_INITIALIZED
     ) {
       EkaScribeStore.txnID = txn_id;
       // File path calculation
@@ -78,7 +78,7 @@ const initialiseTransaction = async (
 
       EkaScribeStore.sessionStatus[txn_id] = {
         api: {
-          status: 'init',
+          status: API_STATUS.INIT,
           code: txnInitStatusCode,
           response: txnInitMessage,
         },

@@ -210,9 +210,10 @@ class VadWebClient {
       selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({
         audio: deviceId ? { deviceId: { exact: deviceId } } : true,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // If the deviceId is invalid/unavailable, fall back to default mic.
-      if (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError') {
+      const errorName = e instanceof DOMException ? e.name : '';
+      if (errorName === 'OverconstrainedError' || errorName === 'NotFoundError') {
         selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } else {
         throw e;

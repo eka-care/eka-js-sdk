@@ -1,5 +1,5 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { ERROR_CODE } from '../constants/enums';
+import { ERROR_CODE, VAD_STATUS } from '../constants/enums';
 import { TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -64,7 +64,7 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
     EkaScribeStore.sessionStatus[txn_id] = {
       ...EkaScribeStore.sessionStatus[txn_id],
       vad: {
-        status: 'start',
+        status: VAD_STATUS.START,
       },
     };
 
@@ -73,14 +73,15 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
       status_code: SDK_STATUS_CODE.SUCCESS,
       txn_id,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('%c Line:102 🍇 startRecording err', 'color:#b03734', err);
 
     // Detect microphone permission denial from getUserMedia (Safari + all browsers)
+    const errorName = err instanceof DOMException ? err.name : '';
     const isMicError =
-      err?.name === 'NotAllowedError' ||
-      err?.name === 'PermissionDeniedError' ||
-      err?.name === 'NotFoundError';
+      errorName === 'NotAllowedError' ||
+      errorName === 'PermissionDeniedError' ||
+      errorName === 'NotFoundError';
 
     if (isMicError) {
       return {

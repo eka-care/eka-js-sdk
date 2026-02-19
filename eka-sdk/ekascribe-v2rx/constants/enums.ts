@@ -1,3 +1,17 @@
+export enum API_STATUS {
+  NOT_INITIALIZED = 'na',
+  INIT = 'init',
+  STOP = 'stop',
+  COMMIT = 'commit',
+}
+
+export enum VAD_STATUS {
+  START = 'start',
+  PAUSE = 'pause',
+  RESUME = 'resume',
+  STOP = 'stop',
+}
+
 export enum TEMPLATE_ID {
   EKA_EMR_TEMPLATE = 'eka_emr_template',
   CLINICAL_NOTE_TEMPLATE = 'clinical_notes_template',

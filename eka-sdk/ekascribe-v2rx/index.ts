@@ -16,7 +16,7 @@ import {
   SAMPLING_RATE,
   SDK_STATUS_CODE,
 } from './constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TEventCallback,
@@ -275,8 +275,8 @@ class EkaScribe {
       }
 
       if (
-        sessionInfo.api.status === 'stop' ||
-        sessionInfo.api.status === 'commit'
+        sessionInfo.api.status === API_STATUS.STOP ||
+        sessionInfo.api.status === API_STATUS.COMMIT
       ) {
         const audioInfo = this.audioFileManagerInstance?.audioChunks.filter(
           (file) => file.status === 'success'
@@ -312,7 +312,7 @@ class EkaScribe {
         EkaScribeStore.sessionStatus[txnID] = {
           ...EkaScribeStore.sessionStatus[txnID],
           api: {
-            status: 'commit',
+            status: API_STATUS.COMMIT,
             code: txnCommitStatusCode,
             response: txnCommitMsg,
           },
@@ -616,3 +616,67 @@ export const getEkaScribeInstance = ({
   clientId?: string;
   flavour?: string;
 }) => EkaScribe.getInstance({ access_token, env, clientId, flavour });
+
+// Re-export types for consumers
+export type {
+  TGetConfigV2Response,
+  TSelectedPreferences,
+  TGetConfigItem,
+  TConfigSettings,
+  TPatientDetails,
+  TSystemInfo,
+  TStartRecordingResponse,
+  TPauseRecordingResponse,
+  TEndRecordingResponse,
+  TPostTransactionInitRequest,
+  TPostTransactionResponse,
+  TPatchTransactionRequest,
+  TPostCogResponse,
+  TGetTransactionHistoryResponse,
+  TSessionHistoryData,
+  TSessionStatus,
+  TEventCallback,
+  TEventCallbackData,
+  TVadFramesCallback,
+  TVadFrameProcessedCallback,
+  TPartialResultCallback,
+  TPostV1TemplateRequest,
+  TPostV1TemplateResponse,
+  TGetV1TemplatesResponse,
+  TTemplate,
+  TPostV1TemplateSectionRequest,
+  TPostV1TemplateSectionResponse,
+  TSection,
+  TGetV1TemplateSectionsResponse,
+  TPatchVoiceApiV2ConfigRequest,
+  TPatchVoiceApiV2ConfigResponse,
+  TPostV1ConvertToTemplateRequest,
+  TPostV1ConvertToTemplateResponse,
+  TPatchVoiceApiV3StatusRequest,
+  TPatchVoiceApiV3StatusResponse,
+  TPostV1UploadAudioFilesRequest,
+  TCompatibilityTestResult,
+  TCompatibilityTestSummary,
+  TCompatibilityCallback,
+  TGetDoctorHeaderFooterRequest,
+  TGetDoctorHeaderFooterResponse,
+  TGetDoctorClinicsRequest,
+  TGetDoctorClinicsResponse,
+} from './constants/types';
+
+// Re-export enums for consumers
+export {
+  ERROR_CODE,
+  CALLBACK_TYPE,
+  TEMPLATE_ID,
+  RESULT_STATUS,
+  PROCESSING_STATUS,
+  TEMPLATE_TYPE,
+  API_STATUS,
+  VAD_STATUS,
+  COMPATIBILITY_TEST_TYPE,
+  COMPATIBILITY_TEST_STATUS,
+} from './constants/enums';
+
+// Re-export status response type
+export type { TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';

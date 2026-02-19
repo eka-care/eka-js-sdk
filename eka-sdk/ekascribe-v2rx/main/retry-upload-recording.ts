@@ -1,6 +1,6 @@
 import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -34,8 +34,8 @@ const retryUploadFailedFiles = async ({
     // call commit transaction api
     const txnID = EkaScribeStore.txnID;
     if (
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.STOP ||
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.COMMIT
     ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: EkaScribeStore.txnID,
@@ -65,7 +65,7 @@ const retryUploadFailedFiles = async ({
       EkaScribeStore.sessionStatus[txnID] = {
         ...EkaScribeStore.sessionStatus[txnID],
         api: {
-          status: 'commit',
+          status: API_STATUS.COMMIT,
           code: txnCommitStatusCode,
           response: txnCommitMsg,
         },
