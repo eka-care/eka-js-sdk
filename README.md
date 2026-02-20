@@ -1454,3 +1454,8 @@ Contributions are welcome!
 - Test cases
 
 Refer [Ekascribe](https://github.com/eka-care/v2rx-extension) for SDK implementations.
+
+---
+
+# MEMORY FILE:
+/Users/sanikagoyal/.claude/projects/-Users-sanikagoyal-Desktop-eka-care-eka-js-sdk/memory/MEMORY.md

@@ -110,7 +110,7 @@ export const pollOutputSummary = async ({
           } else {
             failedCount = 0;
           }
-          // await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           return getSummary(template_id ? `template_id=${template_id}` : '');
         }
 

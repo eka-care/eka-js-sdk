@@ -9,13 +9,13 @@ import {
   SHORT_SILENCE_THRESHOLD,
 } from '../constants/constant';
 import EkaScribeStore from '../store/store';
-import { ERROR_CODE } from '../constants/enums';
+import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TAudioChunksInfo } from '../constants/types';
 
 class VadWebClient {
-  private vad_past: number[];
+  private vad_frame_count: number; // replaces vad_past[] — only .length was ever used
   private last_clip_index: number;
-  private clip_points: number[];
+  private last_clip_point: number; // replaces clip_points[] — only last element was ever read
   private sil_duration_acc: number;
   private pref_length_samples: number;
   private desp_length_samples: number;
@@ -41,9 +41,9 @@ class VadWebClient {
    */
 
   constructor(pref_length: number, desp_length: number, max_length: number, sr: number) {
-    this.vad_past = [];
+    this.vad_frame_count = 0;
     this.last_clip_index = 0;
-    this.clip_points = [0];
+    this.last_clip_point = 0;
     this.sil_duration_acc = 0;
     this.pref_length_samples = pref_length * sr;
     this.desp_length_samples = desp_length * sr;
@@ -90,12 +90,16 @@ class VadWebClient {
             now - this.lastWarningTime >= this.warningCooldownPeriod
           ) {
             if (onVadCallback) {
-              onVadCallback({
-                message:
-                  'No audio detected for a while. Please talk or stop the recording if done.',
-                error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
-                status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-              });
+              try {
+                onVadCallback({
+                  message:
+                    'No audio detected for a while. Please talk or stop the recording if done.',
+                  error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
+                  status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+                });
+              } catch (error) {
+                console.error('[EkaScribe] Error in vadFramesCallback:', error);
+              }
             }
             this.lastWarningTime = now;
             // Reset the silence timer to start counting the next 10 seconds
@@ -108,11 +112,15 @@ class VadWebClient {
       this.noSpeechStartTime = null;
       this.lastWarningTime = null;
       if (onVadCallback) {
-        onVadCallback({
-          message: 'Audio captured. Recording continues.',
-          error_code: ERROR_CODE.SPEECH_DETECTED,
-          status_code: SDK_STATUS_CODE.SUCCESS,
-        });
+        try {
+          onVadCallback({
+            message: 'Audio captured. Recording continues.',
+            error_code: ERROR_CODE.SPEECH_DETECTED,
+            status_code: SDK_STATUS_CODE.SUCCESS,
+          });
+        } catch (error) {
+          console.error('[EkaScribe] Error in vadFramesCallback:', error);
+        }
       }
     }
   }
@@ -138,22 +146,23 @@ class VadWebClient {
   processVadFrame(vad_frame: number): [boolean, number] {
     let is_clip_point_frame: boolean = false;
 
-    if (this.vad_past.length > 0) {
+    if (this.vad_frame_count > 0) {
       if (vad_frame === 0) {
-        this.sil_duration_acc += 1;
+        // Cap at 2x max chunk length to prevent unbounded growth in silent environments
+        this.sil_duration_acc = Math.min(this.sil_duration_acc + 1, this.max_length_samples * 2);
       }
       if (vad_frame === 1) {
         this.sil_duration_acc = 0;
       }
     }
 
-    const sample_passed: number = this.vad_past.length - this.last_clip_index;
+    const sample_passed: number = this.vad_frame_count - this.last_clip_index;
 
     if (sample_passed > this.pref_length_samples) {
       if (this.sil_duration_acc > this.long_thsld) {
         this.last_clip_index =
-          this.vad_past.length - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.clip_points.push(this.last_clip_index);
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
         this.sil_duration_acc = 0;
         is_clip_point_frame = true;
       }
@@ -162,27 +171,27 @@ class VadWebClient {
     if (sample_passed > this.desp_length_samples) {
       if (this.sil_duration_acc > this.shor_thsld) {
         this.last_clip_index =
-          this.vad_past.length - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.clip_points.push(this.last_clip_index);
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
         this.sil_duration_acc = 0;
         is_clip_point_frame = true;
       }
     }
 
     if (sample_passed >= this.max_length_samples) {
-      this.last_clip_index = this.vad_past.length;
-      this.clip_points.push(this.last_clip_index);
+      this.last_clip_index = this.vad_frame_count;
+      this.last_clip_point = this.last_clip_index;
       this.sil_duration_acc = 0;
       is_clip_point_frame = true;
     }
 
-    this.vad_past.push(vad_frame);
+    this.vad_frame_count++;
 
     if (is_clip_point_frame) {
-      return [true, this.clip_points[this.clip_points.length - 1]];
+      return [true, this.last_clip_point];
     }
 
-    return [false, this.clip_points[this.clip_points.length - 1]];
+    return [false, this.last_clip_point];
   }
 
   /**
@@ -201,9 +210,10 @@ class VadWebClient {
       selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({
         audio: deviceId ? { deviceId: { exact: deviceId } } : true,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // If the deviceId is invalid/unavailable, fall back to default mic.
-      if (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError') {
+      const errorName = e instanceof DOMException ? e.name : '';
+      if (errorName === 'OverconstrainedError' || errorName === 'NotFoundError') {
         selectedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } else {
         throw e;
@@ -225,10 +235,14 @@ class VadWebClient {
           // Get callback dynamically to ensure it's always up to date
           const vadFrameProcessedCallback = EkaScribeStore.vadFrameProcessedCallback;
           if (vadFrameProcessedCallback) {
-            const rawSampleDetails = audioFileManager?.getRawSampleDetails();
-            const totalSamples = rawSampleDetails?.totalRawSamples || 0;
-            const duration = totalSamples / SAMPLING_RATE;
-            vadFrameProcessedCallback({ probabilities: prob, frame: frames, duration });
+            try {
+              const rawSampleDetails = audioFileManager?.getRawSampleDetails();
+              const totalSamples = rawSampleDetails?.totalRawSamples || 0;
+              const duration = totalSamples / SAMPLING_RATE;
+              vadFrameProcessedCallback({ probabilities: prob, frame: frames, duration });
+            } catch (error) {
+              console.error('[EkaScribe] Error in vadFrameProcessedCallback:', error);
+            }
           }
 
           // Only process frames internally when recording is active
@@ -256,10 +270,18 @@ class VadWebClient {
           }
         },
         onSpeechStart: () => {
-          EkaScribeStore.userSpeechCallback?.(true);
+          try {
+            EkaScribeStore.userSpeechCallback?.(true);
+          } catch (error) {
+            console.error('[EkaScribe] Error in userSpeechCallback:', error);
+          }
         },
         onSpeechEnd: () => {
-          EkaScribeStore.userSpeechCallback?.(false);
+          try {
+            EkaScribeStore.userSpeechCallback?.(false);
+          } catch (error) {
+            console.error('[EkaScribe] Error in userSpeechCallback:', error);
+          }
         },
       });
 
@@ -322,7 +344,28 @@ class VadWebClient {
         chunkIndex: audioChunkLength - 1,
       });
     } catch (error) {
-      console.error('Error uploading audio chunk:', error);
+      console.error('[EkaScribe] Error uploading audio chunk:', error);
+
+      // Mark chunk as failed so endRecording's retry flow picks it up
+      const failedChunk = audioFileManager.audioChunks.find((c) => c.fileName === fileName);
+      if (failedChunk) {
+        failedChunk.status = 'failure';
+      }
+
+      // Notify client about the chunk failure
+      const onEventCallback = EkaScribeStore.eventCallback;
+      if (onEventCallback) {
+        try {
+          onEventCallback({
+            callback_type: CALLBACK_TYPE.FILE_UPLOAD_STATUS,
+            status: 'error',
+            message: `Failed to upload chunk ${fileName}: ${error}`,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (cbError) {
+          console.error('[EkaScribe] Error in eventCallback:', cbError);
+        }
+      }
     }
   }
 
@@ -330,18 +373,18 @@ class VadWebClient {
    * Start VAD
    */
   startVad() {
+    if (this.recording_started) return;
     if (this.micVad && typeof this.micVad.start === 'function') {
       this.micVad.start();
     }
     this.recording_started = true;
-
-    // this.monitorAudioCapture();
   }
 
   /**
    * Pause VAD
    */
   pauseVad() {
+    if (!this.recording_started) return;
     if (this.micVad && typeof this.micVad.pause === 'function') {
       this.micVad.pause();
     }
@@ -376,9 +419,9 @@ class VadWebClient {
     this.stopMicStream();
 
     // Reset VAD state
-    this.vad_past = [];
+    this.vad_frame_count = 0;
     this.last_clip_index = 0;
-    this.clip_points = [0];
+    this.last_clip_point = 0;
     this.sil_duration_acc = 0;
     this.noSpeechStartTime = null;
     this.lastWarningTime = null;

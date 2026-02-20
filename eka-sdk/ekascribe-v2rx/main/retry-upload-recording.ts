@@ -1,6 +1,6 @@
 import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
 import { TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -18,8 +18,7 @@ const retryUploadFailedFiles = async ({
     }
 
     const failedFiles = (await fileManagerInstance.retryFailedUploads()) || [];
-    const audioInfo = fileManagerInstance?.audioChunks.filter((file) => file.status === 'success');
-    const audioFiles = audioInfo.map((audio) => audio.fileName);
+    const audioFiles = fileManagerInstance.getSuccessfulAudioFileNames();
 
     if (failedFiles.length > 0 && !force_commit) {
       return {
@@ -34,8 +33,8 @@ const retryUploadFailedFiles = async ({
     // call commit transaction api
     const txnID = EkaScribeStore.txnID;
     if (
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.STOP ||
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.COMMIT
     ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: EkaScribeStore.txnID,
@@ -62,14 +61,7 @@ const retryUploadFailedFiles = async ({
         };
       }
 
-      EkaScribeStore.sessionStatus[txnID] = {
-        ...EkaScribeStore.sessionStatus[txnID],
-        api: {
-          status: 'commit',
-          code: txnCommitStatusCode,
-          response: txnCommitMsg,
-        },
-      };
+      EkaScribeStore.updateApiStatus(txnID, API_STATUS.COMMIT, txnCommitStatusCode, txnCommitMsg);
     } else {
       // transaction is not stopped or committed
       return {

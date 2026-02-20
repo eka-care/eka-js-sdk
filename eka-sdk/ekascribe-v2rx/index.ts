@@ -1,7 +1,5 @@
 // ekascribe main Class having all the methods - Entry point
 
-import 'core-js/stable';
-
 import { getConfigV2 } from './api/config/get-voice-api-v2-config';
 import { getVoiceApiV3Status, TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
 import patchTransactionStatus from './api/transaction/patch-transaction-status';
@@ -18,7 +16,7 @@ import {
   SAMPLING_RATE,
   SDK_STATUS_CODE,
 } from './constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
   TEndRecordingResponse,
   TEventCallback,
@@ -36,7 +34,7 @@ import {
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
-import setEnv from './fetch-client/helper';
+import setEnv, { GET_CURRENT_ENV, GET_CLIENT_ID } from './fetch-client/helper';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
 import resumeVoiceRecording from './main/resume-recording';
@@ -102,6 +100,29 @@ class EkaScribe {
     clientId?: string;
     flavour?: string;
   }): EkaScribe {
+    // If env or clientId is changing, reset the instance for a clean slate
+    if (EkaScribe.instance) {
+      const envChanging = env && GET_CURRENT_ENV() !== env;
+      const clientChanging = clientId && GET_CLIENT_ID() !== clientId;
+
+      if (envChanging || clientChanging) {
+        console.warn(
+          `[EkaScribe] Configuration changed` +
+            `${envChanging ? ` (env: ${GET_CURRENT_ENV()} → ${env})` : ''}` +
+            `${clientChanging ? ` (clientId: ${GET_CLIENT_ID()} → ${clientId})` : ''}` +
+            `. Resetting instance.`
+        );
+
+        // Clean up old instance (VAD, mic stream, audio buffers, worker)
+        try {
+          EkaScribe.instance.resetEkaScribe();
+        } catch {
+          // Ignore — sub-instances may not be initialized if initTransaction was never called
+        }
+        EkaScribe.instance = null;
+      }
+    }
+
     setEnv({
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
@@ -244,14 +265,20 @@ class EkaScribe {
       const onEventCallback = EkaScribeStore.eventCallback;
       let txnCommitMsg = '';
 
+      const sessionInfo = EkaScribeStore.sessionStatus[txnID];
+      if (!sessionInfo?.api?.status) {
+        return {
+          error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+          status_code: SDK_STATUS_CODE.TXN_ERROR,
+          message: 'Transaction not initialized.',
+        };
+      }
+
       if (
-        EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
-        EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+        sessionInfo.api.status === API_STATUS.STOP ||
+        sessionInfo.api.status === API_STATUS.COMMIT
       ) {
-        const audioInfo = this.audioFileManagerInstance?.audioChunks.filter(
-          (file) => file.status === 'success'
-        );
-        const audioFiles = audioInfo.map((audio) => audio.fileName);
+        const audioFiles = this.audioFileManagerInstance.getSuccessfulAudioFileNames();
 
         const { message, code: txnCommitStatusCode } = await postTransactionCommit({
           audioFiles,
@@ -279,14 +306,7 @@ class EkaScribe {
           };
         }
 
-        EkaScribeStore.sessionStatus[txnID] = {
-          ...EkaScribeStore.sessionStatus[txnID],
-          api: {
-            status: 'commit',
-            code: txnCommitStatusCode,
-            response: txnCommitMsg,
-          },
-        };
+        EkaScribeStore.updateApiStatus(txnID, API_STATUS.COMMIT, txnCommitStatusCode, txnCommitMsg);
       } else {
         // transaction is not stopped or committed
         return {
@@ -372,7 +392,7 @@ class EkaScribe {
   }
 
   getSuccessFiles() {
-    return this.audioFileManagerInstance.getSuccessfulUploads();
+    return this.audioFileManagerInstance.getSuccessfulAudioFileNames();
   }
 
   getFailedFiles() {
@@ -496,8 +516,8 @@ class EkaScribe {
     return templateSectionsResponse;
   }
 
-  async postTransactionConvertToTemplate({ txn_id, template_id }: TPostV1ConvertToTemplateRequest) {
-    const convertToTemplateResponse = await postV1ConvertToTemplate({ txn_id, template_id });
+  async postTransactionConvertToTemplate(request: TPostV1ConvertToTemplateRequest) {
+    const convertToTemplateResponse = await postV1ConvertToTemplate(request);
     return convertToTemplateResponse;
   }
 
@@ -586,3 +606,67 @@ export const getEkaScribeInstance = ({
   clientId?: string;
   flavour?: string;
 }) => EkaScribe.getInstance({ access_token, env, clientId, flavour });
+
+// Re-export types for consumers
+export type {
+  TGetConfigV2Response,
+  TSelectedPreferences,
+  TGetConfigItem,
+  TConfigSettings,
+  TPatientDetails,
+  TSystemInfo,
+  TStartRecordingResponse,
+  TPauseRecordingResponse,
+  TEndRecordingResponse,
+  TPostTransactionInitRequest,
+  TPostTransactionResponse,
+  TPatchTransactionRequest,
+  TPostCogResponse,
+  TGetTransactionHistoryResponse,
+  TSessionHistoryData,
+  TSessionStatus,
+  TEventCallback,
+  TEventCallbackData,
+  TVadFramesCallback,
+  TVadFrameProcessedCallback,
+  TPartialResultCallback,
+  TPostV1TemplateRequest,
+  TPostV1TemplateResponse,
+  TGetV1TemplatesResponse,
+  TTemplate,
+  TPostV1TemplateSectionRequest,
+  TPostV1TemplateSectionResponse,
+  TSection,
+  TGetV1TemplateSectionsResponse,
+  TPatchVoiceApiV2ConfigRequest,
+  TPatchVoiceApiV2ConfigResponse,
+  TPostV1ConvertToTemplateRequest,
+  TPostV1ConvertToTemplateResponse,
+  TPatchVoiceApiV3StatusRequest,
+  TPatchVoiceApiV3StatusResponse,
+  TPostV1UploadAudioFilesRequest,
+  TCompatibilityTestResult,
+  TCompatibilityTestSummary,
+  TCompatibilityCallback,
+  TGetDoctorHeaderFooterRequest,
+  TGetDoctorHeaderFooterResponse,
+  TGetDoctorClinicsRequest,
+  TGetDoctorClinicsResponse,
+} from './constants/types';
+
+// Re-export enums for consumers
+export {
+  ERROR_CODE,
+  CALLBACK_TYPE,
+  TEMPLATE_ID,
+  RESULT_STATUS,
+  PROCESSING_STATUS,
+  TEMPLATE_TYPE,
+  API_STATUS,
+  VAD_STATUS,
+  COMPATIBILITY_TEST_TYPE,
+  COMPATIBILITY_TEST_STATUS,
+} from './constants/enums';
+
+// Re-export status response type
+export type { TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';

@@ -1,6 +1,7 @@
 import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
 import AudioFileManager from '../audio-chunker/audio-file-manager';
 import VadWebClient from '../audio-chunker/vad-web';
+import { API_STATUS, VAD_STATUS } from '../constants/enums';
 import {
   TEventCallback,
   TSessionStatus,
@@ -119,6 +120,21 @@ class EkaScribeStore {
   }
   set partialResultCallback(callback: TPartialResultCallback | null) {
     this._partialResultCallback = callback;
+  }
+
+  // Session status helpers
+  updateApiStatus(txnID: string, status: API_STATUS, code: number, response?: string): void {
+    if (!this._sessionStatus[txnID]) {
+      this._sessionStatus[txnID] = {};
+    }
+    this._sessionStatus[txnID].api = { status, code, response };
+  }
+
+  updateVadStatus(txnID: string, status: VAD_STATUS): void {
+    if (!this._sessionStatus[txnID]) {
+      this._sessionStatus[txnID] = {};
+    }
+    this._sessionStatus[txnID].vad = { status };
   }
 
   // Reset store to initial state

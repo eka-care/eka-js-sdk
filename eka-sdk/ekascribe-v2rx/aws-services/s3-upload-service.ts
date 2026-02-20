@@ -40,13 +40,15 @@ interface ErrorInfo {
   message: string;
 }
 
-function classifyError(error: any): ErrorInfo {
+function classifyError(error: unknown): ErrorInfo {
+  const err = (typeof error === 'object' && error !== null ? error : {}) as Record<string, unknown>;
+
   // Session expired from token API - permanent
-  if (error?.is_session_expired) {
+  if (err.is_session_expired) {
     return { isPermanent: true, code: 401, message: 'Session expired. Please re-login.' };
   }
 
-  const statusCode = error?.statusCode || error?.code;
+  const statusCode = (err.statusCode || err.code) as number | undefined;
 
   // Permanent errors - don't retry
   if (statusCode === 401) {
@@ -63,7 +65,7 @@ function classifyError(error: any): ErrorInfo {
   return {
     isPermanent: false,
     code: statusCode || 500,
-    message: error?.message || 'Upload failed. Will retry.',
+    message: (err.message as string) || 'Upload failed. Will retry.',
   };
 }
 
@@ -124,8 +126,9 @@ async function uploadToS3(params: S3UploadParams): Promise<Response> {
   const credentials = getConfiguredAwsCredentials();
 
   if (!credentials) {
-    const error: any = new Error('AWS credentials not configured');
-    error.code = 'CredentialsError';
+    const error = Object.assign(new Error('AWS credentials not configured'), {
+      code: 'CredentialsError',
+    });
     throw error;
   }
 
@@ -152,9 +155,10 @@ async function uploadToS3(params: S3UploadParams): Promise<Response> {
   });
 
   if (!response.ok) {
-    const error: any = new Error(response.statusText);
-    error.statusCode = response.status;
-    error.code = response.status === 403 ? 'ExpiredToken' : 'UploadError';
+    const error = Object.assign(new Error(response.statusText), {
+      statusCode: response.status,
+      code: response.status === 403 ? 'ExpiredToken' : 'UploadError',
+    });
     throw error;
   }
 
@@ -214,7 +218,7 @@ export async function uploadFileToS3(
         success: etag || 'Upload successful',
         canRetry: false,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorInfo = classifyError(error);
       lastError = errorInfo;
 
@@ -309,7 +313,7 @@ export async function uploadFileToS3Worker(
         success: etag || 'Upload successful',
         canRetry: false,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorInfo = classifyError(error);
       lastError = errorInfo;
 

@@ -4,6 +4,9 @@ import { resolve } from 'path';
 
 export default defineConfig({
   base: './',
+  esbuild: {
+    pure: ['console.log'],
+  },
   build: {
     target: 'es2020',
     lib: {

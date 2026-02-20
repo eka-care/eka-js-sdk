@@ -9,6 +9,7 @@ import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 async function postV1ConvertToTemplate({
   txn_id,
   template_id,
+  target_language,
 }: TPostV1ConvertToTemplateRequest): Promise<TPostV1ConvertToTemplateResponse> {
   try {
     const headers = new Headers();
@@ -17,11 +18,15 @@ async function postV1ConvertToTemplate({
     const options = {
       method: 'POST',
       headers,
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        ...(target_language && { target_language }),
+      }),
     };
 
     const response = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V1()}/transaction/${txn_id}/convert-to-template/${template_id}`,
+      `${GET_EKA_VOICE_HOST_V1()}/transaction/${txn_id}/convert-to-template/${
+        template_id ? template_id : ''
+      }`,
       options,
       60000
     );
