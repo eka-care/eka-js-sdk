@@ -24,7 +24,6 @@ class AudioFileManager {
   private filePath: string = '';
   public audioChunks: TAudioChunksInfo[] = [];
   private uploadPromises: UploadPromise[] = [];
-  private successfulUploads: string[] = [];
   private totalRawSamples: number = 0;
   private totalRawFrames: number = 0;
   private totalInsertedSamples: number = 0;
@@ -36,7 +35,6 @@ class AudioFileManager {
   initialiseClassInstance() {
     this.audioChunks = [];
     this.uploadPromises = [];
-    this.successfulUploads = [];
     this.totalInsertedFrames = 0;
     this.totalInsertedSamples = 0;
     this.totalRawSamples = 0;
@@ -45,6 +43,13 @@ class AudioFileManager {
 
   constructor() {
     this.initialiseClassInstance();
+  }
+
+  /**
+   * Get count of successfully uploaded chunks (derived from audioChunks — single source of truth)
+   */
+  private getSuccessfulUploadCount(): number {
+    return this.audioChunks.filter((chunk) => chunk.status === 'success').length;
   }
 
   private emitUploadEvent({
@@ -213,7 +218,7 @@ class AudioFileManager {
                 status: 'info',
                 message: 'Audioframes of chunk to store in IDB',
                 data: {
-                  success: this.successfulUploads.length,
+                  success: this.getSuccessfulUploadCount(),
                   total: this.audioChunks.length,
                   fileName,
                   chunkData: compressedAudioBuffer,
@@ -222,10 +227,6 @@ class AudioFileManager {
             }
 
             if (workerResponse.response.success) {
-              if (!this.successfulUploads.includes(fileName)) {
-                this.successfulUploads.push(fileName);
-              }
-
               // remove audioFrames if file uploaded successfully
               if (chunkIndex !== -1) {
                 this.audioChunks[chunkIndex] = {
@@ -241,7 +242,7 @@ class AudioFileManager {
                 status: 'success',
                 message: workerResponse.response.success,
                 data: {
-                  success: this.successfulUploads.length,
+                  success: this.getSuccessfulUploadCount(),
                   total: this.audioChunks.length,
                   is_uploaded: true,
                 },
@@ -258,8 +259,10 @@ class AudioFileManager {
                 },
               });
 
-              // store that audioFrames in audioChunks
-              if (chunkIndex !== -1) {
+              // Only mark as 'failure' if we have a fileBlob to retry with.
+              // If fileBlob is missing (e.g. compression failed in worker),
+              // leave chunk as 'pending' so retry can re-attempt from audioFrames.
+              if (chunkIndex !== -1 && fileBlob) {
                 this.audioChunks[chunkIndex] = {
                   ...this.audioChunks[chunkIndex],
                   fileBlob,
@@ -316,6 +319,18 @@ class AudioFileManager {
 
     const compressedAudioBuffer = compressAudioToMp3(audioFrames);
 
+    // Guard against empty compression result (lamejs failure).
+    // Leave chunk as 'pending' with original audioFrames so retry can re-attempt compression.
+    if (!compressedAudioBuffer || compressedAudioBuffer.length === 0) {
+      this.emitUploadEvent({
+        status: 'error',
+        message: 'MP3 compression failed',
+        data: { fileName, is_uploaded: false },
+        error: { code: 500, msg: 'compressAudioToMp3 returned empty result' },
+      });
+      return { success: false, fileName };
+    }
+
     const audioBlob = new Blob(compressedAudioBuffer as BlobPart[], {
       type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
     });
@@ -324,7 +339,7 @@ class AudioFileManager {
       status: 'info',
       message: 'Audio chunks count to display success/total file count and to store chunks in IDB',
       data: {
-        success: this.successfulUploads.length,
+        success: this.getSuccessfulUploadCount(),
         total: this.audioChunks.length,
         fileName,
         chunkData: compressedAudioBuffer,
@@ -342,10 +357,6 @@ class AudioFileManager {
       businessID: this.businessID,
     }).then((response) => {
       if (response.success) {
-        if (!this.successfulUploads.includes(fileName)) {
-          this.successfulUploads.push(fileName);
-        }
-
         // update file status if file uploaded successfully
         if (chunkIndex !== -1) {
           this.audioChunks[chunkIndex] = {
@@ -361,7 +372,7 @@ class AudioFileManager {
           status: 'success',
           message: response.success,
           data: {
-            success: this.successfulUploads.length,
+            success: this.getSuccessfulUploadCount(),
             total: this.audioChunks.length,
             is_uploaded: true,
           },
@@ -418,7 +429,7 @@ class AudioFileManager {
       status: 'info',
       message: 'Audio chunks count to display success/total file count',
       data: {
-        success: this.successfulUploads.length,
+        success: this.getSuccessfulUploadCount(),
         total: this.audioChunks.length,
       },
     });
@@ -474,10 +485,15 @@ class AudioFileManager {
 
   /**
    * Wait for all upload promises to complete
-   * @param timeoutMs - Maximum time to wait in milliseconds (default: 30 seconds)
+   * @param timeoutMs - Maximum time to wait in milliseconds. If not provided,
+   *                     calculates dynamically: 10s per pending chunk, min 30s, max 120s.
    * @param pollIntervalMs - Interval between polls in milliseconds (default: 500ms)
    */
-  async waitForAllUploads(timeoutMs: number = 10000, pollIntervalMs: number = 500): Promise<void> {
+  async waitForAllUploads(timeoutMs?: number, pollIntervalMs: number = 500): Promise<void> {
+    // Dynamic timeout: 10s per pending chunk, minimum 30s, maximum 60s
+    const pendingCount = this.audioChunks.filter((c) => c.status === 'pending').length;
+    const effectiveTimeout = timeoutMs ?? Math.min(Math.max(30000, pendingCount * 10000), 60000);
+
     if (this.sharedWorkerInstance) {
       // Abort any previous waitForAllUploads listeners to prevent accumulation
       this.waitAbortController?.abort();
@@ -502,12 +518,12 @@ class AudioFileManager {
         // Overall timeout - resolve even if not all uploads complete
         timeoutId = setTimeout(() => {
           console.warn(
-            `[AudioFileManager] waitForAllUploads timed out after ${timeoutMs}ms. ` +
-              `Completed: ${this.successfulUploads.length}/${this.audioChunks.length}`
+            `[AudioFileManager] waitForAllUploads timed out after ${effectiveTimeout}ms. ` +
+              `Completed: ${this.getSuccessfulUploadCount()}/${this.audioChunks.length}`
           );
           cleanup();
           resolve(); // Resolve instead of reject to allow flow to continue
-        }, timeoutMs);
+        }, effectiveTimeout);
 
         const messageHandler = (event: MessageEvent) => {
           if (resolved) return;
@@ -547,22 +563,15 @@ class AudioFileManager {
       const timeoutPromise = new Promise<void>((resolve) => {
         setTimeout(() => {
           console.warn(
-            `[AudioFileManager] waitForAllUploads timed out after ${timeoutMs}ms. ` +
-              `Completed: ${this.successfulUploads.length}/${this.audioChunks.length}`
+            `[AudioFileManager] waitForAllUploads timed out after ${effectiveTimeout}ms. ` +
+              `Completed: ${this.getSuccessfulUploadCount()}/${this.audioChunks.length}`
           );
           resolve();
-        }, timeoutMs);
+        }, effectiveTimeout);
       });
 
       await Promise.race([Promise.allSettled(this.uploadPromises), timeoutPromise]);
     }
-  }
-
-  /**
-   * Get list of successfully uploaded files
-   */
-  getSuccessfulUploads(): string[] {
-    return [...this.successfulUploads];
   }
 
   /**
@@ -611,7 +620,7 @@ class AudioFileManager {
       status: 'info',
       message: 'Retrying failed uploads',
       data: {
-        success: this.successfulUploads.length,
+        success: this.getSuccessfulUploadCount(),
         total: this.audioChunks.length,
       },
     });
@@ -642,7 +651,12 @@ class AudioFileManager {
         }
       });
     } else {
-      this.uploadPromises = []; // Reset upload promises for retries
+      // Wait for any in-flight uploads to settle before retrying,
+      // to avoid racing original uploads with retry uploads on the same chunk
+      if (this.uploadPromises.length > 0) {
+        await Promise.allSettled(this.uploadPromises);
+      }
+      this.uploadPromises = [];
 
       // S3UploadService handles credentials automatically - no pre-check needed
       this.audioChunks.forEach((chunk, index) => {
@@ -672,15 +686,11 @@ class AudioFileManager {
               businessID: this.businessID,
             }).then((response) => {
               if (response.success) {
-                if (!this.successfulUploads.includes(fileName)) {
-                  this.successfulUploads.push(fileName);
-                }
-
                 this.emitUploadEvent({
                   status: 'success',
                   message: 'File uploaded successfully',
                   data: {
-                    success: this.successfulUploads.length,
+                    success: this.getSuccessfulUploadCount(),
                     total: this.audioChunks.length,
                     fileName,
                     is_uploaded: true,

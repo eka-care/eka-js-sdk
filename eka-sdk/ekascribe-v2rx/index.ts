@@ -392,7 +392,7 @@ class EkaScribe {
   }
 
   getSuccessFiles() {
-    return this.audioFileManagerInstance.getSuccessfulUploads();
+    return this.audioFileManagerInstance.getSuccessfulAudioFileNames();
   }
 
   getFailedFiles() {

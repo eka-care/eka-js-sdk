@@ -136,6 +136,21 @@ onconnect = function (event: MessageEvent) {
         } else {
           compressedAudioBuffer = compressAudioToMp3(audioFrames);
 
+          // Guard against empty compression result (lamejs failure)
+          if (!compressedAudioBuffer || compressedAudioBuffer.length === 0) {
+            uploadRequestCompleted++;
+            workerPort.postMessage({
+              action: SHARED_WORKER_ACTION.UPLOAD_FILE_WITH_WORKER_SUCCESS,
+              response: {
+                error: 'MP3 compression failed - no audio data produced',
+                code: 500,
+                canRetry: true,
+              },
+              requestBody: workerData.payload,
+            });
+            return;
+          }
+
           audioBlob = new Blob(compressedAudioBuffer, {
             type: AUDIO_EXTENSION_TYPE_MAP[OUTPUT_FORMAT],
           });

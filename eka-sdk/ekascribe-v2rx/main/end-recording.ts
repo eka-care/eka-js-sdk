@@ -149,7 +149,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         return {
           error_code: ERROR_CODE.TXN_COMMIT_FAILED,
           status_code: txnCommitStatusCode,
-          message: txnCommitMsg || 'Transaction stop failed.',
+          message: txnCommitMsg || 'Transaction commit failed.',
         };
       }
 
