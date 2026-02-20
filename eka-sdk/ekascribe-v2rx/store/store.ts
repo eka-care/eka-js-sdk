@@ -124,17 +124,17 @@ class EkaScribeStore {
 
   // Session status helpers
   updateApiStatus(txnID: string, status: API_STATUS, code: number, response?: string): void {
-    this._sessionStatus[txnID] = {
-      ...this._sessionStatus[txnID],
-      api: { status, code, response },
-    };
+    if (!this._sessionStatus[txnID]) {
+      this._sessionStatus[txnID] = {};
+    }
+    this._sessionStatus[txnID].api = { status, code, response };
   }
 
   updateVadStatus(txnID: string, status: VAD_STATUS): void {
-    this._sessionStatus[txnID] = {
-      ...this._sessionStatus[txnID],
-      vad: { status },
-    };
+    if (!this._sessionStatus[txnID]) {
+      this._sessionStatus[txnID] = {};
+    }
+    this._sessionStatus[txnID].vad = { status };
   }
 
   // Reset store to initial state

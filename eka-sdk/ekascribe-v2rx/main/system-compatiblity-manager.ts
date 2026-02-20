@@ -61,13 +61,15 @@ class SystemCompatibilityManager {
    * Create summary from test results
    */
   private createSummary(results: TCompatibilityTestResult[]): TCompatibilityTestSummary {
-    const passedTests = results.filter(
-      (r) => r.status === COMPATIBILITY_TEST_STATUS.SUCCESS
-    ).length;
-    const failedTests = results.filter((r) => r.status === COMPATIBILITY_TEST_STATUS.ERROR).length;
-    const warningTests = results.filter(
-      (r) => r.status === COMPATIBILITY_TEST_STATUS.WARNING
-    ).length;
+    let passedTests = 0;
+    let failedTests = 0;
+    let warningTests = 0;
+
+    for (const r of results) {
+      if (r.status === COMPATIBILITY_TEST_STATUS.SUCCESS) passedTests++;
+      else if (r.status === COMPATIBILITY_TEST_STATUS.ERROR) failedTests++;
+      else if (r.status === COMPATIBILITY_TEST_STATUS.WARNING) warningTests++;
+    }
 
     return {
       allPassed: passedTests === results.length,
