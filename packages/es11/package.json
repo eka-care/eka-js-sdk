@@ -37,10 +37,5 @@
   "files": [
     "dist",
     "README.md"
-  ],
-  "dependencies": {
-    "webpack": "^5.104.1",
-    "webpack-cli": "^6.0.1",
-    "worker-plugin": "^5.0.1"
-  }
+  ]
 }
