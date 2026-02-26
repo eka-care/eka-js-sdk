@@ -1,5 +1,5 @@
 import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
-import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS } from './enums';
+import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS, API_STATUS, VAD_STATUS } from './enums';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -30,6 +30,7 @@ export type TGetConfigV2Response = {
       'w-n': string;
       'b-id': string;
       is_paid_doc: boolean;
+      is_eka_doc: boolean;
       oid: string;
     };
     selected_preferences?: TSelectedPreferences;
@@ -149,7 +150,7 @@ export type TPostTransactionInitRequest = {
   flavour?: string;
   batch_s3_url?: string;
   audio_file_names?: string[];
-  additional_data?: any;
+  additional_data?: Record<string, unknown>;
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
@@ -264,13 +265,13 @@ export type TVadFramesCallback = (args: {
 export type TSessionStatus = {
   [key: string]: {
     api?: {
-      status: 'na' | 'init' | 'stop' | 'commit';
+      status: API_STATUS;
       error?: string;
       response?: string;
       code: number;
     };
     vad?: {
-      status: 'start' | 'pause' | 'stop' | 'resume';
+      status: VAD_STATUS;
     };
   };
 };
@@ -388,7 +389,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
     consult_language?: string[];
     contact_number?: string;
     onboarding_step?: string;
-    sys_info?: any;
+    sys_info?: TSystemInfo;
   };
   query_params?: string;
 };
@@ -401,8 +402,9 @@ export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRe
 
 export type TPostV1ConvertToTemplateRequest = {
   txn_id: string;
-  template_id: string;
+  template_id?: string;
   transcript?: string;
+  target_language?: string;
 };
 
 export type TPostV1ConvertToTemplateResponse = {
@@ -468,7 +470,7 @@ export type TCompatibilityTestResult = {
   test_type: string;
   status: COMPATIBILITY_TEST_STATUS;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: string;
   error?: string;
 };
@@ -519,7 +521,7 @@ export type TDoctorHeaderFooterInfo = {
 };
 
 export type TGetDoctorHeaderFooterResponse = {
-  data: TDoctorHeaderFooterInfo | null;
+  data: TDoctorHeaderFooterInfo;
   code: number;
   message?: string;
 };

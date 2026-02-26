@@ -1,5 +1,5 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { ERROR_CODE } from '../constants/enums';
+import { ERROR_CODE, VAD_STATUS } from '../constants/enums';
 import { TPauseRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -13,12 +13,7 @@ const resumeVoiceRecording = (): TPauseRecordingResponse => {
 
     vadInstance.startVad();
     const txn_id = EkaScribeStore.txnID;
-    EkaScribeStore.sessionStatus[txn_id] = {
-      ...EkaScribeStore.sessionStatus[txn_id],
-      vad: {
-        status: 'resume',
-      },
-    };
+    EkaScribeStore.updateVadStatus(txn_id, VAD_STATUS.RESUME);
 
     return {
       status_code: SDK_STATUS_CODE.SUCCESS,

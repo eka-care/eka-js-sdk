@@ -1,7 +1,7 @@
 import postTransactionCommit from '../api/transaction/post-transaction-commit';
 import postTransactionStop from '../api/transaction/post-transaction-stop';
 import { OUTPUT_FORMAT, SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { API_STATUS, CALLBACK_TYPE, ERROR_CODE, VAD_STATUS } from '../constants/enums';
 import { TAudioChunksInfo, TEndRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
 
@@ -19,12 +19,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
 
     vadInstance.pauseVad();
     vadInstance.destroyVad();
-    EkaScribeStore.sessionStatus[txnID] = {
-      ...EkaScribeStore.sessionStatus[txnID],
-      vad: {
-        status: 'stop',
-      },
-    };
+    EkaScribeStore.updateVadStatus(txnID, VAD_STATUS.STOP);
 
     // upload last audio chunk
     if (audioBufferInstance.getCurrentSampleLength() > 0) {
@@ -70,7 +65,7 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     console.log(audioFiles, 'Audio files to be committed, - endVoiceRecording - SDLK');
 
     // call stop txn api
-    if (EkaScribeStore.sessionStatus[txnID].api?.status === 'init') {
+    if (EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.INIT) {
       const { message: txnStopMsg, code: txnStopStatusCode } = await postTransactionStop({
         audioFiles,
         txnId: txnID,
@@ -96,15 +91,8 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         };
       }
 
-      EkaScribeStore.sessionStatus[txnID] = {
-        ...EkaScribeStore.sessionStatus[txnID],
-        api: {
-          status: 'stop',
-          code: txnStopStatusCode,
-          response: txnStopMsg,
-        },
-      };
-    } else if (EkaScribeStore.sessionStatus[txnID].api?.status === 'na') {
+      EkaScribeStore.updateApiStatus(txnID, API_STATUS.STOP, txnStopStatusCode, txnStopMsg);
+    } else if (EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.NOT_INITIALIZED) {
       // transaction is not initialised
       return {
         error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
@@ -135,13 +123,10 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
     }
 
     // call commit transaction api
-    const successfullyUploadedAudioInfo = audioInfo.filter((file) => file.status === 'success');
-    const successfullyUploadedAudioFiles = successfullyUploadedAudioInfo.map(
-      (file) => file.fileName
-    );
+    const successfullyUploadedAudioFiles = fileManagerInstance.getSuccessfulAudioFileNames();
     if (
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'stop' ||
-      EkaScribeStore.sessionStatus[txnID].api?.status === 'commit'
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.STOP ||
+      EkaScribeStore.sessionStatus[txnID].api?.status === API_STATUS.COMMIT
     ) {
       const { message: txnCommitMsg, code: txnCommitStatusCode } = await postTransactionCommit({
         txnId: txnID,
@@ -164,18 +149,11 @@ const endVoiceRecording = async (): Promise<TEndRecordingResponse> => {
         return {
           error_code: ERROR_CODE.TXN_COMMIT_FAILED,
           status_code: txnCommitStatusCode,
-          message: txnCommitMsg || 'Transaction stop failed.',
+          message: txnCommitMsg || 'Transaction commit failed.',
         };
       }
 
-      EkaScribeStore.sessionStatus[txnID] = {
-        ...EkaScribeStore.sessionStatus[txnID],
-        api: {
-          status: 'commit',
-          code: txnCommitStatusCode,
-          response: txnCommitMsg,
-        },
-      };
+      EkaScribeStore.updateApiStatus(txnID, API_STATUS.COMMIT, txnCommitStatusCode, txnCommitMsg);
     } else {
       // transaction is not stopped or committed
       return {
