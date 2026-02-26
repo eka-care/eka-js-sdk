@@ -1,3 +1,17 @@
+export enum API_STATUS {
+  NOT_INITIALIZED = 'na',
+  INIT = 'init',
+  STOP = 'stop',
+  COMMIT = 'commit',
+}
+
+export enum VAD_STATUS {
+  START = 'start',
+  PAUSE = 'pause',
+  RESUME = 'resume',
+  STOP = 'stop',
+}
+
 export enum TEMPLATE_ID {
   EKA_EMR_TEMPLATE = 'eka_emr_template',
   CLINICAL_NOTE_TEMPLATE = 'clinical_notes_template',
@@ -54,6 +68,7 @@ export enum SHARED_WORKER_ACTION {
   REQUEST_TOKEN_REFRESH = 'request_token_refresh',
   TOKEN_REFRESH_SUCCESS = 'token_refresh_success',
   TOKEN_REFRESH_ERROR = 'token_refresh_error',
+  RESET_UPLOAD_COUNTERS = 'reset_upload_counters',
 }
 
 export enum CALLBACK_TYPE {

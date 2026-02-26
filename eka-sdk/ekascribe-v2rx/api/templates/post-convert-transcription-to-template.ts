@@ -10,6 +10,7 @@ async function postConvertTranscriptionToTemplate({
   txn_id,
   template_id,
   transcript,
+  target_language,
 }: TPostV1ConvertToTemplateRequest): Promise<TPostV1ConvertToTemplateResponse> {
   try {
     const headers = new Headers();
@@ -19,8 +20,9 @@ async function postConvertTranscriptionToTemplate({
       method: 'POST',
       headers,
       body: JSON.stringify({
-        transcript,
-        template_id,
+        ...(transcript && { transcript }),
+        ...(template_id && { template_id }),
+        ...(target_language && { target_language }),
       }),
     };
 

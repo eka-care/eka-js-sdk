@@ -12,10 +12,20 @@ class AudioBufferManager {
    * @param allocationTimeInSeconds - The size of each incremental allocation in seconds
    */
   constructor(samplingRate: number, allocationTimeInSeconds: number) {
+    if (samplingRate <= 0 || allocationTimeInSeconds <= 0) {
+      throw new Error(
+        `[EkaScribe] Invalid AudioBufferManager params: samplingRate=${samplingRate}, allocationTime=${allocationTimeInSeconds}. Both must be positive.`
+      );
+    }
+
     this.samplingRate = samplingRate;
 
-    // Calculate the size of each incremental allocation in samples
-    this.incrementalAllocationSize = Math.floor(samplingRate * allocationTimeInSeconds);
+    // Calculate the size of each incremental allocation in samples (minimum 100ms worth)
+    const minAllocationSize = Math.floor(samplingRate * 0.1);
+    this.incrementalAllocationSize = Math.max(
+      Math.floor(samplingRate * allocationTimeInSeconds),
+      minAllocationSize
+    );
 
     // Initialize buffer with the first allocation block
     this.buffer = new Float32Array(this.incrementalAllocationSize);
@@ -94,21 +104,21 @@ class AudioBufferManager {
     start: string;
     end: string;
   } {
-    const start = rawSamplesLength / SAMPLING_RATE - this.getDurationInSeconds();
+    const start = Math.max(0, rawSamplesLength / SAMPLING_RATE - this.getDurationInSeconds());
     const end = start + this.getDurationInSeconds();
 
     // Format start time as MM:SS.ffffff
     const startMinutes = Math.floor(start / 60)
       .toString()
       .padStart(2, '0');
-    const startSeconds = (start % 60).toFixed(6).toString().padStart(2, '0');
+    const startSeconds = (start % 60).toFixed(6).padStart(9, '0');
     const formattedStartTime = `${startMinutes}:${startSeconds}`;
 
     // Format end time as MM:SS.ffffff
     const endMinutes = Math.floor(end / 60)
       .toString()
       .padStart(2, '0');
-    const endSeconds = (end % 60).toFixed(6).toString().padStart(2, '0');
+    const endSeconds = (end % 60).toFixed(6).padStart(9, '0');
     const formattedEndTime = `${endMinutes}:${endSeconds}`;
 
     // Return timestamp object
