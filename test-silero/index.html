@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Silero VAD Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0f0f0f; color: #e0e0e0; padding: 24px; }
+    h1 { font-size: 18px; color: #fff; margin-bottom: 6px; }
+    .subtitle { font-size: 12px; color: #555; margin-bottom: 20px; }
+
+    .upload-area {
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 24px;
+    }
+    .upload-area:hover { border-color: #888; }
+    .upload-area label { cursor: pointer; color: #aaa; font-size: 14px; }
+    .upload-area input { display: none; }
+
+    .constants-box {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+    .constants-box span { color: #ccc; }
+
+    .file-result {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #222;
+      padding: 12px 18px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-name { font-size: 14px; color: #fff; font-weight: bold; }
+    .file-meta { font-size: 12px; color: #888; }
+
+    .summary-bar {
+      padding: 12px 18px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      gap: 28px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { color: #e0e0e0; font-size: 13px; }
+
+    /* Timeline */
+    .timeline-wrap { padding: 14px 18px; border-bottom: 1px solid #2a2a2a; }
+    .timeline-label { font-size: 11px; color: #555; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .timeline {
+      height: 22px;
+      background: #111;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+    }
+    .tl-frame { height: 100%; flex-shrink: 0; }
+    .tl-speech  { background: #4caf50; }
+    .tl-silence { background: #1e1e1e; }
+    .tl-clip    { background: #f44336; width: 2px !important; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      background: #1e1e1e; padding: 8px 14px; text-align: left;
+      color: #666; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.5px; border-bottom: 1px solid #2a2a2a;
+    }
+    td { padding: 7px 14px; border-bottom: 1px solid #1e1e1e; color: #ccc; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e1e1e; }
+
+    .clip-PREF { color: #4caf50; }
+    .clip-DESP { color: #ff9800; }
+    .clip-MAX  { color: #f44336; }
+    .clip-END  { color: #888; }
+
+    .speech-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; width: 80px; }
+    .speech-fill  { background: #4caf50; }
+    .silence-fill { background: #333; }
+
+    .status {
+      padding: 18px;
+      font-size: 13px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #333;
+      border-top-color: #888;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { color: #f44336; padding: 18px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<h1>Silero VAD Test</h1>
+<div class="subtitle">Uses real Silero neural network — same model as the SDK</div>
+
+<div class="constants-box">
+  <div>FRAME_SIZE: <span>1024</span></div>
+  <div>FRAME_RATE: <span>15.625 fps</span></div>
+  <div>PREF_CHUNK: <span>10s</span></div>
+  <div>DESP_CHUNK: <span>20s</span></div>
+  <div>MAX_CHUNK: <span>25s</span></div>
+  <div>LONG_SIL_THRESHOLD: <span>0.25s</span></div>
+  <div>SHORT_SIL_THRESHOLD: <span>0.1s</span></div>
+  <div>SPEECH_THRESHOLD: <span>0.5 (Silero)</span></div>
+  <div>PRE_SPEECH_PAD_FRAMES: <span>20</span></div>
+</div>
+
+<div id="upload-area" class="upload-area">
+  <label for="file-input">
+    Drop audio files here or click to select<br/>
+    <small style="color:#555; margin-top:6px; display:block;">MP3, WAV, M4A, OGG — multiple files — model loads on first use</small>
+  </label>
+  <input type="file" id="file-input" accept="audio/*" multiple />
+</div>
+
+<div id="results"></div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -158,31 +158,42 @@ class VadWebClient {
 
     const sample_passed: number = this.vad_frame_count - this.last_clip_index;
 
-    if (sample_passed > this.pref_length_samples) {
-      if (this.sil_duration_acc > this.long_thsld) {
-        this.last_clip_index =
-          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.last_clip_point = this.last_clip_index;
-        this.sil_duration_acc = 0;
-        is_clip_point_frame = true;
-      }
-    }
-
-    if (sample_passed > this.desp_length_samples) {
-      if (this.sil_duration_acc > this.shor_thsld) {
-        this.last_clip_index =
-          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
-        this.last_clip_point = this.last_clip_index;
-        this.sil_duration_acc = 0;
-        is_clip_point_frame = true;
-      }
-    }
-
     if (sample_passed >= this.max_length_samples) {
+      console.log(
+        `[VAD] Max length exceeded: sample_passed=${sample_passed}. Clipping at frame ${this.vad_frame_count}.`
+      );
       this.last_clip_index = this.vad_frame_count;
       this.last_clip_point = this.last_clip_index;
       this.sil_duration_acc = 0;
       is_clip_point_frame = true;
+    }
+
+    if (sample_passed > this.desp_length_samples) {
+      console.log(`[VAD] Checking clip point: sample_passed=${sample_passed} > desperate length`);
+      if (this.sil_duration_acc > this.shor_thsld) {
+        console.log(
+          `[VAD] Short silence detected: sil_duration_acc=${this.sil_duration_acc}. Clipping at frame ${this.vad_frame_count}.`
+        );
+        this.last_clip_index =
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
+        this.sil_duration_acc = 0;
+        is_clip_point_frame = true;
+      }
+    }
+
+    if (sample_passed > this.pref_length_samples) {
+      console.log(`[VAD] Checking clip point: sample_passed=${sample_passed} > preferred length`);
+      if (this.sil_duration_acc > this.long_thsld) {
+        console.log(
+          `[VAD] Long silence detected: sil_duration_acc=${this.sil_duration_acc}. Clipping at frame ${this.vad_frame_count}.`
+        );
+        this.last_clip_index =
+          this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
+        this.last_clip_point = this.last_clip_index;
+        this.sil_duration_acc = 0;
+        is_clip_point_frame = true;
+      }
     }
 
     this.vad_frame_count++;
@@ -253,6 +264,8 @@ class VadWebClient {
           // Check if audio chunk needs to be clipped
           const { isSpeech } = prob;
           let vad_dec = 0;
+
+          // isSpeech >= 0.5 only for human speech detection
           if (isSpeech >= 0.5) {
             vad_dec = 1;
           }
@@ -266,6 +279,10 @@ class VadWebClient {
           if (is_clip_point) {
             // audio chunk is of float32 Array <ArrayBuffer>
             const activeAudioChunk = audioBuffer?.getAudioData();
+
+            console.log(
+              `[VAD] Clip point detected at sample length ${audioBuffer?.getCurrentSampleLength()}. Processing audio chunk.`
+            );
             this.processAudioChunk({ audioFrames: activeAudioChunk });
           }
         },
@@ -335,6 +352,13 @@ class VadWebClient {
       audioFileManager?.incrementInsertedSamples(
         audioBuffer.getCurrentSampleLength(),
         audioBuffer.getCurrentFrameLength()
+      );
+
+      console.log(
+        'Reset buffer state after processing chunk. Current sample length:',
+        audioBuffer.getCurrentSampleLength(),
+        'Current audio file:',
+        fileName
       );
       audioBuffer.resetBufferState();
 
