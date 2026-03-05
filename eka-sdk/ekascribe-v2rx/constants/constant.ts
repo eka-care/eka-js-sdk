@@ -3,11 +3,11 @@ export const DESP_CHUNK_LENGTH = 20;
 export const MAX_CHUNK_LENGTH = 25;
 export const FRAME_SIZE = 1024;
 export const SAMPLING_RATE = 16000;
-export const DURATION_PER_FRAME = FRAME_SIZE / SAMPLING_RATE;
+export const DURATION_PER_FRAME = FRAME_SIZE / SAMPLING_RATE; // 1 frame = 0.064 sec
 export const SILENCE_THRESHOLD = 0.01;
-export const FRAME_RATE = SAMPLING_RATE / FRAME_SIZE;
+export const FRAME_RATE = SAMPLING_RATE / FRAME_SIZE; // 15.625 frames = 1 second
 export const SHORT_SILENCE_THRESHOLD = 0.1;
-export const LONG_SILENCE_THRESHOLD = 0.5;
+export const LONG_SILENCE_THRESHOLD = 0.25;
 export const SPEECH_DETECTION_THRESHOLD = 0.5;
 // export const REDEMPTION_FRAMES = 10;
 export const PRE_SPEECH_PAD_FRAMES = 20;
