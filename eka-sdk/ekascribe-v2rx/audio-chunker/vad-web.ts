@@ -1,4 +1,5 @@
 import { MicVAD } from '@ricky0123/vad-web';
+import { addBreadcrumb, captureEvent } from '../sentry/index';
 import {
   FRAME_SIZE,
   LONG_SILENCE_THRESHOLD,
@@ -213,6 +214,7 @@ class VadWebClient {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     this.is_vad_loading = true;
 
+    // TODO: add sentry log here
     // If we're re-initializing, make sure we don't leak an existing stream.
     this.stopMicStream();
 
@@ -283,6 +285,11 @@ class VadWebClient {
             console.log(
               `[VAD] Clip point detected at sample length ${audioBuffer?.getCurrentSampleLength()}. Processing audio chunk.`
             );
+            addBreadcrumb('vad.clip', 'Clip point triggered', {
+              audioData_length: activeAudioChunk?.length,
+              slice_from: 0,
+              slice_to: audioBuffer?.getCurrentSampleLength(),
+            });
             this.processAudioChunk({ audioFrames: activeAudioChunk });
           }
         },
@@ -354,20 +361,25 @@ class VadWebClient {
         audioBuffer.getCurrentFrameLength()
       );
 
-      console.log(
-        'Reset buffer state after processing chunk. Current sample length:',
-        audioBuffer.getCurrentSampleLength(),
-        'Current audio file:',
-        fileName
-      );
+      addBreadcrumb('buffer.reset', `Buffer reset for ${fileName}`, {
+        fileName,
+        samples_before_reset: audioBuffer.getCurrentSampleLength(),
+      });
       audioBuffer.resetBufferState();
+
+      addBreadcrumb('buffer.reset', `Buffer reset for ${fileName}`, {
+        fileName,
+        samples_after_reset: audioBuffer.getCurrentSampleLength(),
+      });
 
       await audioFileManager.uploadAudioToS3({
         audioFrames,
         fileName,
         chunkIndex: audioChunkLength - 1,
       });
+      captureEvent(`Chunk uploaded: ${fileName}`, { fileName, chunk_index: audioChunkLength - 1 });
     } catch (error) {
+      // TODO: add sentry log here
       console.error('[EkaScribe] Error uploading audio chunk:', error);
 
       // Mark chunk as failed so endRecording's retry flow picks it up
