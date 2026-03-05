@@ -35,6 +35,7 @@ import {
   TVadFramesCallback,
 } from './constants/types';
 import setEnv, { GET_CURRENT_ENV, GET_CLIENT_ID } from './fetch-client/helper';
+import { initSentry, addBreadcrumb } from './sentry/index';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
 import resumeVoiceRecording from './main/resume-recording';
@@ -94,12 +95,15 @@ class EkaScribe {
     env,
     clientId,
     flavour,
+    enableSentryLogs = true,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
     clientId?: string;
     flavour?: string;
+    enableSentryLogs?: boolean;
   }): EkaScribe {
+    EkaScribeStore.enableSentryLogs = enableSentryLogs;
     // If env or clientId is changing, reset the instance for a clean slate
     if (EkaScribe.instance) {
       const envChanging = env && GET_CURRENT_ENV() !== env;
@@ -132,6 +136,9 @@ class EkaScribe {
 
     if (!EkaScribe.instance) {
       EkaScribe.instance = new EkaScribe();
+      if (enableSentryLogs) {
+        initSentry(env ?? 'PROD');
+      }
     }
 
     return EkaScribe.instance;
@@ -175,7 +182,14 @@ class EkaScribe {
     );
     EkaScribeStore.vadInstance = this.vadInstance;
 
-    console.log('Initialising SDK Instances ', EkaScribeStore);
+    addBreadcrumb('instance.check', 'initTransaction', {
+      txn_id: EkaScribeStore.txnID,
+      vadInstance_exists: !!EkaScribeStore.vadInstance,
+      audioFileManager_exists: !!EkaScribeStore.audioFileManagerInstance,
+      audioBuffer_exists: !!EkaScribeStore.audioBufferInstance,
+      audioBuffer_currentSamples: EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
+      audioChunks_count: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
+    });
 
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
@@ -600,12 +614,14 @@ export const getEkaScribeInstance = ({
   env,
   clientId,
   flavour,
+  enableSentryLogs = true,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
   flavour?: string;
-}) => EkaScribe.getInstance({ access_token, env, clientId, flavour });
+  enableSentryLogs?: boolean;
+}) => EkaScribe.getInstance({ access_token, env, clientId, flavour, enableSentryLogs });
 
 // Re-export types for consumers
 export type {

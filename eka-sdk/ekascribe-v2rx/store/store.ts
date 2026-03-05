@@ -23,6 +23,7 @@ class EkaScribeStore {
   private _vadFramesCallback: TVadFramesCallback | null = null;
   private _vadFrameProcessedCallback: TVadFrameProcessedCallback | null = null;
   private _partialResultCallback: TPartialResultCallback | null = null;
+  private _enableSentryLogs: boolean = true;
 
   static getInstance(): EkaScribeStore {
     if (!EkaScribeStore.instance) {
@@ -120,6 +121,14 @@ class EkaScribeStore {
   }
   set partialResultCallback(callback: TPartialResultCallback | null) {
     this._partialResultCallback = callback;
+  }
+
+  // Sentry logging flag
+  get enableSentryLogs(): boolean {
+    return this._enableSentryLogs;
+  }
+  set enableSentryLogs(value: boolean) {
+    this._enableSentryLogs = value;
   }
 
   // Session status helpers

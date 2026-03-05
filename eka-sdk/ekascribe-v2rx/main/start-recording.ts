@@ -2,6 +2,7 @@ import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE, VAD_STATUS } from '../constants/enums';
 import { TStartRecordingResponse } from '../constants/types';
 import EkaScribeStore from '../store/store';
+import { addBreadcrumb } from '../sentry/index';
 
 const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordingResponse> => {
   try {
@@ -34,6 +35,14 @@ const startVoiceRecording = async (microphoneID?: string): Promise<TStartRecordi
       };
     }
 
+    addBreadcrumb('instance.check', 'startRecording', {
+      txn_id: EkaScribeStore.txnID,
+      vadInstance_exists: !!EkaScribeStore.vadInstance,
+      audioFileManager_exists: !!EkaScribeStore.audioFileManagerInstance,
+      audioBuffer_exists: !!EkaScribeStore.audioBufferInstance,
+      audioBuffer_currentSamples: EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
+      audioChunks_count: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
+    });
     await vadInstance.initVad(microphoneID);
 
     const micVad = vadInstance.getMicVad();
