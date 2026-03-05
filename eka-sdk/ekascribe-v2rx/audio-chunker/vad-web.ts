@@ -214,7 +214,11 @@ class VadWebClient {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     this.is_vad_loading = true;
 
-    // TODO: add sentry log here
+    addBreadcrumb('vad.init', 'VAD initializing', {
+      deviceId: deviceId ?? 'default',
+      txn_id: EkaScribeStore.txnID,
+      audioBuffer_currentSamples: audioBuffer?.getCurrentSampleLength() ?? null,
+    });
     // If we're re-initializing, make sure we don't leak an existing stream.
     this.stopMicStream();
 
@@ -379,7 +383,10 @@ class VadWebClient {
       });
       captureEvent(`Chunk uploaded: ${fileName}`, { fileName, chunk_index: audioChunkLength - 1 });
     } catch (error) {
-      // TODO: add sentry log here
+      captureEvent(`Chunk upload failed: <processAudioChunk>: ${fileName}`, {
+        fileName,
+        error: error instanceof Error ? error.message : String(error),
+      });
       console.error('[EkaScribe] Error uploading audio chunk:', error);
 
       // Mark chunk as failed so endRecording's retry flow picks it up
