@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VAD Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0f0f0f; color: #e0e0e0; padding: 24px; }
+    h1 { font-size: 18px; color: #fff; margin-bottom: 20px; }
+
+    .upload-area {
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: border-color 0.2s;
+    }
+    .upload-area:hover { border-color: #888; }
+    .upload-area input { display: none; }
+    .upload-area label { cursor: pointer; color: #aaa; font-size: 14px; }
+
+    .constants-box {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .constants-box span { color: #ccc; }
+
+    .file-result {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #222;
+      padding: 12px 18px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-name { font-size: 14px; color: #fff; font-weight: bold; }
+    .file-meta { font-size: 12px; color: #888; }
+
+    .summary-bar {
+      padding: 12px 18px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      gap: 24px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { color: #e0e0e0; font-size: 13px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      background: #1e1e1e;
+      padding: 8px 14px;
+      text-align: left;
+      color: #666;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    td {
+      padding: 7px 14px;
+      border-bottom: 1px solid #1e1e1e;
+      color: #ccc;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e1e1e; }
+
+    .clip-PREF { color: #4caf50; }
+    .clip-DESP { color: #ff9800; }
+    .clip-MAX  { color: #f44336; }
+
+    .speech-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      width: 80px;
+    }
+    .speech-fill { background: #4caf50; }
+    .silence-fill { background: #333; }
+
+    .processing { color: #888; padding: 18px; font-size: 13px; }
+    .error-msg { color: #f44336; padding: 18px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<h1>VAD Clip Logic Tester</h1>
+
+<!-- Constants display -->
+<div class="constants-box">
+  <div>FRAME_SIZE: <span>1024</span></div>
+  <div>SAMPLING_RATE: <span>16000 Hz</span></div>
+  <div>FRAME_RATE: <span>15.625 frames/s</span></div>
+  <div>PREF_CHUNK: <span>10s (156.25 frames)</span></div>
+  <div>DESP_CHUNK: <span>20s (312.5 frames)</span></div>
+  <div>MAX_CHUNK: <span>25s (390.6 frames)</span></div>
+  <div>LONG_SIL_THRESHOLD: <span>0.25s (3.9 frames)</span></div>
+  <div>SHORT_SIL_THRESHOLD: <span>0.1s (1.56 frames)</span></div>
+  <div>RMS_SPEECH_THRESHOLD: <span id="rms-display">0.01</span></div>
+  <div>
+    Tune RMS:
+    <input type="range" id="rms-slider" min="0.001" max="0.1" step="0.001" value="0.01"
+      style="width:80px; vertical-align:middle;"
+      oninput="document.getElementById('rms-display').textContent = parseFloat(this.value).toFixed(3)" />
+  </div>
+</div>
+
+<!-- Upload -->
+<div class="upload-area" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+  <label for="file-input">
+    Drop audio files here or click to select<br/>
+    <small style="color:#555; margin-top:6px; display:block;">MP3, WAV, M4A, OGG — multiple files supported</small>
+  </label>
+  <input type="file" id="file-input" accept="audio/*" multiple onchange="handleFiles(this.files)" />
+</div>
+
+<div id="results"></div>
+
+<script>
+  // ─── Exact constants from constants/constant.ts ───────────────────────────
+  const FRAME_SIZE              = 1024;
+  const SAMPLING_RATE           = 16000;
+  const FRAME_RATE              = SAMPLING_RATE / FRAME_SIZE;   // 15.625
+  const PREF_CHUNK_LENGTH       = 10;
+  const DESP_CHUNK_LENGTH       = 20;
+  const MAX_CHUNK_LENGTH        = 25;
+  const SHORT_SILENCE_THRESHOLD = 0.1;
+  const LONG_SILENCE_THRESHOLD  = 0.25;
+
+  // ─── Exact processVadFrame from vad-web.ts ────────────────────────────────
+  function makeVadState(sr) {
+    return {
+      vad_frame_count:      0,
+      last_clip_index:      0,
+      last_clip_point:      0,
+      sil_duration_acc:     0,
+      pref_length_samples:  PREF_CHUNK_LENGTH * sr,
+      desp_length_samples:  DESP_CHUNK_LENGTH * sr,
+      max_length_samples:   MAX_CHUNK_LENGTH  * sr,
+      shor_thsld:           SHORT_SILENCE_THRESHOLD * sr,
+      long_thsld:           LONG_SILENCE_THRESHOLD  * sr,
+    };
+  }
+
+  // Exact replica of processVadFrame in vad-web.ts
+  function processVadFrame(state, vad_frame) {
+    let is_clip_point_frame = false;
+    let clip_type = null;
+
+    if (state.vad_frame_count > 0) {
+      if (vad_frame === 0) {
+        state.sil_duration_acc = Math.min(
+          state.sil_duration_acc + 1,
+          state.max_length_samples * 2
+        );
+      }
+      if (vad_frame === 1) {
+        state.sil_duration_acc = 0;
+      }
+    }
+
+    const sample_passed = state.vad_frame_count - state.last_clip_index;
+
+    if (sample_passed > state.pref_length_samples) {
+      if (state.sil_duration_acc > state.long_thsld) {
+        state.last_clip_index =
+          state.vad_frame_count - Math.min(Math.floor(state.sil_duration_acc / 2), 5);
+        state.last_clip_point = state.last_clip_index;
+        state.sil_duration_acc = 0;
+        is_clip_point_frame = true;
+        clip_type = 'PREF';
+      }
+    }
+
+    if (sample_passed > state.desp_length_samples) {
+      if (state.sil_duration_acc > state.shor_thsld) {
+        state.last_clip_index =
+          state.vad_frame_count - Math.min(Math.floor(state.sil_duration_acc / 2), 5);
+        state.last_clip_point = state.last_clip_index;
+        state.sil_duration_acc = 0;
+        is_clip_point_frame = true;
+        clip_type = 'DESP';
+      }
+    }
+
+    if (sample_passed >= state.max_length_samples) {
+      state.last_clip_index = state.vad_frame_count;
+      state.last_clip_point = state.last_clip_index;
+      state.sil_duration_acc = 0;
+      is_clip_point_frame = true;
+      clip_type = 'MAX';
+    }
+
+    state.vad_frame_count++;
+
+    return { clipped: is_clip_point_frame, clip_type, clip_point: state.last_clip_point };
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function toTimestamp(frames) {
+    const secs = frames / FRAME_RATE;
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toFixed(2).padStart(5, '0');
+    return `${m}:${s}`;
+  }
+
+  function rms(frame) {
+    let sum = 0;
+    for (let i = 0; i < frame.length; i++) sum += frame[i] * frame[i];
+    return Math.sqrt(sum / frame.length);
+  }
+
+  // ─── Process one audio file ──────────────��────────────────────────────────
+  async function processFile(file) {
+    const RMS_THRESHOLD = parseFloat(document.getElementById('rms-slider').value);
+    const arrayBuffer  = await file.arrayBuffer();
+    const ctx          = new AudioContext({ sampleRate: SAMPLING_RATE });
+    const decoded      = await ctx.decodeAudioData(arrayBuffer);
+    await ctx.close();
+
+    // Downmix to mono
+    const samples = decoded.numberOfChannels > 1
+      ? (() => {
+          const out = new Float32Array(decoded.length);
+          for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
+            const chData = decoded.getChannelData(ch);
+            for (let i = 0; i < out.length; i++) out[i] += chData[i];
+          }
+          for (let i = 0; i < out.length; i++) out[i] /= decoded.numberOfChannels;
+          return out;
+        })()
+      : decoded.getChannelData(0);
+
+    const totalFrames    = Math.floor(samples.length / FRAME_SIZE);
+    const totalDurationS = (decoded.length / SAMPLING_RATE).toFixed(2);
+
+    const state  = makeVadState(FRAME_RATE);
+    const chunks = [];  // { startFrame, endFrame, frames, speechFrames, silenceFrames, clipType }
+
+    let chunkStart   = 0;
+    let speechFrames = 0;
+    let silenceFrames = 0;
+    let totalSpeech  = 0;
+    let totalSilence = 0;
+
+    for (let f = 0; f < totalFrames; f++) {
+      const frame     = samples.slice(f * FRAME_SIZE, (f + 1) * FRAME_SIZE);
+      const frameRms  = rms(frame);
+      const vad_dec   = frameRms >= RMS_THRESHOLD ? 1 : 0;
+
+      if (vad_dec === 1) { speechFrames++;  totalSpeech++;  }
+      else               { silenceFrames++; totalSilence++; }
+
+      const { clipped, clip_type } = processVadFrame(state, vad_dec);
+
+      if (clipped) {
+        chunks.push({
+          startFrame:    chunkStart,
+          endFrame:      f,
+          frames:        f - chunkStart,
+          speechFrames,
+          silenceFrames,
+          clipType:      clip_type,
+        });
+        chunkStart    = f + 1;
+        speechFrames  = 0;
+        silenceFrames = 0;
+      }
+    }
+
+    // Remaining frames after last clip (what endRecording() would flush)
+    if (state.vad_frame_count > state.last_clip_index) {
+      const remaining = state.vad_frame_count - state.last_clip_index;
+      if (remaining > 0) {
+        chunks.push({
+          startFrame:    chunkStart,
+          endFrame:      totalFrames,
+          frames:        remaining,
+          speechFrames,
+          silenceFrames,
+          clipType:      'END',
+        });
+      }
+    }
+
+    return { file, totalFrames, totalDurationS, chunks, totalSpeech, totalSilence };
+  }
+
+  // ─── Render result ────────────────────────────────────────────────────────
+  function renderResult(result) {
+    const { file, totalDurationS, chunks, totalSpeech, totalSilence } = result;
+    const totalFrames   = totalSpeech + totalSilence;
+    const speechPct     = totalFrames > 0 ? ((totalSpeech / totalFrames) * 100).toFixed(1) : 0;
+    const silencePct    = totalFrames > 0 ? ((totalSilence / totalFrames) * 100).toFixed(1) : 0;
+    const avgChunkLen   = chunks.length > 0
+      ? (chunks.reduce((s, c) => s + c.frames, 0) / chunks.length / FRAME_RATE).toFixed(2)
+      : '—';
+
+    const clipCounts = { PREF: 0, DESP: 0, MAX: 0, END: 0 };
+    chunks.forEach(c => clipCounts[c.clipType] = (clipCounts[c.clipType] || 0) + 1);
+
+    const rows = chunks.map((c, i) => {
+      const durationS   = (c.frames / FRAME_RATE).toFixed(2);
+      const sp          = c.frames > 0 ? ((c.speechFrames / c.frames) * 100).toFixed(0) : 0;
+      const sl          = c.frames > 0 ? ((c.silenceFrames / c.frames) * 100).toFixed(0) : 0;
+
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${toTimestamp(c.startFrame)}</td>
+        <td>${toTimestamp(c.endFrame)}</td>
+        <td>${durationS}s</td>
+        <td class="clip-${c.clipType}">${c.clipType}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="speech-bar">
+              <div class="speech-fill" style="width:${sp}%"></div>
+              <div class="silence-fill" style="width:${sl}%"></div>
+            </div>
+            <span style="color:#4caf50">${sp}%</span> / <span style="color:#555">${sl}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+    <div class="file-result">
+      <div class="file-header">
+        <div class="file-name">${file.name}</div>
+        <div class="file-meta">${totalDurationS}s &nbsp;|&nbsp; ${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+      <div class="summary-bar">
+        <div class="stat">
+          <div class="stat-label">Total Duration</div>
+          <div class="stat-value">${totalDurationS}s</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Chunks Produced</div>
+          <div class="stat-value">${chunks.length}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg Chunk Length</div>
+          <div class="stat-value">${avgChunkLen}s</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Speech Frames</div>
+          <div class="stat-value" style="color:#4caf50">${totalSpeech} (${speechPct}%)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Silence Frames</div>
+          <div class="stat-value" style="color:#666">${totalSilence} (${silencePct}%)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Clips</div>
+          <div class="stat-value">
+            <span class="clip-PREF">PREF×${clipCounts.PREF}</span> &nbsp;
+            <span class="clip-DESP">DESP×${clipCounts.DESP}</span> &nbsp;
+            <span class="clip-MAX">MAX×${clipCounts.MAX}</span> &nbsp;
+            <span style="color:#888">END×${clipCounts.END}</span>
+          </div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Duration</th>
+            <th>Clip Type</th>
+            <th>Speech / Silence</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }
+
+  // ─── Entry points ─────────────────────────────────────────────────────────
+  async function handleFiles(files) {
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+
+    for (const file of Array.from(files)) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'file-result';
+      placeholder.innerHTML = `<div class="processing">Processing ${file.name}…</div>`;
+      container.appendChild(placeholder);
+
+      try {
+        const result = await processFile(file);
+        placeholder.outerHTML = renderResult(result);
+      } catch (err) {
+        placeholder.innerHTML = `<div class="error-msg">Error processing ${file.name}: ${err.message}</div>`;
+      }
+    }
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    handleFiles(event.dataTransfer.files);
+  }
+
+  document.getElementById('upload-area')?.addEventListener('click', () => {
+    document.getElementById('file-input').click();
+  });
+</script>
+
+</body>
+</html>
