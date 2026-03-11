@@ -246,7 +246,8 @@ class EkaScribe {
       vadInstance_exists: !!EkaScribeStore.vadInstance,
       audioFileManager_exists: !!EkaScribeStore.audioFileManagerInstance,
       audioBuffer_exists: !!EkaScribeStore.audioBufferInstance,
-      audioBuffer_currentSamples: EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
+      audioBuffer_currentSamples:
+        EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
       audioChunks_count: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
     });
 
@@ -277,6 +278,7 @@ class EkaScribe {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
       this.vadInstance.pauseVad();
+      this.vadInstance.destroyVad();
 
       const patchTransactionResponse = await patchTransactionStatus({
         sessionId,
