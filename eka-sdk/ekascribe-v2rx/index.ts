@@ -241,7 +241,24 @@ class EkaScribe {
   }
 
   async endRecording() {
+    addBreadcrumb('instance.check', 'endRecording', {
+      txn_id: EkaScribeStore.txnID,
+      vadInstance_exists: !!EkaScribeStore.vadInstance,
+      audioFileManager_exists: !!EkaScribeStore.audioFileManagerInstance,
+      audioBuffer_exists: !!EkaScribeStore.audioBufferInstance,
+      audioBuffer_currentSamples: EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
+      audioChunks_count: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
+    });
+
     const endRecordingResponse = await endVoiceRecording();
+
+    captureEvent('Session ended', {
+      txn_id: EkaScribeStore.txnID,
+      status_code: endRecordingResponse.status_code,
+      error_code: endRecordingResponse.error_code ?? null,
+      total_chunks: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
+    });
+
     console.log('%c Line:131 🍅 endRecordingResponse', 'color:#e41a6a', endRecordingResponse);
     return endRecordingResponse;
   }

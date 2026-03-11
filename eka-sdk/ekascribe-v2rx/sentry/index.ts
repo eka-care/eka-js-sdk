@@ -33,9 +33,12 @@ export function addBreadcrumb(
 
 export function captureEvent(message: string, data?: Record<string, unknown>): void {
   if (!EkaScribeStore.enableSentryLogs) return;
+  const txnID = EkaScribeStore.txnID;
   Sentry.captureMessage(message, {
     level: 'info',
-    tags: { txn_id: EkaScribeStore.txnID, flavour: EkaScribeStore.flavour },
+    tags: { txn_id: txnID, flavour: EkaScribeStore.flavour },
     extra: data,
+    // Each txn_id + event type gets its own Sentry Issue
+    fingerprint: [message, txnID],
   });
 }
