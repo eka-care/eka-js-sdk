@@ -1,15 +1,25 @@
 import * as Sentry from '@sentry/browser';
 import EkaScribeStore from '../store/store';
 
-const SENTRY_DSN = 'REPLACE_WITH_YOUR_SENTRY_DSN';
+const SENTRY_DSN =
+  'https://06451c8d861702902d2e6b2088fa9b62@o1128948.ingest.us.sentry.io/4509207135387648';
 
 export function initSentry(env: 'PROD' | 'DEV'): void {
+  if (!SENTRY_DSN) {
+    return;
+  }
+
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: env,
     defaultIntegrations: false,
     tracesSampleRate: 0,
   });
+}
+
+export function setSentryUser(flavour: string): void {
+  if (!flavour) return;
+  Sentry.setUser({ id: flavour, username: flavour });
 }
 
 export function addBreadcrumb(
@@ -25,7 +35,7 @@ export function captureEvent(message: string, data?: Record<string, unknown>): v
   if (!EkaScribeStore.enableSentryLogs) return;
   Sentry.captureMessage(message, {
     level: 'info',
-    tags: { txn_id: EkaScribeStore.txnID },
+    tags: { txn_id: EkaScribeStore.txnID, flavour: EkaScribeStore.flavour },
     extra: data,
   });
 }

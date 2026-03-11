@@ -35,7 +35,7 @@ import {
   TVadFramesCallback,
 } from './constants/types';
 import setEnv, { GET_CURRENT_ENV, GET_CLIENT_ID } from './fetch-client/helper';
-import { initSentry, addBreadcrumb } from './sentry/index';
+import { initSentry, setSentryUser, addBreadcrumb, captureEvent } from './sentry/index';
 import endVoiceRecording from './main/end-recording';
 import pauseVoiceRecording from './main/pause-recording';
 import resumeVoiceRecording from './main/resume-recording';
@@ -104,6 +104,7 @@ class EkaScribe {
     enableSentryLogs?: boolean;
   }): EkaScribe {
     EkaScribeStore.enableSentryLogs = enableSentryLogs;
+    if (flavour) EkaScribeStore.flavour = flavour;
     // If env or clientId is changing, reset the instance for a clean slate
     if (EkaScribe.instance) {
       const envChanging = env && GET_CURRENT_ENV() !== env;
@@ -139,6 +140,11 @@ class EkaScribe {
       if (enableSentryLogs) {
         initSentry(env ?? 'PROD');
       }
+    }
+
+    // Call on every getInstance so user identity stays current across sessions
+    if (enableSentryLogs && flavour) {
+      setSentryUser(flavour);
     }
 
     return EkaScribe.instance;
@@ -187,12 +193,20 @@ class EkaScribe {
       vadInstance_exists: !!EkaScribeStore.vadInstance,
       audioFileManager_exists: !!EkaScribeStore.audioFileManagerInstance,
       audioBuffer_exists: !!EkaScribeStore.audioBufferInstance,
-      audioBuffer_currentSamples: EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
+      audioBuffer_currentSamples:
+        EkaScribeStore.audioBufferInstance?.getCurrentSampleLength() ?? null,
       audioChunks_count: EkaScribeStore.audioFileManagerInstance?.audioChunks?.length ?? null,
     });
 
     const initTransactionResponse = await initialiseTransaction(request);
     console.log(initTransactionResponse, 'initTransactionResponse');
+
+    // Guaranteed event per session — flushes the instance.check breadcrumb to Sentry
+    captureEvent('Session started', {
+      txn_id: EkaScribeStore.txnID,
+      status_code: initTransactionResponse.status_code,
+    });
+
     return initTransactionResponse;
   }
 
