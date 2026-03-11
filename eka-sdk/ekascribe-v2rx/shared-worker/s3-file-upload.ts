@@ -190,6 +190,13 @@ onconnect = function (event: MessageEvent) {
         return;
       }
 
+      case SHARED_WORKER_ACTION.TERMINATE_WORKER: {
+        workerPort.close();
+        // self.close() is the only reliable way to terminate a SharedWorker process
+        self.close();
+        return;
+      }
+
       case SHARED_WORKER_ACTION.WAIT_FOR_ALL_UPLOADS: {
         if (uploadRequestReceived === uploadRequestCompleted) {
           workerPort.postMessage({

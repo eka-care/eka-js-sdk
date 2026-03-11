@@ -298,6 +298,9 @@ class AudioFileManager {
 
   terminateSharedWorkerInstance() {
     if (this.sharedWorkerInstance) {
+      this.sharedWorkerInstance.port.postMessage({
+        action: SHARED_WORKER_ACTION.TERMINATE_WORKER,
+      });
       this.sharedWorkerInstance.port.close();
       this.sharedWorkerInstance = null;
     }
