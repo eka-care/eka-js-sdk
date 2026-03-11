@@ -1,4 +1,5 @@
 import { MicVAD } from '@ricky0123/vad-web';
+import { addBreadcrumb, captureEvent } from '../sentry/index';
 import {
   FRAME_SIZE,
   LONG_SILENCE_THRESHOLD,
@@ -17,6 +18,8 @@ class VadWebClient {
   private last_clip_index: number;
   private last_clip_point: number; // replaces clip_points[] — only last element was ever read
   private sil_duration_acc: number;
+  private last_clip_reason: 'max_forced' | 'desperate_silence' | 'preferred_silence' | null = null;
+  private last_sil_at_clip: number = 0; // sil_duration_acc (frames) captured before reset
   private pref_length_samples: number;
   private desp_length_samples: number;
   private max_length_samples: number;
@@ -162,6 +165,8 @@ class VadWebClient {
       console.log(
         `[VAD] Max length exceeded: sample_passed=${sample_passed}. Clipping at frame ${this.vad_frame_count}.`
       );
+      this.last_clip_reason = 'max_forced';
+      this.last_sil_at_clip = this.sil_duration_acc; // capture BEFORE reset — if > 0, silence was present but not caught
       this.last_clip_index = this.vad_frame_count;
       this.last_clip_point = this.last_clip_index;
       this.sil_duration_acc = 0;
@@ -174,6 +179,8 @@ class VadWebClient {
         console.log(
           `[VAD] Short silence detected: sil_duration_acc=${this.sil_duration_acc}. Clipping at frame ${this.vad_frame_count}.`
         );
+        this.last_clip_reason = 'desperate_silence';
+        this.last_sil_at_clip = this.sil_duration_acc;
         this.last_clip_index =
           this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
         this.last_clip_point = this.last_clip_index;
@@ -188,6 +195,8 @@ class VadWebClient {
         console.log(
           `[VAD] Long silence detected: sil_duration_acc=${this.sil_duration_acc}. Clipping at frame ${this.vad_frame_count}.`
         );
+        this.last_clip_reason = 'preferred_silence';
+        this.last_sil_at_clip = this.sil_duration_acc;
         this.last_clip_index =
           this.vad_frame_count - Math.min(Math.floor(this.sil_duration_acc / 2), 5);
         this.last_clip_point = this.last_clip_index;
@@ -213,6 +222,11 @@ class VadWebClient {
     const audioBuffer = EkaScribeStore.audioBufferInstance;
     this.is_vad_loading = true;
 
+    addBreadcrumb('vad.init', 'VAD initializing', {
+      deviceId: deviceId ?? 'default',
+      txn_id: EkaScribeStore.txnID,
+      audioBuffer_currentSamples: audioBuffer?.getCurrentSampleLength() ?? null,
+    });
     // If we're re-initializing, make sure we don't leak an existing stream.
     this.stopMicStream();
 
@@ -283,6 +297,18 @@ class VadWebClient {
             console.log(
               `[VAD] Clip point detected at sample length ${audioBuffer?.getCurrentSampleLength()}. Processing audio chunk.`
             );
+            addBreadcrumb('vad.clip', 'Clip point triggered', {
+              clip_reason: this.last_clip_reason,
+              actual_duration_s: (
+                (audioBuffer?.getCurrentSampleLength() ?? 0) / SAMPLING_RATE
+              ).toFixed(2),
+              sil_at_clip_frames: this.last_sil_at_clip,
+              vad_frame_count: this.vad_frame_count,
+              last_clip_point: this.last_clip_point,
+              audioData_length: activeAudioChunk?.length,
+              slice_from: 0,
+              slice_to: audioBuffer?.getCurrentSampleLength(),
+            });
             this.processAudioChunk({ audioFrames: activeAudioChunk });
           }
         },
@@ -354,20 +380,35 @@ class VadWebClient {
         audioBuffer.getCurrentFrameLength()
       );
 
-      console.log(
-        'Reset buffer state after processing chunk. Current sample length:',
-        audioBuffer.getCurrentSampleLength(),
-        'Current audio file:',
-        fileName
-      );
+      addBreadcrumb('buffer.reset', `Buffer reset for ${fileName}`, {
+        fileName,
+        samples_before_reset: audioBuffer.getCurrentSampleLength(),
+        frames_before_reset: audioBuffer.getCurrentFrameLength(),
+        duration_s: (audioBuffer.getCurrentSampleLength() / SAMPLING_RATE).toFixed(3),
+        _note: 'captured before reset',
+      });
       audioBuffer.resetBufferState();
+
+      addBreadcrumb('buffer.reset', `Buffer reset for ${fileName}`, {
+        fileName,
+        samples_after_reset: audioBuffer.getCurrentSampleLength(),
+        _note: 'captured after reset',
+      });
 
       await audioFileManager.uploadAudioToS3({
         audioFrames,
         fileName,
         chunkIndex: audioChunkLength - 1,
       });
+      captureEvent(`Chunk uploaded: ${fileName}`, {
+        fileName,
+        chunk_index: audioChunkLength - 1,
+      });
     } catch (error) {
+      captureEvent(`Chunk upload failed: <processAudioChunk>: ${fileName}`, {
+        fileName,
+        error: error instanceof Error ? error.message : String(error),
+      });
       console.error('[EkaScribe] Error uploading audio chunk:', error);
 
       // Mark chunk as failed so endRecording's retry flow picks it up

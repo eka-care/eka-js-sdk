@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
-import { analyzer } from 'vite-bundle-analyzer';
 
 export default defineConfig({
   base: './',
@@ -36,6 +35,5 @@ export default defineConfig({
       rollupTypes: true,
       outDir: 'dist',
     }),
-    analyzer(),
   ],
 });
