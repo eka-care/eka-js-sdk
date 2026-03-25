@@ -1,8 +1,46 @@
-import { GET_CLIENT_ID, GET_AUTH_TOKEN, GET_FLAVOUR } from './helper';
+import { GET_CLIENT_ID, GET_AUTH_TOKEN, GET_FLAVOUR, GET_EKA_HOST } from './helper';
 import EkaScribeStore from '../store/store';
 import { CALLBACK_TYPE } from '../constants/enums';
 
 const API_TIMEOUT_MS = 10000;
+
+type NetworkRequestPayload = {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+  retry: boolean;
+  ekaHost: string;
+};
+
+type NetworkResponsePayload = {
+  status: number;
+  statusText: string;
+  ok: boolean;
+  headers: Record<string, string>;
+  body: string;
+};
+
+type NetworkApiBridge = {
+  request: (payload: NetworkRequestPayload) => Promise<NetworkResponsePayload>;
+};
+
+type WindowWithNetworkApi = Window & {
+  networkApi?: NetworkApiBridge;
+};
+
+function getNetworkBridge(): NetworkApiBridge | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return (window as WindowWithNetworkApi).networkApi;
+}
+
+function headersToRecord(headers: Headers): Record<string, string> {
+  const record: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    record[key] = value;
+  });
+  return record;
+}
 
 export default async function fetchWrapper(
   url: RequestInfo,
@@ -33,12 +71,33 @@ export default async function fetchWrapper(
       newHeaders.set('auth', GET_AUTH_TOKEN());
     }
 
-    const response: Response = await fetch(url, {
-      ...options,
-      headers: newHeaders,
-      signal: controller.signal,
-      credentials: 'include',
-    });
+    const bridge = getNetworkBridge();
+    let response: Response;
+
+    if (bridge) {
+      const payload: NetworkRequestPayload = {
+        url: typeof url === 'string' ? url : (url as Request).url,
+        method: options.method || 'GET',
+        headers: headersToRecord(newHeaders),
+        body: (options.body as string) ?? null,
+        retry: true,
+        ekaHost: GET_EKA_HOST(),
+      };
+
+      const result = await bridge.request(payload);
+      response = new Response(result.body, {
+        status: result.status,
+        statusText: result.statusText,
+        headers: result.headers,
+      });
+    } else {
+      response = await fetch(url, {
+        ...options,
+        headers: newHeaders,
+        signal: controller.signal,
+        credentials: 'include',
+      });
+    }
 
     if (!response.ok) {
       if (onEventCallback) {
