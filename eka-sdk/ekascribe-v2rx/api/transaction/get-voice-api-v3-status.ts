@@ -38,6 +38,7 @@ export type TGetStatusApiResponse = {
       custom: TOutputSummary[];
       transcript: TOutputSummary[];
     };
+    additional_data?: any;
   };
   error?: {
     code: string;

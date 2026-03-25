@@ -1,5 +1,11 @@
 import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
-import { ERROR_CODE, CALLBACK_TYPE, COMPATIBILITY_TEST_STATUS, API_STATUS, VAD_STATUS } from './enums';
+import {
+  ERROR_CODE,
+  CALLBACK_TYPE,
+  COMPATIBILITY_TEST_STATUS,
+  API_STATUS,
+  VAD_STATUS,
+} from './enums';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -61,6 +67,7 @@ export type TSelectedPreferences = {
   use_audio_cues?: boolean;
   auto_download?: boolean;
   model_type?: string;
+  copy_overlay?: boolean;
 };
 
 export type TGetConfigItem = {
@@ -390,6 +397,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
     contact_number?: string;
     onboarding_step?: string;
     sys_info?: TSystemInfo;
+    copy_overlay?: boolean;
   };
   query_params?: string;
 };
