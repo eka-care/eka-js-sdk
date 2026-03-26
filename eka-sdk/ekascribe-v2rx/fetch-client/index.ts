@@ -43,7 +43,7 @@ function headersToRecord(headers: Headers): Record<string, string> {
 }
 
 export default async function fetchWrapper(
-  url: RequestInfo,
+  url: string,
   options: RequestInit | undefined = {},
   timeoutMs: number = API_TIMEOUT_MS
 ): Promise<Response> {
@@ -63,7 +63,7 @@ export default async function fetchWrapper(
       newHeaders.set('client-id', GET_CLIENT_ID());
     }
 
-    if (!newHeaders.get('flavour')) {
+    if (!newHeaders.get('flavour') && !url.includes('file-upload')) {
       newHeaders.set('flavour', GET_FLAVOUR());
     }
 
