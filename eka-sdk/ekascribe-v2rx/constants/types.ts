@@ -68,6 +68,7 @@ export type TSelectedPreferences = {
   auto_download?: boolean;
   model_type?: string;
   copy_overlay?: boolean;
+  auto_detect_language?: boolean;
 };
 
 export type TGetConfigItem = {
@@ -383,6 +384,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
   request_type: string;
   data: {
     auto_download?: boolean;
+    auto_detect_language?: boolean;
     input_languages?: TGetConfigItem[];
     consultation_mode?: string;
     model_type?: string;
@@ -547,4 +549,12 @@ export type TGetDoctorClinicsResponse = {
   data: TClinicInfo[] | null;
   code: number;
   message?: string;
+};
+
+export type TDeleteTransactionResponse = {
+  code: number;
+  message?: string;
+  status?: string;
+  txn_id?: string;
+  error?: { code: string; message: string; display_message?: string };
 };

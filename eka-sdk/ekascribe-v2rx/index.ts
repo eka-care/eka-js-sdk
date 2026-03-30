@@ -18,6 +18,7 @@ import {
 } from './constants/constant';
 import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
+  TDeleteTransactionResponse,
   TEndRecordingResponse,
   TEventCallback,
   TGetTransactionHistoryResponse,
@@ -44,6 +45,7 @@ import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
 import getTransactionHistory from './api/transaction/get-transaction-history';
+import deleteTransaction from './api/transaction/delete-transaction';
 import getV1Templates from './api/templates/get-v1-templates';
 import postV1Template from './api/templates/post-v1-template';
 import patchV1Template from './api/templates/patch-v1-template';
@@ -435,6 +437,17 @@ class EkaScribe {
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to fetch previous transactions, ${error}`,
       } as TGetTransactionHistoryResponse;
+    }
+  }
+
+  async deleteSession({ txn_id }: { txn_id: string }): Promise<TDeleteTransactionResponse> {
+    try {
+      return await deleteTransaction({ txn_id });
+    } catch (error) {
+      return {
+        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to delete session, ${error}`,
+      };
     }
   }
 
