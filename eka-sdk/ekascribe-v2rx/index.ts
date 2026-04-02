@@ -78,6 +78,7 @@ import {
 } from './constants/types';
 import { getDoctorHeaderFooter } from './api/profile/get-doctor-header-footer';
 import { getDoctorClinics } from './api/profile/get-doctor-clinics';
+import { getV1SessionSuggestedMedications } from './api/transaction/get-v1-session-suggested-medications';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -652,6 +653,10 @@ class EkaScribe {
     const clinicsResponse = await getDoctorClinics(request);
     return clinicsResponse;
   }
+
+  async getSuggestedMedications(txnId: string) {
+    return getV1SessionSuggestedMedications(txnId);
+  }
 }
 
 // Export the singleton instance getter with optional initialization
@@ -714,6 +719,7 @@ export type {
   TGetDoctorHeaderFooterResponse,
   TGetDoctorClinicsRequest,
   TGetDoctorClinicsResponse,
+  TSuggestedMedication,
 } from './constants/types';
 
 // Re-export enums for consumers
