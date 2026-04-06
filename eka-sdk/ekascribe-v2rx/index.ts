@@ -98,7 +98,7 @@ class EkaScribe {
     env,
     clientId,
     flavour,
-    enableSentryLogs = true,
+    enableSentryLogs = false,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
@@ -665,14 +665,12 @@ export const getEkaScribeInstance = ({
   env,
   clientId,
   flavour,
-  enableSentryLogs = true,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
   flavour?: string;
-  enableSentryLogs?: boolean;
-}) => EkaScribe.getInstance({ access_token, env, clientId, flavour, enableSentryLogs });
+}) => EkaScribe.getInstance({ access_token, env, clientId, flavour });
 
 // Re-export types for consumers
 export type {
