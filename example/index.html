@@ -355,7 +355,10 @@
     if (!ekascribe) return;
     const res = ekascribe.resumeRecording();
     log(`Resume - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'error');
-    if (res.status_code === 200) setStatus('recording', 'Recording in progress...');
+    if (res.status_code === 200) {
+      resumeTimer();
+      setStatus('recording', 'Recording in progress...');
+    }
   }
 
   // ─── End Recording ──────────────────────────────────────
@@ -380,9 +383,11 @@
         log(`End error: ${res.error_code} - ${res.message}`, 'warn');
       }
 
+      stopTimer();
       setStatus('stopped', 'Recording ended - click Get Output to fetch results');
     } catch (err) {
       log(`End failed: ${err.message}`, 'error');
+      stopTimer();
       setStatus('stopped', 'End had errors');
     }
   }
