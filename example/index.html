@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EkaScribe SDK - Example Integration</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 24px; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+    .config-section { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .config-section h2 { font-size: 15px; margin-bottom: 14px; color: #555; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; flex: 1; min-width: 200px; }
+    .form-group label { font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
+    .form-group input, .form-group select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: #4a90d9; }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    button { padding: 10px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button:hover:not(:disabled) { opacity: 0.85; }
+    .btn-start { background: #43a047; color: #fff; }
+    .btn-pause { background: #fb8c00; color: #fff; }
+    .btn-resume { background: #00897b; color: #fff; }
+    .btn-end { background: #e53935; color: #fff; }
+    .btn-poll { background: #7b1fa2; color: #fff; }
+
+    .status-bar { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-idle { background: #bbb; }
+    .dot-recording { background: #43a047; animation: pulse 1s infinite; }
+    .dot-paused { background: #fb8c00; }
+    .dot-stopped { background: #e53935; }
+    .dot-processing { background: #7b1fa2; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .status-text { font-size: 13px; color: #555; }
+    .mic-status { margin-left: auto; font-size: 12px; color: #888; }
+
+    .output-section { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: none; }
+    .output-section h2 { font-size: 15px; margin-bottom: 10px; color: #555; }
+    .output-content { font-family: 'SF Mono', monospace; font-size: 12px; background: #f8f8f8; padding: 12px; border-radius: 6px; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+
+    .log-section { background: #1e1e1e; border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; }
+    .log-section h2 { font-size: 13px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .log-entry { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; word-break: break-all; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-info { color: #64b5f6; }
+    .log-success { color: #81c784; }
+    .log-error { color: #e57373; }
+    .log-warn { color: #ffb74d; }
+    .log-event { color: #ce93d8; }
+    .log-time { color: #616161; margin-right: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>EkaScribe SDK - Example Integration</h1>
+<p class="subtitle">Standalone HTML using the SDK via CDN script tag. No bundler or npm install required.</p>
+
+<!-- Configuration -->
+<div class="config-section">
+  <h2>Configuration</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Access Token *</label>
+      <input type="text" id="accessToken" placeholder="Your access token" />
+    </div>
+    <div class="form-group">
+      <label>Environment</label>
+      <select id="env">
+        <option value="DEV">DEV</option>
+        <option value="PROD">PROD</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Client ID</label>
+      <input type="text" id="clientId" placeholder="Optional client ID" />
+    </div>
+    <div class="form-group">
+      <label>Template ID *</label>
+      <input type="text" id="templateId" placeholder="Template ID for output format" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Input Language</label>
+      <select id="inputLang">
+        <option value="en-IN">English (India)</option>
+        <option value="hi">Hindi</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Mode</label>
+      <select id="mode">
+        <option value="consultation">Consultation</option>
+        <option value="dictation">Dictation</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Model Type</label>
+      <select id="modelType">
+        <option value="pro">Pro (Most Accurate)</option>
+        <option value="lite">Lite (Lower Latency)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Patient Name (Optional)</label>
+      <input type="text" id="patientName" placeholder="e.g. John Doe" />
+    </div>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-dot dot-idle" id="statusDot"></div>
+  <span class="status-text" id="statusText">Idle - Fill config and click Start Recording</span>
+  <span class="timer" id="timer" style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; color:#333; display:none;">00:00</span>
+  <span class="mic-status" id="micStatus"></span>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-start" id="btnStart" onclick="handleStart()">Start Recording</button>
+  <button class="btn-pause" id="btnPause" onclick="handlePause()" disabled>Pause</button>
+  <button class="btn-resume" id="btnResume" onclick="handleResume()" disabled>Resume</button>
+  <button class="btn-end" id="btnEnd" onclick="handleEnd()" disabled>End Recording</button>
+  <button class="btn-poll" id="btnPoll" onclick="handlePoll()" disabled>Get Output</button>
+</div>
+
+<!-- Output -->
+<div class="output-section" id="outputSection">
+  <h2>Session Output</h2>
+  <div class="output-content" id="outputContent"></div>
+</div>
+
+<!-- Event Log -->
+<div class="log-section">
+  <h2>Event Log</h2>
+  <div id="logContainer"></div>
+</div>
+
+<script type="module">
+  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+
+  let ekascribe = null;
+  let currentTxnId = null;
+  let sessionState = 'idle'; // idle | recording | paused | stopped
+  let timerInterval = null;
+  let timerSeconds = 0;
+
+  window.handleStart = handleStart;
+  window.handlePause = handlePause;
+  window.handleResume = handleResume;
+  window.handleEnd = handleEnd;
+  window.handlePoll = handlePoll;
+
+  // ─── Helpers ─────────────────────────────────────────────
+
+  function log(message, type = 'info') {
+    const container = document.getElementById('logContainer');
+    const entry = document.createElement('div');
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    entry.className = `log-entry log-${type}`;
+    entry.innerHTML = `<span class="log-time">${time}</span>${message}`;
+    container.prepend(entry);
+  }
+
+  function setStatus(state, text) {
+    sessionState = state;
+    const dotMap = { idle: 'dot-idle', recording: 'dot-recording', paused: 'dot-paused', stopped: 'dot-stopped', processing: 'dot-processing' };
+    document.getElementById('statusDot').className = `status-dot ${dotMap[state] || 'dot-idle'}`;
+    document.getElementById('statusText').textContent = text;
+    updateButtons();
+  }
+
+  function formatTime(totalSeconds) {
+    const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const secs = String(totalSeconds % 60).padStart(2, '0');
+    return `${mins}:${secs}`;
+  }
+
+  function startTimer() {
+    const timerEl = document.getElementById('timer');
+    timerEl.style.display = 'inline';
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      timerEl.textContent = formatTime(timerSeconds);
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function resumeTimer() {
+    if (timerInterval) return;
+    startTimer();
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerSeconds = 0;
+    const timerEl = document.getElementById('timer');
+    timerEl.textContent = '00:00';
+    timerEl.style.display = 'none';
+  }
+
+  function updateButtons() {
+    const s = sessionState;
+    document.getElementById('btnStart').disabled = (s !== 'idle');
+    document.getElementById('btnPause').disabled = (s !== 'recording');
+    document.getElementById('btnResume').disabled = (s !== 'paused');
+    document.getElementById('btnEnd').disabled = (s !== 'recording' && s !== 'paused');
+    document.getElementById('btnPoll').disabled = (s !== 'stopped');
+  }
+
+  // ─── Start Recording (getInstance + init + start) ───────
+
+  async function handleStart() {
+    const accessToken = document.getElementById('accessToken').value.trim();
+    const templateId = document.getElementById('templateId').value.trim();
+
+    if (!accessToken) { log('Access token is required', 'error'); return; }
+    if (!templateId) { log('Template ID is required', 'error'); return; }
+
+    // 0. Request mic permission first before any API calls
+    setStatus('processing', 'Requesting microphone permission...');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Permission granted — stop the stream immediately, SDK will create its own
+      stream.getTracks().forEach(track => track.stop());
+      log('Microphone permission granted', 'success');
+    } catch (err) {
+      log('Microphone permission denied. Allow mic access in browser settings and try again.', 'error');
+      setStatus('idle', 'Mic permission denied');
+      return;
+    }
+
+    setStatus('processing', 'Initializing...');
+
+    // 1. Get SDK instance
+    const env = document.getElementById('env').value;
+    const clientId = document.getElementById('clientId').value.trim();
+
+    ekascribe = getEkaScribeInstance({
+      access_token: accessToken,
+      env,
+      ...(clientId ? { clientId } : {}),
+    });
+
+   
+    // 3. Init transaction
+    currentTxnId = `test-${crypto.randomUUID()}`;
+    log(`Initializing transaction: ${currentTxnId}`, 'info');
+
+    try {
+      const initRes = await ekascribe.initTransaction({
+        mode: document.getElementById('mode').value,
+        input_language: [document.getElementById('inputLang').value],
+        output_format_template: [{ template_id: templateId }],
+        txn_id: currentTxnId,
+        transfer: 'vaded',
+        model_type: document.getElementById('modelType').value,
+        system_info: {
+          platform: 'web',
+          language: navigator.language || 'en',
+          time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        ...(document.getElementById('patientName').value.trim()
+          ? {
+              patient_details: {
+                username: document.getElementById('patientName').value.trim(),
+                age: 0,
+                biologicalSex: 'O',
+              },
+            }
+          : {}),
+      });
+
+      if (initRes.error_code) {
+        log(`Init failed: ${initRes.error_code} - ${initRes.message}`, 'error');
+        setStatus('idle', 'Init failed');
+        return;
+      }
+
+      log(`Transaction initialized (status: ${initRes.status_code})`, 'success');
+    } catch (err) {
+      log(`Init failed: ${err.message}`, 'error');
+      setStatus('idle', 'Init failed');
+      return;
+    }
+
+    // 4. Start recording - browser will prompt mic permission here
+    log('Requesting microphone access and starting recording...', 'info');
+
+    try {
+      const startRes = await ekascribe.startRecording();
+
+      if (startRes.error_code === 'microphone') {
+        log('Microphone permission denied. Allow mic access in browser settings and try again.', 'error');
+        setStatus('idle', 'Mic permission denied');
+        return;
+      }
+      if (startRes.error_code === 'vad_not_initialized') {
+        log('VAD failed to initialize. Please try again.', 'error');
+        setStatus('idle', 'VAD init failed');
+        return;
+      }
+      if (startRes.error_code) {
+        log(`Start error: ${startRes.error_code} - ${startRes.message}`, 'error');
+        setStatus('idle', 'Start failed');
+        return;
+      }
+
+      log('Recording started - speak into your microphone', 'success');
+      resetTimer();
+      startTimer();
+      setStatus('recording', 'Recording in progress...');
+    } catch (err) {
+      log(`Start recording failed: ${err.message}`, 'error');
+      setStatus('idle', 'Start failed');
+    }
+  }
+
+  // ─── Pause ───────────────────────────────────────────────
+
+  function handlePause() {
+    if (!ekascribe) return;
+    const res = ekascribe.pauseRecording();
+    log(`Pause - status: ${res.status_code}, paused: ${res.is_paused}`, res.status_code === 200 ? 'success' : 'error');
+    if (res.status_code === 200) {
+      pauseTimer();
+      setStatus('paused', 'Recording paused');
+    }
+  }
+
+  // ─── Resume ──────────────────────────────────────────────
+
+  function handleResume() {
+    if (!ekascribe) return;
+    const res = ekascribe.resumeRecording();
+    log(`Resume - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'error');
+    if (res.status_code === 200) {
+      resumeTimer();
+      setStatus('recording', 'Recording in progress...');
+    }
+  }
+
+  // ─── End Recording ──────────────────────────────────────
+
+  async function handleEnd() {
+    if (!ekascribe) return;
+
+    log('Ending recording (stop + upload + commit)...', 'info');
+    setStatus('processing', 'Stopping and uploading audio...');
+
+    try {
+      const res = await ekascribe.endRecording();
+      log(`End - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'error');
+
+      if (res.failed_files?.length) {
+        log(`Failed uploads: ${res.failed_files.join(', ')}`, 'warn');
+      }
+      if (res.total_audio_files?.length) {
+        log(`Total audio files: ${res.total_audio_files.length}`, 'info');
+      }
+      if (res.error_code) {
+        log(`End error: ${res.error_code} - ${res.message}`, 'warn');
+      }
+
+      stopTimer();
+      setStatus('stopped', 'Recording ended - click Get Output to fetch results');
+    } catch (err) {
+      log(`End failed: ${err.message}`, 'error');
+      stopTimer();
+      setStatus('stopped', 'End had errors');
+    }
+  }
+
+  // ─── Get Output ──────────────────────────────────────────
+
+  async function handlePoll() {
+    if (!ekascribe || !currentTxnId) return;
+
+    log(`Polling output for: ${currentTxnId}`, 'info');
+    setStatus('processing', 'Fetching session output (polls up to 2 min)...');
+    document.getElementById('outputSection').style.display = 'none';
+
+    try {
+      const res = await ekascribe.pollSessionOutput({
+        txn_id: currentTxnId,
+        max_polling_time: 2 * 60 * 1000,
+      });
+
+      log(`Output response - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'warn');
+
+      if (res.response?.data) {
+        document.getElementById('outputSection').style.display = 'block';
+        document.getElementById('outputContent').textContent = JSON.stringify(res.response.data, null, 2);
+        log('Output received - displayed above the log', 'success');
+      } else {
+        log(`No output data: ${res.message || 'still processing'}`, 'warn');
+      }
+
+      setStatus('stopped', 'Done');
+    } catch (err) {
+      log(`Poll failed: ${err.message}`, 'error');
+      setStatus('stopped', 'Poll failed');
+    }
+  }
+
+  // Init
+  updateButtons();
+  log('Ready. Fill in config and click Start Recording.', 'info');
+</script>
+
+</body>
+</html>

@@ -78,6 +78,7 @@ import {
 } from './constants/types';
 import { getDoctorHeaderFooter } from './api/profile/get-doctor-header-footer';
 import { getDoctorClinics } from './api/profile/get-doctor-clinics';
+import { getV1SessionSuggestedMedications } from './api/transaction/get-v1-session-suggested-medications';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -97,7 +98,7 @@ class EkaScribe {
     env,
     clientId,
     flavour,
-    enableSentryLogs = true,
+    enableSentryLogs = false,
   }: {
     access_token?: string;
     env?: 'PROD' | 'DEV';
@@ -652,6 +653,10 @@ class EkaScribe {
     const clinicsResponse = await getDoctorClinics(request);
     return clinicsResponse;
   }
+
+  async getSuggestedMedications(txnId: string) {
+    return getV1SessionSuggestedMedications(txnId);
+  }
 }
 
 // Export the singleton instance getter with optional initialization
@@ -660,14 +665,12 @@ export const getEkaScribeInstance = ({
   env,
   clientId,
   flavour,
-  enableSentryLogs = true,
 }: {
   access_token?: string;
   env?: 'PROD' | 'DEV';
   clientId?: string;
   flavour?: string;
-  enableSentryLogs?: boolean;
-}) => EkaScribe.getInstance({ access_token, env, clientId, flavour, enableSentryLogs });
+}) => EkaScribe.getInstance({ access_token, env, clientId, flavour });
 
 // Re-export types for consumers
 export type {
@@ -714,6 +717,7 @@ export type {
   TGetDoctorHeaderFooterResponse,
   TGetDoctorClinicsRequest,
   TGetDoctorClinicsResponse,
+  TSuggestedMedication,
 } from './constants/types';
 
 // Re-export enums for consumers

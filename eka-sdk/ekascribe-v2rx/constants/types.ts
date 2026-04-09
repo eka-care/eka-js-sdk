@@ -558,3 +558,33 @@ export type TDeleteTransactionResponse = {
   txn_id?: string;
   error?: { code: string; message: string; display_message?: string };
 };
+
+export type TSuggestedMedication = {
+  extracted: {
+    name: string;
+    dose: string | null;
+    frequency: string | null;
+    duration: string | null;
+    route: string | null;
+  };
+  suggestions: Array<{
+    coded_name: string;
+    coded_generic_name: string | null;
+    coded_dose_unit: string | null;
+    coded_form: string | null;
+    eka_id: string;
+    locale_id: string;
+    uncoded_name: string;
+    source: string;
+    is_fhir_confidence: boolean;
+    is_brandname_matched: boolean;
+    [key: string]: unknown;
+  }>;
+};
+
+export type TSuggestedMedicationResponse = {
+  code: number;
+  message?: string;
+  session_id?: string;
+  medications?: TSuggestedMedication[];
+};
