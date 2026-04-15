@@ -32,6 +32,7 @@ import {
   TPostV1TemplateRequest,
   TPostV1TemplateSectionRequest,
   TPostV1UploadAudioFilesRequest,
+  TPostV1DocumentRequest,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
@@ -79,6 +80,9 @@ import {
 import { getDoctorHeaderFooter } from './api/profile/get-doctor-header-footer';
 import { getDoctorClinics } from './api/profile/get-doctor-clinics';
 import { getV1SessionSuggestedMedications } from './api/transaction/get-v1-session-suggested-medications';
+import postV1Document from './api/documents/post-v1-document';
+import deleteV1Document from './api/documents/delete-v1-document';
+import fetchChunkTranscript from './api/transaction/get-chunk-transcript';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -419,6 +423,8 @@ class EkaScribe {
     txn_id: string;
     max_polling_time?: number;
     template_id?: string;
+    document_id?: string;
+    dlp?: boolean;
     onPartialResultCb?: TPartialResultCallback;
   }) {
     const pollingResponse = await pollOutputSummary(request);
@@ -657,6 +663,20 @@ class EkaScribe {
   async getSuggestedMedications(txnId: string) {
     return getV1SessionSuggestedMedications(txnId);
   }
+
+  async createDocument(request: TPostV1DocumentRequest) {
+    const response = await postV1Document(request);
+    return response;
+  }
+
+  async deleteDocument(document_id: string) {
+    const response = await deleteV1Document(document_id);
+    return response;
+  }
+
+  async getChunkTranscript(txnId: string, chunkNumber: string) {
+    return fetchChunkTranscript(txnId, chunkNumber);
+  }
 }
 
 // Export the singleton instance getter with optional initialization
@@ -718,7 +738,15 @@ export type {
   TGetDoctorClinicsRequest,
   TGetDoctorClinicsResponse,
   TSuggestedMedication,
+  TPostV1DocumentRequest,
+  TPostV1DocumentResponse,
+  TDeleteV1DocumentResponse,
 } from './constants/types';
+
+export type {
+  TChunkTranscriptResponse,
+  TFetchChunkTranscriptResult,
+} from './api/transaction/get-chunk-transcript';
 
 // Re-export enums for consumers
 export {

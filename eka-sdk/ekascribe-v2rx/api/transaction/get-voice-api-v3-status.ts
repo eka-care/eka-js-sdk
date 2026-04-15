@@ -18,6 +18,12 @@ export type TOutputSummary = {
   status: TTemplateStatus;
   errors?: TTemplateMessage[];
   warnings?: TTemplateMessage[];
+  document_id: string;
+  document_path: {
+    bucket: string;
+    folder: string;
+    filename: string;
+  };
 };
 
 export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
@@ -92,7 +98,7 @@ export const getVoiceApiV3Status = async ({
     const getResponse = await fetchWrapper(
       `${GET_EKA_VOICE_HOST_V3()}/status/${txnId}${queryParams ? `?${queryParams}` : ''}`,
       options,
-      16000
+      20000
     );
 
     const response = (await getResponse.json()) as TGetStatusApiResponse;

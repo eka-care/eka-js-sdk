@@ -422,6 +422,7 @@ export type TPostV1ConvertToTemplateResponse = {
   message: string;
   txn_id: string;
   template_id: string;
+  document_id: string;
   b_id: string;
   code: number;
   msg: string;
@@ -462,7 +463,7 @@ export type TPatchVoiceApiV3StatusResponse = {
 export type TPatchVoiceApiV3StatusRequest = {
   txnId: string;
   data: {
-    'template-id': string;
+    'document-id': string;
     data: string;
   }[];
 };
@@ -587,4 +588,40 @@ export type TSuggestedMedicationResponse = {
   message?: string;
   session_id?: string;
   medications?: TSuggestedMedication[];
+};
+
+export type TPostV1DocumentRequest = {
+  session_id: string;
+  document_name: string;
+};
+
+export type TPostV1DocumentResponse = {
+  code: number;
+  status?: string;
+  message?: string;
+  data?: {
+    document_id: string;
+    session_id: string;
+    template_id: string;
+    document_name: string;
+    type: string;
+    status: string;
+    errors: unknown[];
+    warnings: unknown[];
+    usage_information: Record<string, unknown>;
+    document_path: {
+      bucket: string;
+      folder: string;
+      filename: string;
+    };
+    presigned_url: string;
+    created_at: string;
+    updated_at: number;
+  };
+};
+
+export type TDeleteV1DocumentResponse = {
+  code: number;
+  message?: string;
+  [key: string]: unknown;
 };

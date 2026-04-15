@@ -148,7 +148,9 @@
 </div>
 
 <script type="module">
-  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+  // Use local build for development (run: cd packages/es11 && yarn build)
+  // Switch to CDN for production: 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs'
+  import { getEkaScribeInstance } from '../packages/es11/dist/index.mjs';
 
   let ekascribe = null;
   let currentTxnId = null;
