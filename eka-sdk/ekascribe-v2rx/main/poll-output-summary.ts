@@ -17,11 +17,15 @@ export const pollOutputSummary = async ({
   txn_id,
   max_polling_time = 2 * 60 * 1000,
   template_id,
+  document_id,
+  dlp,
   onPartialResultCb,
 }: {
   txn_id: string;
   max_polling_time?: number;
   template_id?: string;
+  dlp?: boolean;
+  document_id?: string;
   onPartialResultCb?: TPartialResultCallback;
 }): Promise<TPollingResponse> => {
   // Use passed callback, fallback to store callback for backwards compatibility
@@ -111,7 +115,11 @@ export const pollOutputSummary = async ({
             failedCount = 0;
           }
           await new Promise((resolve) => setTimeout(resolve, 1000));
-          return getSummary(template_id ? `template_id=${template_id}` : '');
+          const parts: string[] = [];
+          if (template_id) parts.push(`template_id=${template_id}`);
+          if (document_id) parts.push(`document_id=${document_id}`);
+          if (dlp) parts.push(`_dlp=true`);
+          return getSummary(parts.join('&'));
         }
 
         return createResponse(
@@ -130,7 +138,14 @@ export const pollOutputSummary = async ({
       }
     };
 
-    return getSummary(template_id ? `template_id=${template_id}` : '');
+    const parts: string[] = [];
+    if (template_id) parts.push(`template_id=${template_id}`);
+    if (document_id) parts.push(`document_id=${document_id}`);
+    if (dlp) parts.push(`_dlp=true`);
+    const queryParams = parts.join('&');
+
+    console.log(queryParams, 'query params');
+    return getSummary(queryParams);
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       return createResponse(-1, null, 'Request was aborted due to timeout.', 'timeout');
