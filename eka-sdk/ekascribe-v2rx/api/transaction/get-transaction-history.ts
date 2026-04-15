@@ -7,8 +7,10 @@ import { GET_EKA_VOICE_HOST_V2 } from '../../fetch-client/helper';
 
 const getTransactionHistory = async ({
   txn_count,
+  oid,
 }: {
   txn_count: number;
+  oid?: string;
 }): Promise<TGetTransactionHistoryResponse> => {
   try {
     const headers = new Headers();
@@ -20,7 +22,9 @@ const getTransactionHistory = async ({
     };
 
     const responseJson = await fetchWrapper(
-      `${GET_EKA_VOICE_HOST_V2()}/transaction/history?count=${txn_count}`,
+      `${GET_EKA_VOICE_HOST_V2()}/transaction/history?count=${txn_count}${
+        oid ? `&oid=${oid}` : ''
+      }`,
       options
     );
 

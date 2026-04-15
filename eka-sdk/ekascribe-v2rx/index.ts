@@ -432,10 +432,11 @@ class EkaScribe {
     return pollingResponse;
   }
 
-  async getSessionHistory({ txn_count }: { txn_count: number }) {
+  async getSessionHistory({ txn_count, oid }: { txn_count: number; oid?: string }) {
     try {
       const transactionsResponse = await getTransactionHistory({
         txn_count,
+        oid,
       });
 
       return transactionsResponse;
