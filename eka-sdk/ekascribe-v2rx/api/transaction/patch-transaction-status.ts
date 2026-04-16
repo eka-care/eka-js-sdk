@@ -19,14 +19,16 @@ const patchTransactionStatus = async ({
   sessionId,
   processing_status,
   processing_error,
+  patient_details,
 }: TPatchTransactionRequest): Promise<TPostTransactionResponse> => {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
     const raw = {
-      processing_status,
-      processing_error,
+      ...(processing_status ? { processing_status } : {}),
+      ...(patient_details ? { patient_details } : {}),
+      ...(processing_error ? { processing_error } : {}),
     };
 
     const options = {

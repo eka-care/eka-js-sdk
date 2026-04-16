@@ -280,21 +280,13 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
-  async patchSessionStatus({
-    sessionId,
-    processing_status,
-    processing_error,
-  }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
+  async patchSessionStatus(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
       this.vadInstance.pauseVad();
       this.vadInstance.destroyVad();
 
-      const patchTransactionResponse = await patchTransactionStatus({
-        sessionId,
-        processing_status,
-        processing_error,
-      });
+      const patchTransactionResponse = await patchTransactionStatus(request);
 
       this.resetEkaScribe();
 

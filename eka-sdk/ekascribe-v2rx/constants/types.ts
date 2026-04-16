@@ -194,8 +194,9 @@ export type TPatchTransactionError = {
 
 export type TPatchTransactionRequest = {
   sessionId: string;
-  processing_status: string;
+  processing_status?: string;
   processing_error?: TPatchTransactionError;
+  patient_details?: TPatientDetails;
 };
 
 export type TPostCogResponse = {
