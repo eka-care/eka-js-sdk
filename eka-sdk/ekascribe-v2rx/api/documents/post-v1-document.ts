@@ -6,6 +6,7 @@ import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 async function postV1Document({
   session_id,
   document_name,
+  type,
 }: TPostV1DocumentRequest): Promise<TPostV1DocumentResponse> {
   try {
     const headers = new Headers();
@@ -14,6 +15,7 @@ async function postV1Document({
     const raw = {
       session_id,
       document_name,
+      type,
     };
 
     const options = {

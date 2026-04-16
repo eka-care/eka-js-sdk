@@ -33,6 +33,7 @@ import {
   TPostV1TemplateSectionRequest,
   TPostV1UploadAudioFilesRequest,
   TPostV1DocumentRequest,
+  TPatchSessionContextRequest,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
@@ -83,6 +84,8 @@ import { getV1SessionSuggestedMedications } from './api/transaction/get-v1-sessi
 import postV1Document from './api/documents/post-v1-document';
 import deleteV1Document from './api/documents/delete-v1-document';
 import fetchChunkTranscript from './api/transaction/get-chunk-transcript';
+import patchSessionContext from './api/transaction/patch-session-context';
+import deleteSessionContext from './api/transaction/delete-session-context';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -678,6 +681,16 @@ class EkaScribe {
   async getChunkTranscript(txnId: string, chunkNumber: string) {
     return fetchChunkTranscript(txnId, chunkNumber);
   }
+
+  async addSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
+    const response = await patchSessionContext(txn_id, context);
+    return response;
+  }
+
+  async removeSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
+    const response = await deleteSessionContext(txn_id, context);
+    return response;
+  }
 }
 
 // Export the singleton instance getter with optional initialization
@@ -742,6 +755,8 @@ export type {
   TPostV1DocumentRequest,
   TPostV1DocumentResponse,
   TDeleteV1DocumentResponse,
+  TPatchSessionContextRequest,
+  TPatchSessionContextResponse,
 } from './constants/types';
 
 export type {

@@ -593,6 +593,7 @@ export type TSuggestedMedicationResponse = {
 export type TPostV1DocumentRequest = {
   session_id: string;
   document_name: string;
+  type?: string;
 };
 
 export type TPostV1DocumentResponse = {
@@ -621,6 +622,20 @@ export type TPostV1DocumentResponse = {
 };
 
 export type TDeleteV1DocumentResponse = {
+  code: number;
+  message?: string;
+  [key: string]: unknown;
+};
+
+export type TPatchSessionContextRequest = {
+  txn_id: string;
+  context: {
+    past_sessions?: string[];
+    attachments?: string[];
+  };
+};
+
+export type TPatchSessionContextResponse = {
   code: number;
   message?: string;
   [key: string]: unknown;

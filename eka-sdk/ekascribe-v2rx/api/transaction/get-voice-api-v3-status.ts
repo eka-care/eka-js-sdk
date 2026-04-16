@@ -19,6 +19,7 @@ export type TOutputSummary = {
   errors?: TTemplateMessage[];
   warnings?: TTemplateMessage[];
   document_id: string;
+  document_type: string;
   document_path: {
     bucket: string;
     folder: string;
