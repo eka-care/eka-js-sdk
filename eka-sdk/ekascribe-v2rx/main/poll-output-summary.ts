@@ -118,7 +118,7 @@ export const pollOutputSummary = async ({
           const parts: string[] = [];
           if (template_id) parts.push(`template_id=${template_id}`);
           if (document_id) parts.push(`document_id=${document_id}`);
-          if (dlp) parts.push(`_dlp=true`);
+          if (dlp) parts.push(`dlp=true`);
           return getSummary(parts.join('&'));
         }
 
@@ -141,7 +141,7 @@ export const pollOutputSummary = async ({
     const parts: string[] = [];
     if (template_id) parts.push(`template_id=${template_id}`);
     if (document_id) parts.push(`document_id=${document_id}`);
-    if (dlp) parts.push(`_dlp=true`);
+    if (dlp) parts.push(`dlp=true`);
     const queryParams = parts.join('&');
 
     console.log(queryParams, 'query params');
