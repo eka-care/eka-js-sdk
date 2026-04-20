@@ -1,12 +1,12 @@
 import { SDK_STATUS_CODE } from '../../constants/constant';
-import { TPatchSessionContextResponse } from '../../constants/types';
+import { TPatchSessionContextRequest, TPatchSessionContextResponse } from '../../constants/types';
 import fetchWrapper from '../../fetch-client';
 import { GET_EKA_VOICE_HOST_V1 } from '../../fetch-client/helper';
 
-async function patchSessionContext(
-  txn_id: string,
-  context: { past_sessions?: string[]; attachments?: string[] }
-): Promise<TPatchSessionContextResponse> {
+async function patchSessionContext({
+  txn_id,
+  context,
+}: TPatchSessionContextRequest): Promise<TPatchSessionContextResponse> {
   try {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');

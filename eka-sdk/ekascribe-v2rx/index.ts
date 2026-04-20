@@ -282,6 +282,19 @@ class EkaScribe {
 
   async patchSessionStatus(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
+      const patchTransactionResponse = await patchTransactionStatus(request);
+
+      return patchTransactionResponse;
+    } catch (error) {
+      return {
+        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to patch session, ${error}`,
+      } as TPostTransactionResponse;
+    }
+  }
+
+  async discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
+    try {
       const onEventCallback = EkaScribeStore.eventCallback;
       this.vadInstance.pauseVad();
       this.vadInstance.destroyVad();
@@ -675,12 +688,12 @@ class EkaScribe {
   }
 
   async addSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
-    const response = await patchSessionContext(txn_id, context);
+    const response = await patchSessionContext({ txn_id, context });
     return response;
   }
 
   async removeSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
-    const response = await deleteSessionContext(txn_id, context);
+    const response = await deleteSessionContext({ txn_id, context });
     return response;
   }
 }

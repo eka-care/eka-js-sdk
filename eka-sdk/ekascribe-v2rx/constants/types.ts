@@ -632,7 +632,10 @@ export type TPatchSessionContextRequest = {
   txn_id: string;
   context: {
     past_sessions?: string[];
-    attachments?: string[];
+    attachments?: {
+      id: string;
+      patient_oid?: string;
+    }[];
   };
 };
 
