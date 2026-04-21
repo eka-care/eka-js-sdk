@@ -49,8 +49,10 @@ export type TGetStatusApiResponse = {
   };
   error?: {
     code: string;
-    msg: string;
+    message: string;
+    display_message: string;
   };
+  status: string;
 };
 
 export type TGetStatusResponse = {

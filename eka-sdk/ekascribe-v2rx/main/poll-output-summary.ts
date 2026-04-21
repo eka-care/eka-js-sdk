@@ -106,7 +106,7 @@ export const pollOutputSummary = async ({
 
             if (failedCount >= 3) {
               const errorMessage =
-                response?.error?.msg ||
+                response?.error?.message ||
                 'We encountered a backend error while fetching results. Please try again.';
 
               return createResponse(status_code, null, errorMessage, 'failed');
