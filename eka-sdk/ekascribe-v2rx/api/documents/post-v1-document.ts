@@ -7,6 +7,7 @@ async function postV1Document({
   session_id,
   document_name,
   type,
+  document_id,
 }: TPostV1DocumentRequest): Promise<TPostV1DocumentResponse> {
   try {
     const headers = new Headers();
@@ -14,8 +15,9 @@ async function postV1Document({
 
     const raw = {
       session_id,
-      document_name,
       type,
+      ...(document_name ? { document_name } : {}),
+      ...(document_id ? { document_id } : {}),
     };
 
     const options = {

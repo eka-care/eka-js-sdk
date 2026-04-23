@@ -593,8 +593,9 @@ export type TSuggestedMedicationResponse = {
 
 export type TPostV1DocumentRequest = {
   session_id: string;
-  document_name: string;
+  document_name?: string;
   type?: string;
+  document_id?: string;
 };
 
 export type TPostV1DocumentResponse = {
