@@ -678,7 +678,7 @@ class EkaScribe {
     return response;
   }
 
-  async updateDocument(request: TPostV1DocumentRequest & { document_id: string }) {
+  async updateDocument(request: TPostV1DocumentRequest) {
     const response = await postV1Document(request);
     return response;
   }
