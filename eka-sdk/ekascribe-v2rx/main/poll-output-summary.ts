@@ -114,6 +114,7 @@ export const pollOutputSummary = async ({
           } else {
             failedCount = 0;
           }
+
           await new Promise((resolve) => setTimeout(resolve, 1000));
           const parts: string[] = [];
           if (template_id) parts.push(`template_id=${template_id}`);

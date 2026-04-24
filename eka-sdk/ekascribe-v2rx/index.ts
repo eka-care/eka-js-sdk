@@ -86,6 +86,7 @@ import deleteV1Document from './api/documents/delete-v1-document';
 import fetchChunkTranscript from './api/transaction/get-chunk-transcript';
 import patchSessionContext from './api/transaction/patch-session-context';
 import deleteSessionContext from './api/transaction/delete-session-context';
+import postV1SessionDocumentPublish from './api/documents/post-v1-sessions-document-publish';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -685,6 +686,11 @@ class EkaScribe {
 
   async deleteDocument(document_id: string) {
     const response = await deleteV1Document(document_id);
+    return response;
+  }
+
+  async publishDocument(request: TPostV1DocumentRequest) {
+    const response = await postV1SessionDocumentPublish(request);
     return response;
   }
 
