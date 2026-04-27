@@ -23,3 +23,7 @@ export function configureAWS({ accessKeyId, secretKey, sessionToken }: TAwsCrede
 export function getConfiguredAwsCredentials(): TAwsCredentials | null {
   return currentAwsCredentials;
 }
+
+export function clearAwsCredentials(): void {
+  currentAwsCredentials = null;
+}

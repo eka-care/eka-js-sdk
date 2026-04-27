@@ -5,6 +5,7 @@ import {
   COMPATIBILITY_TEST_STATUS,
   API_STATUS,
   VAD_STATUS,
+  AUTH_ERROR_STATUS,
 } from './enums';
 
 export type TGetConfigV2Response = {
@@ -284,6 +285,11 @@ export type TSessionStatus = {
     };
   };
 };
+
+export type TAuthErrorCallback = (
+  status: AUTH_ERROR_STATUS,
+  code: number
+) => { access_token?: string } | void;
 
 // Generic callback type that can handle any data structure
 export type TEventCallback = (args: {

@@ -82,6 +82,11 @@ export enum CALLBACK_TYPE {
   STORAGE_STATUS = 'storage_status',
 }
 
+export enum AUTH_ERROR_STATUS {
+  UNAUTHORIZED = 'unauthorized',
+  FORBIDDEN = 'forbidden',
+}
+
 export enum TEMPLATE_TYPE {
   JSON = 'json',
   TRANSCRIPT = 'transcript',

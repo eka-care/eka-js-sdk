@@ -1,6 +1,6 @@
 import { AwsClient } from 'aws4fetch';
 import postCogInit from '../api/post-cog-init';
-import { configureAWS, getConfiguredAwsCredentials } from './configure-aws';
+import { clearAwsCredentials, configureAWS, getConfiguredAwsCredentials } from './configure-aws';
 
 // ============================================================================
 // Types
@@ -45,6 +45,7 @@ function classifyError(error: unknown): ErrorInfo {
 
   // Session expired from token API - permanent
   if (err.is_session_expired) {
+    clearAwsCredentials();
     return { isPermanent: true, code: 401, message: 'Session expired. Please re-login.' };
   }
 
@@ -52,9 +53,11 @@ function classifyError(error: unknown): ErrorInfo {
 
   // Permanent errors - don't retry
   if (statusCode === 401) {
+    clearAwsCredentials();
     return { isPermanent: true, code: 401, message: 'Authentication failed. Please re-login.' };
   }
   if (statusCode === 403) {
+    clearAwsCredentials();
     return { isPermanent: true, code: 403, message: 'Permission denied.' };
   }
   if (statusCode === 404) {

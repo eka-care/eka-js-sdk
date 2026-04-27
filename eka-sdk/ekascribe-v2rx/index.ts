@@ -18,6 +18,7 @@ import {
 } from './constants/constant';
 import { API_STATUS, CALLBACK_TYPE, ERROR_CODE } from './constants/enums';
 import {
+  TAuthErrorCallback,
   TDeleteTransactionResponse,
   TEndRecordingResponse,
   TEventCallback,
@@ -139,7 +140,13 @@ class EkaScribe {
       }
     }
 
+    // // Once the singleton exists, `access_token` from config is ignored — the stored
+    // // token can only be changed via `updateAuthTokens` (or a full resetInstance).
+    // // This prevents a stale SDK config from overwriting a freshly-refreshed token.
+    // const skipAuthToken = EkaScribe.instance !== null;
+
     setEnv({
+      // ...(access_token && !skipAuthToken ? { auth_token: access_token } : {}),
       ...(access_token ? { auth_token: access_token } : {}),
       ...(env ? { env } : {}),
       ...(clientId ? { clientId } : {}),
@@ -510,6 +517,11 @@ class EkaScribe {
     EkaScribeStore.partialResultCallback = callback;
   }
 
+  // Register a handler for 401/403 from any SDK API call.
+  onAuthErrorCallback(callback: TAuthErrorCallback) {
+    EkaScribeStore.authErrorCallback = callback;
+  }
+
   configureVadConstants({
     pref_length,
     desp_length,
@@ -773,6 +785,7 @@ export type {
   TDeleteV1DocumentResponse,
   TPatchSessionContextRequest,
   TPatchSessionContextResponse,
+  TAuthErrorCallback,
 } from './constants/types';
 
 export type {
@@ -792,6 +805,7 @@ export {
   VAD_STATUS,
   COMPATIBILITY_TEST_TYPE,
   COMPATIBILITY_TEST_STATUS,
+  AUTH_ERROR_STATUS,
 } from './constants/enums';
 
 // Re-export status response type

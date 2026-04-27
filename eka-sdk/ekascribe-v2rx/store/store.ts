@@ -8,6 +8,7 @@ import {
   TVadFrameProcessedCallback,
   TVadFramesCallback,
   TPartialResultCallback,
+  TAuthErrorCallback,
 } from '../constants/types';
 
 class EkaScribeStore {
@@ -23,6 +24,7 @@ class EkaScribeStore {
   private _vadFramesCallback: TVadFramesCallback | null = null;
   private _vadFrameProcessedCallback: TVadFrameProcessedCallback | null = null;
   private _partialResultCallback: TPartialResultCallback | null = null;
+  private _authErrorCallback: TAuthErrorCallback | null = null;
   private _enableSentryLogs: boolean = true;
   private _flavour: string = '';
 
@@ -122,6 +124,16 @@ class EkaScribeStore {
   }
   set partialResultCallback(callback: TPartialResultCallback | null) {
     this._partialResultCallback = callback;
+  }
+
+  // Auth Error Callback (401/403)
+  // Survives `resetStore` so it stays registered across transactions —
+  // clients register once at SDK init, not per-recording.
+  get authErrorCallback(): TAuthErrorCallback | null {
+    return this._authErrorCallback;
+  }
+  set authErrorCallback(callback: TAuthErrorCallback | null) {
+    this._authErrorCallback = callback;
   }
 
   // Sentry logging flag
