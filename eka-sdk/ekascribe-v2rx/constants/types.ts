@@ -160,6 +160,7 @@ export type TPostTransactionInitRequest = {
   batch_s3_url?: string;
   audio_file_names?: string[];
   additional_data?: Record<string, unknown>;
+  encounter_id?: string;
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
