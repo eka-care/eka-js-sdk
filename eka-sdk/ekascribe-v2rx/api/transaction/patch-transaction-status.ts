@@ -42,10 +42,6 @@ const patchTransactionStatus = async ({
       options
     );
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-
     let res = await response.json();
     res = {
       ...res,
