@@ -197,6 +197,7 @@ export type TPatchTransactionRequest = {
   processing_status?: string;
   processing_error?: TPatchTransactionError;
   patient_details?: TPatientDetails;
+  user_status?: string;
 };
 
 export type TPostCogResponse = {
@@ -641,6 +642,63 @@ export type TPatchSessionContextRequest = {
 };
 
 export type TPatchSessionContextResponse = {
+  code: number;
+  message?: string;
+  [key: string]: unknown;
+};
+
+export type TGetV1SessionDetailsRequest = {
+  session_id: string;
+  presigned?: boolean;
+};
+
+export type TSessionDocument = {
+  document_id: string;
+  session_id: string;
+  template_id: string;
+  document_name: string;
+  document_type: 'document' | 'context' | 'transcript';
+  type: string;
+  status: string;
+  errors: unknown[];
+  warnings: unknown[];
+  publish: Record<string, unknown>;
+  created_at: number;
+  presigned_url: string | null;
+  presigned_url_expires_at: number | null;
+  vault_doc_id: string | null;
+};
+
+export type TSessionDetailsAdditionalData = {
+  input_languages?: { id: string; name: string }[];
+  output_format_template?: {
+    id: string;
+    name: string;
+    template_type: string;
+  }[];
+  model_type?: string;
+  consultation_mode?: string;
+  [key: string]: unknown;
+};
+
+export type TGetV1SessionDetailsData = {
+  schema_version: string;
+  session_id: string;
+  uuid: string;
+  wid: string;
+  created_at: number;
+  status: string;
+  user_status: 'init' | 'recording_started' | 'commit' | string;
+  transfer: string;
+  flavour: string;
+  patient_details: TPatientDetails | Record<string, unknown>;
+  audio_matrix: Record<string, unknown>;
+  additional_data: TSessionDetailsAdditionalData;
+  documents: TSessionDocument[];
+};
+
+export type TGetV1SessionDetailsResponse = {
+  data?: TGetV1SessionDetailsData;
   code: number;
   message?: string;
   [key: string]: unknown;
