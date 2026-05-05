@@ -34,6 +34,7 @@ import {
   TPostV1UploadAudioFilesRequest,
   TPostV1DocumentRequest,
   TPatchSessionContextRequest,
+  TGetV1SessionDetailsRequest,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
@@ -46,6 +47,9 @@ import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
+import startRecordingForExistingSessionFlow, {
+  TStartRecordingForExistingSessionRequest,
+} from './main/start-recording-for-existing-session';
 import getTransactionHistory from './api/transaction/get-transaction-history';
 import deleteTransaction from './api/transaction/delete-transaction';
 import getV1Templates from './api/templates/get-v1-templates';
@@ -87,6 +91,8 @@ import fetchChunkTranscript from './api/transaction/get-chunk-transcript';
 import patchSessionContext from './api/transaction/patch-session-context';
 import deleteSessionContext from './api/transaction/delete-session-context';
 import postV1SessionDocumentPublish from './api/documents/post-v1-sessions-document-publish';
+import getV1SessionDetails from './api/transaction/get-v1-session-details';
+import getV1Document from './api/documents/get-v1-document';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -224,6 +230,11 @@ class EkaScribe {
   async startRecording(microphoneID?: string) {
     const startResponse = await startVoiceRecording(microphoneID);
     console.log('%c Line:110 🍓 startResponse', 'color:#465975', startResponse);
+    return startResponse;
+  }
+
+  async startRecordingForExistingSession(request: TStartRecordingForExistingSessionRequest) {
+    const startResponse = await startRecordingForExistingSessionFlow(request);
     return startResponse;
   }
 
@@ -684,6 +695,11 @@ class EkaScribe {
     return response;
   }
 
+  async getDocument(document_id: string) {
+    const response = await getV1Document(document_id);
+    return response;
+  }
+
   async deleteDocument(document_id: string) {
     const response = await deleteV1Document(document_id);
     return response;
@@ -705,6 +721,11 @@ class EkaScribe {
 
   async removeSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
     const response = await deleteSessionContext({ txn_id, context });
+    return response;
+  }
+
+  async getSessionDetails({ session_id, presigned }: TGetV1SessionDetailsRequest) {
+    const response = await getV1SessionDetails({ session_id, presigned });
     return response;
   }
 }
@@ -773,6 +794,11 @@ export type {
   TDeleteV1DocumentResponse,
   TPatchSessionContextRequest,
   TPatchSessionContextResponse,
+  TGetV1SessionDetailsRequest,
+  TGetV1SessionDetailsResponse,
+  TGetV1SessionDetailsData,
+  TSessionDocument,
+  TSessionDetailsAdditionalData,
 } from './constants/types';
 
 export type {
