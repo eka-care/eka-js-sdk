@@ -234,20 +234,54 @@ class EkaScribe {
   }
 
   async startRecordingForExistingSession(request: TStartRecordingForExistingSessionRequest) {
+    // Mirror initTransaction: create instances on `this` so downstream
+    // methods (discardSession, resetEkaScribe, etc.) can reach them.
+    EkaScribeStore.resetStore();
+
+    this.audioFileManagerInstance = new AudioFileManager();
+    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
+    if (request.sharedWorkerUrl) {
+      this.audioFileManagerInstance.createSharedWorkerInstance(request.sharedWorkerUrl);
+    }
+
+    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
+    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
+    this.vadInstance = new VadWebClient(
+      PREF_CHUNK_LENGTH,
+      DESP_CHUNK_LENGTH,
+      MAX_CHUNK_LENGTH,
+      FRAME_RATE
+    );
+    EkaScribeStore.vadInstance = this.vadInstance;
+
     const startResponse = await startRecordingForExistingSessionFlow(request);
     return startResponse;
   }
 
-  reinitializeVad() {
-    this.vadInstance.reinitializeVad();
+  async reinitializeVad() {
+    try {
+      await this.vadInstance.reinitializeVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in reinitializeVad:', error);
+    }
   }
 
   destroyVad() {
-    this.vadInstance.destroyVad();
+    try {
+      this.vadInstance.destroyVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in destroyVad:', error);
+    }
   }
 
   pauseVad() {
-    this.vadInstance.pauseVad();
+    try {
+      this.vadInstance.pauseVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in pauseVad:', error);
+    }
   }
 
   pauseRecording() {
@@ -308,6 +342,7 @@ class EkaScribe {
   async discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
+
       this.vadInstance.pauseVad();
       this.vadInstance.destroyVad();
 

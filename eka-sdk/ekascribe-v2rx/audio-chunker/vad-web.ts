@@ -343,8 +343,12 @@ class VadWebClient {
    * reinitialize the vad instance
    */
   async reinitializeVad(deviceId?: string) {
-    const response = await this.initVad(deviceId);
-    return response;
+    try {
+      const response = await this.initVad(deviceId);
+      return response;
+    } catch (error) {
+      console.error('[EkaScribe] Error in reinitializeVad:', error);
+    }
   }
 
   /**
@@ -438,61 +442,77 @@ class VadWebClient {
    * Start VAD
    */
   startVad() {
-    if (this.recording_started) return;
-    if (this.micVad && typeof this.micVad.start === 'function') {
-      this.micVad.start();
+    try {
+      if (this.recording_started) return;
+      if (this.micVad && typeof this.micVad.start === 'function') {
+        this.micVad.start();
+      }
+      this.recording_started = true;
+    } catch (error) {
+      console.error('[EkaScribe] Error in startVad:', error);
     }
-    this.recording_started = true;
   }
 
   /**
    * Pause VAD
    */
   pauseVad() {
-    if (!this.recording_started) return;
-    if (this.micVad && typeof this.micVad.pause === 'function') {
-      this.micVad.pause();
+    try {
+      if (!this.recording_started) return;
+      if (this.micVad && typeof this.micVad.pause === 'function') {
+        this.micVad.pause();
+      }
+      this.recording_started = false;
+    } catch (error) {
+      console.error('[EkaScribe] Error in pauseVad:', error);
     }
-    this.recording_started = false;
   }
 
   /**
    * End VAD
    */
   destroyVad() {
-    // Properly destroy MicVAD instance
-    if (this.micVad && typeof this.micVad.destroy === 'function') {
-      this.micVad.destroy();
+    try {
+      // Properly destroy MicVAD instance
+      if (this.micVad && typeof this.micVad.destroy === 'function') {
+        this.micVad.destroy();
+      }
+      this.stopMicStream();
+      this.recording_started = false;
+    } catch (error) {
+      console.error('[EkaScribe] Error in destroyVad:', error);
     }
-    this.stopMicStream();
-    this.recording_started = false;
   }
 
   /**
    * reset vadWeb instance
    */
   resetVadWebInstance() {
-    // First, stop any ongoing operations
-    // if (this.micVad && typeof this.micVad.pause === 'function') {
-    //   this.micVad.pause(); // Stop recording first
-    // }
+    try {
+      // First, stop any ongoing operations
+      // if (this.micVad && typeof this.micVad.pause === 'function') {
+      //   this.micVad.pause(); // Stop recording first
+      // }
 
-    // Properly destroy MicVAD instance
-    if (this.micVad && typeof this.micVad.destroy === 'function') {
-      this.micVad.destroy();
+      // Properly destroy MicVAD instance
+      if (this.micVad && typeof this.micVad.destroy === 'function') {
+        this.micVad.destroy();
+      }
+      this.stopMicStream();
+
+      // Reset VAD state
+      this.vad_frame_count = 0;
+      this.last_clip_index = 0;
+      this.last_clip_point = 0;
+      this.sil_duration_acc = 0;
+      this.noSpeechStartTime = null;
+      this.lastWarningTime = null;
+      this.recording_started = false;
+      this.is_vad_loading = true; // Reset to initial state
+      // this.micVad = {} as MicVAD; // Clear the instance
+    } catch (error) {
+      console.error('[EkaScribe] Error in resetVadWebInstance:', error);
     }
-    this.stopMicStream();
-
-    // Reset VAD state
-    this.vad_frame_count = 0;
-    this.last_clip_index = 0;
-    this.last_clip_point = 0;
-    this.sil_duration_acc = 0;
-    this.noSpeechStartTime = null;
-    this.lastWarningTime = null;
-    this.recording_started = false;
-    this.is_vad_loading = true; // Reset to initial state
-    // this.micVad = {} as MicVAD; // Clear the instance
   }
 
   /**
@@ -504,19 +524,26 @@ class VadWebClient {
     const onVadCallback = EkaScribeStore.vadFramesCallback;
 
     setTimeout(() => {
-      if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
-        this.micVad.pause();
-        if (onVadCallback) {
-          onVadCallback({
-            message: 'No audio is being captured. Please check your microphone.',
-            error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
-            status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-          });
+      try {
+        if (audioBuffer && audioBuffer.getCurrentSampleLength() <= 0) {
+          if (this.micVad && typeof this.micVad.pause === 'function') {
+            this.micVad.pause();
+          }
+          if (onVadCallback) {
+            onVadCallback({
+              message: 'No audio is being captured. Please check your microphone.',
+              error_code: ERROR_CODE.NO_AUDIO_CAPTURE,
+              status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+            });
+          }
+          return false;
         }
+
+        return true;
+      } catch (error) {
+        console.error('[EkaScribe] Error in monitorAudioCapture:', error);
         return false;
       }
-
-      return true;
     }, 5000);
   }
 

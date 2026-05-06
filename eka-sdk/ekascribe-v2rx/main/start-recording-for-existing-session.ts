@@ -1,15 +1,4 @@
-import AudioBufferManager from '../audio-chunker/audio-buffer-manager';
-import AudioFileManager from '../audio-chunker/audio-file-manager';
-import VadWebClient from '../audio-chunker/vad-web';
-import {
-  AUDIO_BUFFER_SIZE_IN_S,
-  DESP_CHUNK_LENGTH,
-  FRAME_RATE,
-  MAX_CHUNK_LENGTH,
-  PREF_CHUNK_LENGTH,
-  SAMPLING_RATE,
-  SDK_STATUS_CODE,
-} from '../constants/constant';
+import { SDK_STATUS_CODE } from '../constants/constant';
 import { API_STATUS, ERROR_CODE } from '../constants/enums';
 import { TStartRecordingResponse } from '../constants/types';
 import setEnv from '../fetch-client/helper';
@@ -41,7 +30,6 @@ const startRecordingForExistingSession = async ({
   business_id,
   created_at,
   microphoneID,
-  sharedWorkerUrl,
   flavour,
 }: TStartRecordingForExistingSessionRequest): Promise<TStartRecordingResponse> => {
   try {
@@ -55,25 +43,9 @@ const startRecordingForExistingSession = async ({
       };
     }
 
-    EkaScribeStore.resetStore();
-
-    const audioFileManagerInstance = new AudioFileManager();
-    EkaScribeStore.audioFileManagerInstance = audioFileManagerInstance;
-
-    if (sharedWorkerUrl) {
-      audioFileManagerInstance.createSharedWorkerInstance(sharedWorkerUrl);
-    }
-
-    const audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
-    EkaScribeStore.audioBufferInstance = audioBufferInstance;
-
-    const vadInstance = new VadWebClient(
-      PREF_CHUNK_LENGTH,
-      DESP_CHUNK_LENGTH,
-      MAX_CHUNK_LENGTH,
-      FRAME_RATE
-    );
-    EkaScribeStore.vadInstance = vadInstance;
+    // Instances are created by EkaScribe.startRecordingForExistingSession
+    // (mirrors initTransaction) so they are bound to `this` on the class.
+    const audioFileManagerInstance = EkaScribeStore.audioFileManagerInstance;
 
     if (flavour) {
       setEnv({ flavour });
@@ -90,7 +62,7 @@ const startRecordingForExistingSession = async ({
       },
     };
 
-    audioFileManagerInstance.setSessionInfo({
+    audioFileManagerInstance?.setSessionInfo({
       sessionId: txn_id,
       filePath: session_bucket_path,
       businessID: business_id,
