@@ -107,11 +107,7 @@ const startRecordingForExistingSession = async ({
 
     return await startVoiceRecording(microphoneID);
   } catch (err) {
-    console.error(
-      '%c Line:00 🍇 startRecordingForExistingSession err',
-      'color:#b03734',
-      err
-    );
+    console.error('%c Line:00 🍇 startRecordingForExistingSession err', 'color:#b03734', err);
     return {
       error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
       status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,

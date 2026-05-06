@@ -657,7 +657,7 @@ export type TSessionDocument = {
   session_id: string;
   template_id: string;
   document_name: string;
-  document_type: 'document' | 'context' | 'transcript';
+  document_type: 'notes' | 'context' | 'transcript' | 'integration';
   type: string;
   status: string;
   errors: unknown[];
