@@ -597,6 +597,7 @@ export type TPostV1DocumentRequest = {
   document_name?: string;
   type?: string;
   document_id?: string;
+  publish?: Record<string, unknown>;
 };
 
 export type TPostV1DocumentResponse = {
@@ -621,6 +622,7 @@ export type TPostV1DocumentResponse = {
     presigned_url: string;
     created_at: string;
     updated_at: number;
+    publish: Record<string, unknown>;
   };
 };
 
