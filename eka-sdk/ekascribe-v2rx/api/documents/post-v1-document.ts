@@ -8,6 +8,7 @@ async function postV1Document({
   document_name,
   type,
   document_id,
+  publish,
 }: TPostV1DocumentRequest): Promise<TPostV1DocumentResponse> {
   try {
     const headers = new Headers();
@@ -18,6 +19,7 @@ async function postV1Document({
       type,
       ...(document_name ? { document_name } : {}),
       ...(document_id ? { document_id } : {}),
+      ...(publish ? { publish } : {}),
     };
 
     const options = {

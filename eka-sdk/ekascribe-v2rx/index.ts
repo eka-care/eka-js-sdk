@@ -34,6 +34,7 @@ import {
   TPostV1UploadAudioFilesRequest,
   TPostV1DocumentRequest,
   TPatchSessionContextRequest,
+  TGetV1SessionDetailsRequest,
   TVadFrameProcessedCallback,
   TVadFramesCallback,
 } from './constants/types';
@@ -46,6 +47,9 @@ import retryUploadFailedFiles from './main/retry-upload-recording';
 import startVoiceRecording from './main/start-recording';
 import EkaScribeStore from './store/store';
 import initialiseTransaction from './main/init-transaction';
+import startRecordingForExistingSessionFlow, {
+  TStartRecordingForExistingSessionRequest,
+} from './main/start-recording-for-existing-session';
 import getTransactionHistory from './api/transaction/get-transaction-history';
 import deleteTransaction from './api/transaction/delete-transaction';
 import getV1Templates from './api/templates/get-v1-templates';
@@ -87,6 +91,8 @@ import fetchChunkTranscript from './api/transaction/get-chunk-transcript';
 import patchSessionContext from './api/transaction/patch-session-context';
 import deleteSessionContext from './api/transaction/delete-session-context';
 import postV1SessionDocumentPublish from './api/documents/post-v1-sessions-document-publish';
+import getV1SessionDetails from './api/transaction/get-v1-session-details';
+import getV1Document from './api/documents/get-v1-document';
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -227,16 +233,55 @@ class EkaScribe {
     return startResponse;
   }
 
-  reinitializeVad() {
-    this.vadInstance.reinitializeVad();
+  async startRecordingForExistingSession(request: TStartRecordingForExistingSessionRequest) {
+    // Mirror initTransaction: create instances on `this` so downstream
+    // methods (discardSession, resetEkaScribe, etc.) can reach them.
+    EkaScribeStore.resetStore();
+
+    this.audioFileManagerInstance = new AudioFileManager();
+    EkaScribeStore.audioFileManagerInstance = this.audioFileManagerInstance;
+
+    if (request.sharedWorkerUrl) {
+      this.audioFileManagerInstance.createSharedWorkerInstance(request.sharedWorkerUrl);
+    }
+
+    this.audioBufferInstance = new AudioBufferManager(SAMPLING_RATE, AUDIO_BUFFER_SIZE_IN_S);
+    EkaScribeStore.audioBufferInstance = this.audioBufferInstance;
+
+    this.vadInstance = new VadWebClient(
+      PREF_CHUNK_LENGTH,
+      DESP_CHUNK_LENGTH,
+      MAX_CHUNK_LENGTH,
+      FRAME_RATE
+    );
+    EkaScribeStore.vadInstance = this.vadInstance;
+
+    const startResponse = await startRecordingForExistingSessionFlow(request);
+    return startResponse;
+  }
+
+  async reinitializeVad() {
+    try {
+      await this.vadInstance.reinitializeVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in reinitializeVad:', error);
+    }
   }
 
   destroyVad() {
-    this.vadInstance.destroyVad();
+    try {
+      this.vadInstance.destroyVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in destroyVad:', error);
+    }
   }
 
   pauseVad() {
-    this.vadInstance.pauseVad();
+    try {
+      this.vadInstance.pauseVad();
+    } catch (error) {
+      console.error('[EkaScribe] Error in pauseVad:', error);
+    }
   }
 
   pauseRecording() {
@@ -297,6 +342,7 @@ class EkaScribe {
   async discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
+
       this.vadInstance.pauseVad();
       this.vadInstance.destroyVad();
 
@@ -684,6 +730,11 @@ class EkaScribe {
     return response;
   }
 
+  async getDocument(document_id: string) {
+    const response = await getV1Document(document_id);
+    return response;
+  }
+
   async deleteDocument(document_id: string) {
     const response = await deleteV1Document(document_id);
     return response;
@@ -705,6 +756,11 @@ class EkaScribe {
 
   async removeSessionContext({ txn_id, context }: TPatchSessionContextRequest) {
     const response = await deleteSessionContext({ txn_id, context });
+    return response;
+  }
+
+  async getSessionDetails({ session_id, presigned }: TGetV1SessionDetailsRequest) {
+    const response = await getV1SessionDetails({ session_id, presigned });
     return response;
   }
 }
@@ -773,6 +829,11 @@ export type {
   TDeleteV1DocumentResponse,
   TPatchSessionContextRequest,
   TPatchSessionContextResponse,
+  TGetV1SessionDetailsRequest,
+  TGetV1SessionDetailsResponse,
+  TGetV1SessionDetailsData,
+  TSessionDocument,
+  TSessionDetailsAdditionalData,
 } from './constants/types';
 
 export type {

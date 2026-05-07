@@ -20,6 +20,7 @@ const patchTransactionStatus = async ({
   processing_status,
   processing_error,
   patient_details,
+  user_status,
 }: TPatchTransactionRequest): Promise<TPostTransactionResponse> => {
   try {
     const headers = new Headers();
@@ -29,6 +30,7 @@ const patchTransactionStatus = async ({
       ...(processing_status ? { processing_status } : {}),
       ...(patient_details ? { patient_details } : {}),
       ...(processing_error ? { processing_error } : {}),
+      ...(user_status ? { user_status } : {}),
     };
 
     const options = {
