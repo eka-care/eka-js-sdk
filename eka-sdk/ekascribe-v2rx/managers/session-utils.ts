@@ -434,8 +434,6 @@ export class SessionUtils {
 
   // deleteSession
 
-  // cancelSession
-
   // --- Private helpers ---
 
   private getDefaultHeaderFooterInfo(): TDoctorHeaderFooterInfo {
