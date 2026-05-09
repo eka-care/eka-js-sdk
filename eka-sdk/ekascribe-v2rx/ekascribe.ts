@@ -10,6 +10,7 @@ import {
   TCompatibilityTestSummary,
   TStartRecordingForExistingSessionRequest,
   TPollingResponse,
+  TPostV1UploadAudioFilesRequest,
 } from './constants/types';
 import { ITransport as EkaITransport, TransportConfig } from './transport/transport.interface';
 import { HttpTransport } from './transport/http-transport';
@@ -200,6 +201,10 @@ class EkaScribe {
 
   discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     return this.recording.discardSession(request);
+  }
+
+  uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest): Promise<TStartRecordingResponse> {
+    return this.recording.uploadAudioWithPresignedUrl(request);
   }
 
   /** @deprecated Backward compatible */

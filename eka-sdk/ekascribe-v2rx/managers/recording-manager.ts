@@ -8,6 +8,8 @@ import {
   TEndRecordingResponse,
   TPatchTransactionRequest,
   TStartRecordingForExistingSessionRequest,
+  TPostV1UploadAudioFilesRequest,
+  TPostV1FileUploadResponse,
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
@@ -327,6 +329,121 @@ export class RecordingManager {
         code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to cancel recording session, ${error}`,
       } as TPostTransactionResponse;
+    }
+  }
+
+  // TODO: Alliance integration
+  async uploadAudioWithPresignedUrl(
+    request: TPostV1UploadAudioFilesRequest
+  ): Promise<TStartRecordingResponse> {
+    try {
+      const { audioFiles, audioFileNames, txn_id, action, ...initParams } = request;
+
+      // Step 1: Get presigned URL
+      const presignedResponse = await this.transport.request<TPostV1FileUploadResponse>({
+        method: 'POST',
+        url: `${this.hosts.ekaHost}/v1/file-upload?txn_id=${txn_id}&action=${action}`,
+        body: {},
+      });
+
+      if (presignedResponse.status >= 400) {
+        return {
+          error_code: ERROR_CODE.GET_PRESIGNED_URL_FAILED,
+          status_code: presignedResponse.status,
+          message: presignedResponse.data.message || 'Get presigned URL failed',
+        };
+      }
+
+      const { uploadData, folderPath } = presignedResponse.data;
+
+      // Step 2: Upload files to S3 using presigned URL
+      const uploadPromises = audioFiles.map(async (file: File | Blob, index: number) => {
+        const fileName = audioFileNames[index];
+        const fields = { ...uploadData.fields, key: folderPath + fileName };
+        const formData = new FormData();
+        Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+        formData.append('file', file);
+
+        try {
+          const res = await fetch(uploadData.url, { method: 'POST', body: formData });
+          return {
+            success: res.status === 204,
+            fileName,
+            error: res.status !== 204 ? `Upload failed with status: ${res.status}` : undefined,
+          };
+        } catch (err) {
+          return { success: false, fileName, error: `${err}` };
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const failedUploads = results.filter((r) => !r.success);
+
+      if (failedUploads.length === audioFiles.length) {
+        return {
+          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+          status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: 'All file uploads failed.',
+        };
+      }
+
+      // Step 3: Init transaction with batch S3 URL
+      const batchS3Url = uploadData.url + folderPath;
+      const allianceRequest: CreateSessionRequest = {
+        templates: initParams.output_format_template.map((t) => t.template_id),
+        model: initParams.model_type,
+        language_hint: initParams.input_language,
+        ...(initParams.output_language
+          ? { transcript_language: [initParams.output_language] }
+          : {}),
+        upload_type: initParams.transfer || 'single',
+        communication_protocol: 'http',
+        additional_data: {
+          mode: initParams.mode,
+          txn_id,
+          patient_details: initParams.patient_details,
+          system_info: initParams.system_info,
+          auto_download: initParams.auto_download,
+          model_training_consent: initParams.model_training_consent,
+          version: initParams.version,
+          batch_s3_url: batchS3Url,
+          audio_file_names: audioFileNames,
+          ...(initParams.additional_data || {}),
+        },
+      };
+
+      const result: SDKResult<CreateSessionResponse> = await this.allianceClient.createSession(
+        allianceRequest
+      );
+
+      if (!result.success) {
+        const errorCode =
+          result.error.code === 'rate_limit_exceeded'
+            ? ERROR_CODE.TXN_LIMIT_EXCEEDED
+            : ERROR_CODE.TXN_INIT_FAILED;
+
+        return {
+          error_code: errorCode,
+          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: result.error.message || 'Transaction initialization failed.',
+        };
+      }
+
+      this.storedSession = result.data;
+      this.txnID = result.data.session_id;
+      this.tracker.setTransactionId(this.txnID);
+
+      return {
+        status_code: SDK_STATUS_CODE.SUCCESS,
+        message: 'Recording uploaded successfully.',
+        txn_id: this.txnID,
+      };
+    } catch (error) {
+      return {
+        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Recording upload failed: ${error}`,
+      };
     }
   }
 
