@@ -706,3 +706,17 @@ export type TGetV1SessionDetailsResponse = {
   message?: string;
   [key: string]: unknown;
 };
+
+export type TStartRecordingForExistingSessionRequest = {
+  txn_id: string;
+  business_id: string;
+  created_at: number;
+  microphoneID?: string;
+};
+
+export type TPollingResponse = {
+  response?: TGetStatusApiResponse | null;
+  status_code: number;
+  errorMessage?: string;
+  errorCode?: string;
+};

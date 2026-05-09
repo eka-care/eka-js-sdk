@@ -172,6 +172,7 @@ class EkaScribe {
     EkaScribe.instance = null;
   }
 
+  // UTILS
   async getEkascribeConfig() {
     const response = await getConfigV2();
     return response;
@@ -326,6 +327,7 @@ class EkaScribe {
     return retryUploadResponse;
   }
 
+  // NOCHANGE
   async patchSessionStatus(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const patchTransactionResponse = await patchTransactionStatus(request);
@@ -339,6 +341,7 @@ class EkaScribe {
     }
   }
 
+  // NOCHANGE
   async discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const onEventCallback = EkaScribeStore.eventCallback;
@@ -368,6 +371,7 @@ class EkaScribe {
     }
   }
 
+  // DEPRECATED
   async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
       const txnID = EkaScribeStore.txnID;
@@ -438,6 +442,7 @@ class EkaScribe {
     }
   }
 
+  // DEPRECATED
   async stopTransactionCall() {
     // call endRecording method since all the steps are same
     const endRecordingResponse = await endVoiceRecording();
@@ -459,6 +464,7 @@ class EkaScribe {
     }
   }
 
+  // UTILS
   async getOutputTranscription({ txn_id }: { txn_id: string }) {
     try {
       const getStatusResponse = await getVoiceApiV3StatusTranscript({
@@ -487,6 +493,7 @@ class EkaScribe {
     return pollingResponse;
   }
 
+  // UTILS
   async getSessionHistory({ txn_count, oid }: { txn_count: number; oid?: string }) {
     try {
       const transactionsResponse = await getTransactionHistory({
@@ -503,6 +510,7 @@ class EkaScribe {
     }
   }
 
+  // UTILS
   async deleteSession({ txn_id }: { txn_id: string }): Promise<TDeleteTransactionResponse> {
     try {
       return await deleteTransaction({ txn_id });
@@ -613,6 +621,7 @@ class EkaScribe {
     return templatesResponse;
   }
 
+  // UTILS
   async updateConfig(request: TPatchVoiceApiV2ConfigRequest) {
     const configResponse = await putVoiceApiV2Config(request);
     return configResponse;
@@ -644,6 +653,7 @@ class EkaScribe {
     return convertToTemplateResponse;
   }
 
+  // UTILS
   async convertTranscriptionToTemplate(request: TPostV1ConvertToTemplateRequest) {
     const convertToTemplateResponse = await postConvertTranscriptionToTemplate(request);
     return convertToTemplateResponse;
@@ -669,16 +679,19 @@ class EkaScribe {
     return uploadAudioFilesResponse;
   }
 
+  // UTILS
   async updateResultSummary(request: TPatchVoiceApiV3StatusRequest) {
     const updateResultSummaryResponse = await patchVoiceApiV3Status(request);
     return updateResultSummaryResponse;
   }
 
+  // UTILS
   async getConfigMyTemplates() {
     const configMyTemplatesResponse = await getConfigV2MyTemplates();
     return configMyTemplatesResponse;
   }
 
+  // UTILS
   async runSystemCompatibilityTest(
     callback: TCompatibilityCallback,
     sharedWorker?: SharedWorker
@@ -706,16 +719,19 @@ class EkaScribe {
     }
   }
 
+  // UTILS
   async getDoctorHeaderFooter(request: TGetDoctorHeaderFooterRequest) {
     const headerFooterResponse = await getDoctorHeaderFooter(request);
     return headerFooterResponse;
   }
 
+  // UTILS
   async getDoctorClinics(request: TGetDoctorClinicsRequest) {
     const clinicsResponse = await getDoctorClinics(request);
     return clinicsResponse;
   }
 
+  // UTILS
   async getSuggestedMedications(txnId: string) {
     return getV1SessionSuggestedMedications(txnId);
   }
