@@ -104,7 +104,7 @@ export class SessionUtils {
     }
   }
 
-  // Alliance SDK
+  // TODO: Alliance SDK
   async deleteSession({ txn_id }: { txn_id: string }): Promise<TDeleteTransactionResponse> {
     try {
       const response = await this.transport.request<TDeleteTransactionResponse>({
@@ -121,7 +121,7 @@ export class SessionUtils {
     }
   }
 
-  // Alliance SDK
+  // TODO: Alliance SDK
   async patchSessionStatus({
     sessionId,
     processing_status,

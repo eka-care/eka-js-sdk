@@ -115,7 +115,7 @@ export class DocumentManager {
     }
   }
 
-  // Alliance SDK
+  // TODO: Alliance SDK
   async convertToTemplate({
     txn_id,
     template_id,

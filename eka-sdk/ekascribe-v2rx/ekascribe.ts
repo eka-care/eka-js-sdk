@@ -11,6 +11,8 @@ import {
   TStartRecordingForExistingSessionRequest,
   TPollingResponse,
   TPostV1UploadAudioFilesRequest,
+  TGetStatusResponse,
+  TFetchChunkTranscriptResult,
 } from './constants/types';
 import { ITransport as EkaITransport, TransportConfig } from './transport/transport.interface';
 import { HttpTransport } from './transport/http-transport';
@@ -23,8 +25,6 @@ import { SessionUtils } from './managers/session-utils';
 import { RecordingManager } from './managers/recording-manager';
 import { OutputManager } from './managers/output-manager';
 import SystemCompatibilityManager from './compatibility/system-compatibility-manager';
-import { TGetStatusResponse } from './api/transaction/get-voice-api-v3-status';
-import { TFetchChunkTranscriptResult } from './api/transaction/get-chunk-transcript';
 import {
   ScribeClient,
   type TokenRequiredEvent,
@@ -195,6 +195,8 @@ class EkaScribe {
     return this.recording.endRecording();
   }
 
+  // TODO: add getSessionStatus - scribe alliance
+
   retryUploadRecording(): Promise<TEndRecordingResponse> {
     return this.recording.retryUploadRecording();
   }
@@ -203,7 +205,9 @@ class EkaScribe {
     return this.recording.discardSession(request);
   }
 
-  uploadAudioWithPresignedUrl(request: TPostV1UploadAudioFilesRequest): Promise<TStartRecordingResponse> {
+  uploadAudioWithPresignedUrl(
+    request: TPostV1UploadAudioFilesRequest
+  ): Promise<TStartRecordingResponse> {
     return this.recording.uploadAudioWithPresignedUrl(request);
   }
 
@@ -219,10 +223,12 @@ class EkaScribe {
 
   // ─── Output ────────────────────────────────────────────────────────────────
 
+  /** @deprecated Backward compatible */
   getTemplateOutput(request: { txn_id: string }): Promise<TGetStatusResponse> {
     return this.output.getTemplateOutput(request);
   }
 
+  /** @deprecated Backward compatible */
   getOutputTranscription(request: { txn_id: string }): Promise<TGetStatusResponse> {
     return this.output.getOutputTranscription(request);
   }
@@ -231,6 +237,7 @@ class EkaScribe {
     return this.output.getChunkTranscript(txnId, chunkNumber);
   }
 
+  /** @deprecated Backward compatible */
   pollSessionOutput(request: {
     txn_id: string;
     max_polling_time?: number;

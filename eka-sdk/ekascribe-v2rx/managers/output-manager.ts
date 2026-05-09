@@ -1,17 +1,16 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
-import { TPartialResultCallback, TPollingResponse } from '../constants/types';
+import {
+  TPartialResultCallback,
+  TPollingResponse,
+  TGetStatusApiResponse,
+  TGetStatusResponse,
+  TChunkTranscriptResponse,
+  TFetchChunkTranscriptResult,
+} from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
 import { decodeOutputSummaries } from '../utils/template-value';
-import {
-  TGetStatusApiResponse,
-  TGetStatusResponse,
-} from '../api/transaction/get-voice-api-v3-status';
-import {
-  TChunkTranscriptResponse,
-  TFetchChunkTranscriptResult,
-} from '../api/transaction/get-chunk-transcript';
 
 // NEHA - Should it call protocol get session apis or status apis
 export class OutputManager {

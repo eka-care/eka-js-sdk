@@ -1,4 +1,84 @@
-import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
+// --- Status API types (moved from api/transaction/) ---
+
+export type TTemplateMessage = {
+  type: 'warning' | 'error';
+  code?: string;
+  msg: string;
+};
+
+export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
+
+export type TOutputSummary = {
+  template_id: string;
+  value?: any;
+  type: string;
+  name: string;
+  lang?: string;
+  status: TTemplateStatus;
+  errors?: TTemplateMessage[];
+  warnings?: TTemplateMessage[];
+  document_id: string;
+  document_type: string;
+  document_path: {
+    bucket: string;
+    folder: string;
+    filename: string;
+  };
+};
+
+export type TGetStatusApiResponse = {
+  data: {
+    output: TOutputSummary[];
+    audio_matrix?: {
+      quality: string;
+    };
+    meta_data?: {
+      total_resources?: number;
+      total_parsed_resources?: number;
+    };
+    created_at?: string;
+    template_results: {
+      integration: TOutputSummary[];
+      custom: TOutputSummary[];
+      transcript: TOutputSummary[];
+    };
+    additional_data?: any;
+  };
+  error?: {
+    code: string;
+    message: string;
+    display_message: string;
+  };
+  status: string;
+};
+
+export type TGetStatusResponse = {
+  response?: TGetStatusApiResponse | null;
+  status_code: number;
+  message?: string;
+};
+
+// --- Chunk transcript types (moved from api/transaction/) ---
+
+export type TChunkTranscriptResponse = {
+  text: string;
+  confidence: number;
+  segments: unknown[];
+  audio_length: number;
+  audio_quality: string;
+  metadata: {
+    model_id: string;
+    commit_id: string;
+    context_used: unknown[];
+    lang_input: string[];
+    lang_output: string;
+    task: string | null;
+  };
+};
+
+export type TFetchChunkTranscriptResult =
+  | { success: true; data: TChunkTranscriptResponse }
+  | { success: false; error: string };
 import {
   ERROR_CODE,
   CALLBACK_TYPE,
