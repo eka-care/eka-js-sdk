@@ -1482,10 +1482,20 @@ magic-string@^0.30.17:
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
-med-scribe-alliance-ts-sdk@2.0.9:
-  version "2.0.9"
-  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.9.tgz#a88a917adb986f8a60f84dcfa8ff193ddd9ae009"
-  integrity sha512-0cRPV5OAz2ntIJdZlLysnFSlQ+j9pprNzXDJrTe0NW0XEQQfG2/16ii5kSRomHNGfP3PKpgmCE/h8MQGYvYfjg==
+med-scribe-alliance-ts-sdk@2.0.10:
+  version "2.0.10"
+  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.10.tgz#35b6ce865ec4c0c3f4200085b8058f15f8d0101a"
+  integrity sha512-gUoSA2EuhLPPsEDijPSJgZu+EY5HtpVs1vii7HY4jLn6jtdmkyDAcUMlWJgBstFyTXSXrCutSUkmJxil6oTRZw==
+  dependencies:
+    "@breezystack/lamejs" "^1.2.7"
+    "@ricky0123/vad-web" "^0.0.22"
+    core-js "^3.48.0"
+    zod "^4.4.3"
+
+med-scribe-alliance-ts-sdk@2.0.12, med-scribe-alliance-ts-sdk@^2.0.12:
+  version "2.0.12"
+  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.12.tgz#d9776dd974542f9396017ce14e02f9ccfb20915d"
+  integrity sha512-bJdL9ISal13TmO2WyBUPkv0BGH7KfVwZkAqIdBxYF8cFN57qFJDxS9II+PtXMHsgXLgNiTOmG9boho2sR/zUKw==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
     "@ricky0123/vad-web" "^0.0.22"

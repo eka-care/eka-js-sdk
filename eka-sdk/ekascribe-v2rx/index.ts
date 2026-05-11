@@ -23,6 +23,8 @@ export type {
   CreateSessionRequest,
   CreateSessionResponse,
   ProcessTemplateResponse,
+  EndSessionRequest,
+  EndSessionResponse,
   DiscoveryDocument,
   ResolvedConfig,
 } from 'med-scribe-alliance-ts-sdk';

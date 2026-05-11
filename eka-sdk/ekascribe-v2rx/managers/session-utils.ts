@@ -26,6 +26,8 @@ import {
   type CreateSessionResponse,
   type PatchSessionRequest,
   type PatchSessionResponse,
+  type EndSessionRequest,
+  type EndSessionResponse,
   type SDKResult,
   type DiscoveryDocument,
   type ResolvedConfig,
@@ -407,6 +409,13 @@ export class SessionUtils {
     request: CreateSessionRequest
   ): Promise<SDKResult<CreateSessionResponse>> {
     return this.allianceClient.createSession(request);
+  }
+
+  async endSession(
+    request: EndSessionRequest,
+    sessionId?: string
+  ): Promise<SDKResult<EndSessionResponse>> {
+    return this.allianceClient.endSession(request, sessionId);
   }
 
   getDiscoveryDocument(): DiscoveryDocument | null {

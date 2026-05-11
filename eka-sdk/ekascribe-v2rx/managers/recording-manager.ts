@@ -63,7 +63,7 @@ export class RecordingManager {
         upload_type: request.transfer || 'chunked',
         communication_protocol: 'http',
         session_mode: request.mode,
-        txn_id: request.txn_id,
+        session_id: request.txn_id,
         ...(request.patient_details
           ? {
               patient_details: {
@@ -280,7 +280,7 @@ export class RecordingManager {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording ended successfully.',
         failed_files: result.data.failedUploads,
-        total_audio_files: Array.from({ length: result.data.totalFiles }, (_, i) => `${i}.mp3`),
+        total_audio_files: result.data.endSessionResponse?.audio_files,
       };
     } catch (error) {
       return {
@@ -369,21 +369,19 @@ export class RecordingManager {
   async processPreRecordedAudio({
     uploadUrl,
     audioFile,
-    audioFileName,
   }: {
     uploadUrl: string;
     audioFile: File | Blob;
-    audioFileName: string;
+    audioFileName?: string;
   }): Promise<TStartRecordingResponse> {
     try {
-      const url = uploadUrl.endsWith('/')
-        ? `${uploadUrl}${audioFileName}`
-        : `${uploadUrl}/${audioFileName}`;
+      const url = uploadUrl.endsWith('/') ? `${uploadUrl}audio_1.mp3` : `${uploadUrl}/audio_1.mp3`;
 
       const res = await this.transport.request({
         method: 'POST',
         url,
         body: audioFile,
+        headers: { 'Content-Type': 'audio/mp3' },
       });
 
       if (res.status < 200 || res.status >= 300) {

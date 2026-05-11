@@ -99,16 +99,24 @@ class EkaScribe {
     }
 
     // Initialize Alliance SDK (handles recording, audio, VAD, uploads)
+    // baseUrl is required — Alliance SDK fetches well-known discovery from it
+    if (!config.allianceConfig?.baseUrl) {
+      throw new Error('[EkaScribe] allianceConfig.baseUrl is required.');
+    }
+
     this.allianceClient = new ScribeClient({
-      baseUrl: config.allianceConfig?.baseUrl ?? this.hosts.voiceV2,
+      baseUrl: config.allianceConfig.baseUrl,
       accessToken: config.access_token,
       mode: config.mode === 'ipc' ? TransportMode.IPC : TransportMode.DIRECT,
       ipcTransport: config.ipcBridge,
       useWorker: config.allianceConfig?.useWorker ?? 'auto',
       workerScriptUrl: config.sharedWorkerUrl,
       debug: config.allianceConfig?.debug ?? false,
-      autoDiscovery: false,
+      autoDiscovery: true,
     });
+
+    // Fetch well-known discovery document
+    this.allianceClient.init();
 
     // Initialize sub-managers
     this.documents = new DocumentManager(this.transport, this.hosts, this.allianceClient);
@@ -219,12 +227,11 @@ class EkaScribe {
    * Client flow:
    * 1. createSession() — via sessions.createSession()
    * 2. processPreRecordedAudio(uploadUrl, audioFile, audioFileName) — this method
-   * 3. endSession — via sessions.patchSessionStatus()
+   * 3. endSession — via sessions.endSession()
    */
   processPreRecordedAudio(request: {
     uploadUrl: string;
     audioFile: File | Blob;
-    audioFileName: string;
   }): Promise<TStartRecordingResponse> {
     return this.recording.processPreRecordedAudio(request);
   }
