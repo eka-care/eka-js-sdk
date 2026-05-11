@@ -8,7 +8,6 @@ import {
   TPauseRecordingResponse,
   TEndRecordingResponse,
   TStartRecordingForExistingSessionRequest,
-  TPostV1UploadAudioFilesRequest,
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
@@ -367,72 +366,20 @@ export class RecordingManager {
     return result;
   }
 
-  // TODO
-  async processPreRecordedAudio(
-    request: TPostV1UploadAudioFilesRequest
-  ): Promise<TStartRecordingResponse> {
+  async processPreRecordedAudio({
+    uploadUrl,
+    audioFile,
+    audioFileName,
+  }: {
+    uploadUrl: string;
+    audioFile: File | Blob;
+    audioFileName: string;
+  }): Promise<TStartRecordingResponse> {
     try {
-      const { audioFile, audioFileName, ...initParams } = request;
-
-      // Step 1: Create session
-      const allianceRequest: CreateSessionRequest = {
-        templates: initParams.output_format_template.map((t) => t.template_id),
-        model: initParams.model_type,
-        language_hint: initParams.input_language,
-        ...(initParams.output_language ? { transcript_language: initParams.output_language } : {}),
-        upload_type: initParams.transfer || 'single',
-        communication_protocol: 'http',
-        txn_id: initParams.txn_id,
-        session_mode: initParams.mode,
-        ...(initParams.patient_details
-          ? {
-              patient_details: {
-                name: initParams.patient_details.username,
-                age: String(initParams.patient_details.age),
-                gender: initParams.patient_details.biologicalSex,
-                mobile: initParams.patient_details.mobile
-                  ? Number(initParams.patient_details.mobile)
-                  : undefined,
-              },
-            }
-          : {}),
-        additional_data: {
-          system_info: initParams.system_info,
-          auto_download: initParams.auto_download,
-          model_training_consent: initParams.model_training_consent,
-          version: initParams.version,
-          audio_file_names: [audioFileName],
-          ...(initParams.additional_data || {}),
-        },
-      };
-
-      const sessionResult: SDKResult<CreateSessionResponse> =
-        await this.allianceClient.createSession(allianceRequest);
-
-      if (!sessionResult.success) {
-        const errorCode =
-          sessionResult.error.code === 'rate_limit_exceeded'
-            ? ERROR_CODE.TXN_LIMIT_EXCEEDED
-            : ERROR_CODE.TXN_INIT_FAILED;
-
-        return {
-          error_code: errorCode,
-          status_code: sessionResult.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: sessionResult.error.message || 'Session creation failed.',
-        };
-      }
-
-      this.storedSession = sessionResult.data;
-      this.txnID = sessionResult.data.session_id;
-      this.tracker.setTransactionId(this.txnID);
-
-      // Step 2: Get upload URL from session response
-      const uploadUrl = sessionResult.data.upload_url;
       const url = uploadUrl.endsWith('/')
         ? `${uploadUrl}${audioFileName}`
         : `${uploadUrl}/${audioFileName}`;
 
-      // Step 3: Upload audio file
       const res = await this.transport.request({
         method: 'POST',
         url,
@@ -449,11 +396,10 @@ export class RecordingManager {
 
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
-        message: 'Audio file uploaded and session created.',
-        txn_id: this.txnID,
+        message: 'Audio file uploaded successfully.',
       };
     } catch (error) {
-      const mapped = mapTransportError(error, 'Audio submission failed:');
+      const mapped = mapTransportError(error, 'Audio upload failed:');
       return {
         error_code: mapped.error_code,
         status_code: mapped.status_code,

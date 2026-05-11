@@ -8,7 +8,6 @@ import {
   TCompatibilityTestSummary,
   TStartRecordingForExistingSessionRequest,
   TPollingResponse,
-  TPostV1UploadAudioFilesRequest,
   TGetStatusResponse,
   TFetchChunkTranscriptResult,
 } from './constants/types';
@@ -175,6 +174,7 @@ class EkaScribe {
     return this.recording.initTransaction(request);
   }
 
+  // TODO: change to startSession with recording
   startRecording(microphoneID?: string): Promise<TStartRecordingResponse> {
     return this.recording.startRecording(microphoneID);
   }
@@ -193,6 +193,7 @@ class EkaScribe {
     return this.recording.resumeRecording();
   }
 
+  // TODO: change to endSession
   endRecording(): Promise<TEndRecordingResponse> {
     return this.recording.endRecording();
   }
@@ -212,9 +213,19 @@ class EkaScribe {
     return this.recording.cancelSession(sessionId);
   }
 
-  processPreRecordedAudio(
-    request: TPostV1UploadAudioFilesRequest
-  ): Promise<TStartRecordingResponse> {
+  /**
+   * Upload a pre-recorded audio file to an existing session's upload URL.
+   *
+   * Client flow:
+   * 1. createSession() — via sessions.createSession()
+   * 2. processPreRecordedAudio(uploadUrl, audioFile, audioFileName) — this method
+   * 3. endSession — via sessions.patchSessionStatus()
+   */
+  processPreRecordedAudio(request: {
+    uploadUrl: string;
+    audioFile: File | Blob;
+    audioFileName: string;
+  }): Promise<TStartRecordingResponse> {
     return this.recording.processPreRecordedAudio(request);
   }
 
