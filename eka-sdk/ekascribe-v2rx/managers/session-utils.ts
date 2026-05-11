@@ -142,7 +142,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to patch session status,');
-      return { status_code: mapped.status_code, message: mapped.message } as TPostTransactionResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TPostTransactionResponse;
     }
   }
 
@@ -159,7 +162,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch session details,');
-      return { status_code: mapped.status_code, message: mapped.message } as TGetV1SessionDetailsResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TGetV1SessionDetailsResponse;
     }
   }
 
@@ -173,7 +179,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch suggested medications,');
-      return { status_code: mapped.status_code, message: mapped.message } as TSuggestedMedicationResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TSuggestedMedicationResponse;
     }
   }
 
@@ -191,7 +200,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to add session context,');
-      return { status_code: mapped.status_code, message: mapped.message } as TPatchSessionContextResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TPatchSessionContextResponse;
     }
   }
 
@@ -209,7 +221,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to remove session context,');
-      return { status_code: mapped.status_code, message: mapped.message } as TPatchSessionContextResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TPatchSessionContextResponse;
     }
   }
 
@@ -229,7 +244,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update result summary,');
-      return { status_code: mapped.status_code, message: mapped.message } as TPatchVoiceApiV3StatusResponse;
+      return {
+        status_code: mapped.status_code,
+        message: mapped.message,
+      } as TPatchVoiceApiV3StatusResponse;
     }
   }
 
@@ -277,7 +295,10 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update config,');
-      return { status_code: mapped.status_code, msg: mapped.message } as TPatchVoiceApiV2ConfigResponse;
+      return {
+        status_code: mapped.status_code,
+        msg: mapped.message,
+      } as TPatchVoiceApiV2ConfigResponse;
     }
   }
 

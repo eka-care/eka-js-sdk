@@ -330,7 +330,7 @@ export class RecordingManager {
   }
 
   // TODO: cancelSession - Alliance SDK
-  async discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
+  async cancelSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
     try {
       const patchResponse = await this.sessions.patchSessionStatus(request);
 
@@ -341,14 +341,14 @@ export class RecordingManager {
         await this.callbackRegistry.dispatch('onSessionEvent', {
           callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
           status: 'info',
-          message: `Transaction cancel status: ${patchResponse.status_code}`,
+          message: `Session cancel status: ${patchResponse.status_code}`,
           timestamp: new Date().toISOString(),
         });
       }
 
       return patchResponse;
     } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to cancel recording session,');
+      const mapped = mapTransportError(error, 'Failed to cancel session,');
       return {
         status_code: mapped.status_code,
         message: mapped.message,

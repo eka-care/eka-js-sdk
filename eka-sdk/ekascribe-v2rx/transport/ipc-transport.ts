@@ -44,7 +44,7 @@ export class IpcTransport implements ITransport {
   >();
 
   constructor(config: TransportConfig, bridge: IpcBridge) {
-    this.accessToken = config.accessToken;
+    this.accessToken = config.access_token;
     this.clientId = config.clientId;
     this.flavour = config.flavour;
     this.defaultTimeout = config.defaultTimeout ?? IPC_TIMEOUT;

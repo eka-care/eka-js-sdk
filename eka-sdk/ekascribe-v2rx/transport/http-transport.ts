@@ -16,7 +16,7 @@ export class HttpTransport implements ITransport {
   private tokenRefreshPromise: Promise<string> | null = null;
 
   constructor(config: TransportConfig) {
-    this.accessToken = config.accessToken;
+    this.accessToken = config.access_token;
     this.clientId = config.clientId;
     this.flavour = config.flavour;
     this.defaultTimeout = config.defaultTimeout ?? DEFAULT_TIMEOUT;

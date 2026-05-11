@@ -38,17 +38,17 @@ import {
 } from 'med-scribe-alliance-ts-sdk';
 
 export interface EkaScribeConfig {
-  accessToken: string;
+  access_token: string;
   env: 'PROD' | 'DEV';
   clientId?: string;
   mode?: 'http' | 'ipc';
   ipcBridge?: AllianceIpcBridge;
   enableTracking?: boolean;
   flavour?: string;
+  sharedWorkerUrl?: string;
   allianceConfig?: {
     baseUrl?: string;
     useWorker?: boolean | 'auto';
-    workerScriptUrl?: string;
     debug?: boolean;
   };
 }
@@ -80,7 +80,7 @@ class EkaScribe {
 
     // Initialize eka transport (for eka-specific API calls)
     const transportConfig: TransportConfig = {
-      accessToken: config.accessToken,
+      access_token: config.access_token,
       clientId: config.clientId,
       flavour: config.flavour,
       onUnauthorized: () => this.handleUnauthorized(),
@@ -108,11 +108,11 @@ class EkaScribe {
     // Initialize Alliance SDK (handles recording, audio, VAD, uploads)
     this.allianceClient = new ScribeClient({
       baseUrl: config.allianceConfig?.baseUrl ?? this.hosts.voiceV2,
-      accessToken: config.accessToken,
+      accessToken: config.access_token,
       mode: config.mode === 'ipc' ? TransportMode.IPC : TransportMode.DIRECT,
       ipcTransport: config.ipcBridge,
       useWorker: config.allianceConfig?.useWorker ?? 'auto',
-      workerScriptUrl: config.allianceConfig?.workerScriptUrl,
+      workerScriptUrl: config.sharedWorkerUrl,
       debug: config.allianceConfig?.debug ?? false,
       autoDiscovery: false,
     });
@@ -153,8 +153,8 @@ class EkaScribe {
         EkaScribe.instance.resetInstance();
       } else {
         // Update mutable config (token, flavour)
-        if (config.accessToken) {
-          EkaScribe.instance.setAccessToken(config.accessToken);
+        if (config.access_token) {
+          EkaScribe.instance.updateAuthTokens({ access_token: config.access_token });
         }
         if (config.flavour && config.flavour !== current.flavour) {
           current.flavour = config.flavour;
@@ -172,6 +172,7 @@ class EkaScribe {
 
   // ─── Recording ─────────────────────────────────────────────────────────────
 
+  /** @deprecated Backward compatible */
   initTransaction(request: TPostTransactionInitRequest): Promise<TStartRecordingResponse> {
     return this.recording.initTransaction(request);
   }
@@ -209,8 +210,8 @@ class EkaScribe {
     return this.recording.retryUploadRecording();
   }
 
-  discardSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
-    return this.recording.discardSession(request);
+  cancelSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
+    return this.recording.cancelSession(request);
   }
 
   uploadAudioWithPresignedUrl(
@@ -277,10 +278,11 @@ class EkaScribe {
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
-  setAccessToken(token: string): void {
-    this.config.accessToken = token;
-    this.transport.setAuthToken(token);
-    this.allianceClient.setAccessToken(token);
+  /** @future Rename to setAccessToken(token: string) once existing clients migrate */
+  updateAuthTokens({ access_token }: { access_token: string }): void {
+    this.config.access_token = access_token;
+    this.transport.setAuthToken(access_token);
+    this.allianceClient.setAccessToken(access_token);
   }
 
   // ─── Compatibility ─────────────────────────────────────────────────────────
@@ -312,8 +314,7 @@ class EkaScribe {
     const newToken = (await this.callbackRegistry.dispatch('onTokenRequired')) as string;
 
     if (newToken) {
-      this.transport.setAuthToken(newToken);
-      this.allianceClient.setAccessToken(newToken);
+      this.updateAuthTokens({ access_token: newToken });
     }
 
     return newToken;
