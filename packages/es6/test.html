@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>EkaScribe SDK Test</title>
+  <title>EkaScribe SDK Test (ES6)</title>
   <style>
     body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
     button { margin: 4px; padding: 8px 16px; cursor: pointer; font-family: monospace; }
@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h2>EkaScribe SDK Test Page</h2>
+  <h2>EkaScribe SDK Test Page (ES6 / Legacy)</h2>
 
   <div class="section">
     <h3>Config</h3>
@@ -86,14 +86,14 @@
       sdk = getEkaScribeInstance({
         access_token: token,
         env,
-        clientId: 'test-html',
+        clientId: 'test-html-es6',
         flavour: 'web',
         allianceConfig: { baseUrl, useWorker: false, debug: true },
       });
 
       sdk.registerCallback('onTokenRequired', async () => {
         log('Callback', 'onTokenRequired fired — return new token here');
-        return token; // reuse same token for testing
+        return token;
       });
 
       sdk.registerCallback('onSessionEvent', (event) => {
@@ -115,7 +115,7 @@
       sdk = getEkaScribeInstance({
         access_token: token,
         env,
-        clientId: 'test-html',
+        clientId: 'test-html-es6',
         flavour: 'web',
         sharedWorkerUrl: workerUrl,
         allianceConfig: { baseUrl, debug: true },
