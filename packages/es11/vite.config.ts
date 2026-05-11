@@ -16,17 +16,10 @@ export default defineConfig({
     },
     outDir: 'dist',
     rollupOptions: {
+      external: ['med-scribe-alliance-ts-sdk'],
       output: {
         assetFileNames: '[name][extname]',
         chunkFileNames: '[name].js',
-      },
-    },
-  },
-  worker: {
-    format: 'iife',
-    rollupOptions: {
-      output: {
-        entryFileNames: 'worker.bundle.js',
       },
     },
   },

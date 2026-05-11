@@ -27,6 +27,9 @@ export type {
   ResolvedConfig,
 } from 'med-scribe-alliance-ts-sdk';
 
+// Re-export Alliance SDK worker utilities
+export { getWorkerUrl, createWorkerBlobUrl } from 'med-scribe-alliance-ts-sdk';
+
 // Re-export callback types
 export type { CallbackName } from './callbacks/callback-registry';
 

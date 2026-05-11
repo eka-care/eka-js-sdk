@@ -11,8 +11,7 @@
       "require": "./dist/index.js",
       "import": "./dist/index.esm.js",
       "default": "./dist/index.js"
-    },
-    "./worker": "./dist/worker.bundle.js"
+    }
   },
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
@@ -37,7 +36,8 @@
     "access": "public"
   },
   "dependencies": {
-    "core-js": "^3.38.0"
+    "core-js": "^3.38.0",
+    "med-scribe-alliance-ts-sdk": "2.0.8"
   },
   "files": [
     "dist",

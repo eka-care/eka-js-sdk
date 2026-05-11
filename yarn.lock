@@ -1482,10 +1482,10 @@ magic-string@^0.30.17:
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
-med-scribe-alliance-ts-sdk@2.0.7:
-  version "2.0.7"
-  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.7.tgz#6a66b1685d10b2d32574e6460a5dbd4af7a3001c"
-  integrity sha512-Q5nKKLfRFtTLZJDNsG/Vipl/oW65uZRYN92LweuHd2z/6ZmbMtlj6lzDFFNIX13AJrG1AUTOkdDnZPtLnUb7Dg==
+med-scribe-alliance-ts-sdk@2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.8.tgz#7c30850ec3a44dae71ab6fd2c3dd53bb546d6b40"
+  integrity sha512-pv0cEAStybFlxIgU0QXLpYsTxG+GePboH1ACtXItQCv3ri1o9h/4UnJ60UuOLb1mozmDW6cWxI/yGPfxEvdPBg==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
     "@ricky0123/vad-web" "^0.0.22"
