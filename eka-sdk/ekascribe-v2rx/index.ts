@@ -13,6 +13,13 @@ export type {
   TPollingResponse,
 } from './ekascribe';
 
+// Re-export Alliance SDK types for consumers
+export type {
+  SDKResult,
+  GetSessionStatusResponse,
+  PollOptions,
+} from 'med-scribe-alliance-ts-sdk';
+
 // Re-export callback types
 export type { CallbackName } from './callbacks/callback-registry';
 

@@ -23,7 +23,10 @@ import {
   type SDKResult,
   type StopRecordingResult,
   type RetryUploadResult,
+  type GetSessionStatusResponse,
+  type PollOptions,
   SessionStatus,
+  ScribeError,
 } from 'med-scribe-alliance-ts-sdk';
 
 export class RecordingManager {
@@ -278,6 +281,25 @@ export class RecordingManager {
         message: `Failed to end recording. ${error}`,
       };
     }
+  }
+
+  async getSessionStatus(
+    sessionId?: string,
+    options?: { poll?: PollOptions }
+  ): Promise<SDKResult<GetSessionStatusResponse>> {
+    const targetId = sessionId || this.txnID;
+
+    if (!targetId) {
+      return {
+        success: false,
+        error: new ScribeError(
+          'No session ID available. Call initTransaction() first or pass a sessionId.',
+          ERROR_CODE.TXN_STATUS_MISMATCH
+        ),
+      };
+    }
+
+    return this.allianceClient.getSessionStatus(targetId, options);
   }
 
   async retryUploadRecording(): Promise<TEndRecordingResponse> {

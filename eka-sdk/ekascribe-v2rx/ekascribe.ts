@@ -31,6 +31,9 @@ import {
   type CallbackMap,
   type CallbackName as AllianceCallbackName,
   type IpcBridge as AllianceIpcBridge,
+  type SDKResult,
+  type GetSessionStatusResponse,
+  type PollOptions,
   TransportMode,
 } from 'med-scribe-alliance-ts-sdk';
 
@@ -195,7 +198,12 @@ class EkaScribe {
     return this.recording.endRecording();
   }
 
-  // TODO: add getSessionStatus - scribe alliance
+  getSessionStatus(
+    sessionId?: string,
+    options?: { poll?: PollOptions }
+  ): Promise<SDKResult<GetSessionStatusResponse>> {
+    return this.recording.getSessionStatus(sessionId, options);
+  }
 
   retryUploadRecording(): Promise<TEndRecordingResponse> {
     return this.recording.retryUploadRecording();
