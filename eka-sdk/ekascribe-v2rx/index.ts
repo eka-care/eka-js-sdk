@@ -18,6 +18,13 @@ export type {
   SDKResult,
   GetSessionStatusResponse,
   PollOptions,
+  PatchSessionRequest,
+  PatchSessionResponse,
+  CreateSessionRequest,
+  CreateSessionResponse,
+  ProcessTemplateResponse,
+  DiscoveryDocument,
+  ResolvedConfig,
 } from 'med-scribe-alliance-ts-sdk';
 
 // Re-export callback types

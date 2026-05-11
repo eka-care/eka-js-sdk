@@ -243,9 +243,8 @@ export type TPostTransactionInitRequest = {
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
-  action: string;
-  audioFiles: File[] | Blob[];
-  audioFileNames: string[];
+  audioFile: File | Blob;
+  audioFileName: string;
 }
 
 export type TPostTransactionCommitRequest = {

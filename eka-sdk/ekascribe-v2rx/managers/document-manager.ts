@@ -15,9 +15,18 @@ import {
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
+import {
+  type ScribeClient,
+  type SDKResult,
+  type ProcessTemplateResponse,
+} from 'med-scribe-alliance-ts-sdk';
 
 export class DocumentManager {
-  constructor(private transport: ITransport, private hosts: EkaHosts) {}
+  constructor(
+    private transport: ITransport,
+    private hosts: EkaHosts,
+    private allianceClient: ScribeClient
+  ) {}
 
   // --- Templates ---
 
@@ -105,26 +114,14 @@ export class DocumentManager {
     }
   }
 
-  // TODO: Alliance SDK
   async convertToTemplate({
     txn_id,
     template_id,
-  }: TPostV1ConvertToTemplateRequest): Promise<TPostV1ConvertToTemplateResponse> {
-    try {
-      const response = await this.transport.request<TPostV1ConvertToTemplateResponse>({
-        method: 'POST',
-        url: `${this.hosts.voiceV1}/transaction/${txn_id}/convert-to-template/${
-          template_id ? template_id : ''
-        }`,
-        body: {},
-        timeout: 60000,
-      });
-
-      return { ...response.data, status_code: response.status };
-    } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to convert to template,');
-      return { status_code: mapped.status_code, message: mapped.message } as TPostV1ConvertToTemplateResponse;
-    }
+  }: {
+    txn_id: string;
+    template_id: string;
+  }): Promise<SDKResult<ProcessTemplateResponse>> {
+    return this.allianceClient.processTemplate(template_id, txn_id);
   }
 
   async convertTranscriptionToTemplate({

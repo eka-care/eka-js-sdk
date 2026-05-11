@@ -3,8 +3,6 @@ import {
   TGetConfigV2Response,
   TGetTransactionHistoryResponse,
   TDeleteTransactionResponse,
-  TPatchTransactionRequest,
-  TPostTransactionResponse,
   TPatchVoiceApiV3StatusRequest,
   TPatchVoiceApiV3StatusResponse,
   TPatchVoiceApiV2ConfigRequest,
@@ -22,6 +20,16 @@ import {
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
+import {
+  type ScribeClient,
+  type CreateSessionRequest,
+  type CreateSessionResponse,
+  type PatchSessionRequest,
+  type PatchSessionResponse,
+  type SDKResult,
+  type DiscoveryDocument,
+  type ResolvedConfig,
+} from 'med-scribe-alliance-ts-sdk';
 
 const DEFAULT_HEADER_IMAGE = 'https://cdn.eka.care/vagus/cmlf0ip4a00000td1dmth2wk3.png';
 const DEFAULT_FOOTER_IMAGE = 'https://cdn.eka.care/vagus/cmlf0j9ea00010td1h3mi6zqk.png';
@@ -73,7 +81,11 @@ type TBusinessEntitiesResponse = {
 };
 
 export class SessionUtils {
-  constructor(private transport: ITransport, private hosts: EkaHosts) {}
+  constructor(
+    private transport: ITransport,
+    private hosts: EkaHosts,
+    private allianceClient: ScribeClient
+  ) {}
 
   // --- Session CRUD ---
 
@@ -102,7 +114,6 @@ export class SessionUtils {
     }
   }
 
-  // TODO: Alliance SDK
   async deleteSession({ txn_id }: { txn_id: string }): Promise<TDeleteTransactionResponse> {
     try {
       const response = await this.transport.request<TDeleteTransactionResponse>({
@@ -117,36 +128,11 @@ export class SessionUtils {
     }
   }
 
-  // TODO: Alliance SDK
-  async patchSessionStatus({
-    sessionId,
-    processing_status,
-    processing_error,
-    patient_details,
-    user_status,
-  }: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
-    try {
-      const body = {
-        ...(processing_status ? { processing_status } : {}),
-        ...(patient_details ? { patient_details } : {}),
-        ...(processing_error ? { processing_error } : {}),
-        ...(user_status ? { user_status } : {}),
-      };
-
-      const response = await this.transport.request<TPostTransactionResponse>({
-        method: 'PATCH',
-        url: `${this.hosts.voiceV2}/transaction/${sessionId}`,
-        body,
-      });
-
-      return { ...response.data, status_code: response.status };
-    } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to patch session status,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostTransactionResponse;
-    }
+  async patchSessionStatus(
+    request: PatchSessionRequest,
+    sessionId?: string
+  ): Promise<SDKResult<PatchSessionResponse>> {
+    return this.allianceClient.updateSession(request, sessionId);
   }
 
   async getSessionDetails({
@@ -415,21 +401,25 @@ export class SessionUtils {
     }
   }
 
-  // --- Alliance SDK methods (TODO: wire up when Alliance SDK is integrated) ---
+  // --- Alliance SDK methods ---
 
-  // async createSession(request: unknown): Promise<unknown> {
-  //   // Alliance SDK: allianceClient.createSession(request)
-  // }
+  async createSession(
+    request: CreateSessionRequest
+  ): Promise<SDKResult<CreateSessionResponse>> {
+    return this.allianceClient.createSession(request);
+  }
 
-  // async getSessionStatus(sessionId: string): Promise<unknown> {
-  //   // Alliance SDK: allianceClient.getSessionStatus(sessionId)
-  // }
+  getDiscoveryDocument(): DiscoveryDocument | null {
+    return this.allianceClient.getDiscoveryDocument();
+  }
 
-  // patchSession
+  getDiscoveryConfig(): SDKResult<ResolvedConfig> {
+    return this.allianceClient.getDiscoveryConfig();
+  }
 
-  // processTemplate
-
-  // deleteSession
+  async refreshDiscovery(): Promise<SDKResult<ResolvedConfig>> {
+    return this.allianceClient.refreshDiscovery();
+  }
 
   // --- Private helpers ---
 

@@ -87,7 +87,11 @@ export class IpcTransport implements ITransport {
   private async executeRequest<T>(config: TransportRequest): Promise<TransportResponse<T>> {
     const correlationId = this.generateCorrelationId();
     const timeout = config.timeout ?? this.defaultTimeout;
-    const headers = this.buildHeaders(config.headers);
+    const isRawBody =
+      config.body instanceof Blob ||
+      config.body instanceof File ||
+      config.body instanceof FormData;
+    const headers = this.buildHeaders(config.headers, isRawBody);
 
     const message: IpcMessage = {
       correlationId,
@@ -96,7 +100,9 @@ export class IpcTransport implements ITransport {
         method: config.method,
         url: config.url,
         headers,
-        body: config.body != null ? JSON.stringify(config.body) : undefined,
+        body: config.body != null
+          ? (isRawBody ? (config.body as any) : JSON.stringify(config.body))
+          : undefined,
       },
     };
 
@@ -132,13 +138,15 @@ export class IpcTransport implements ITransport {
     });
   }
 
-  private buildHeaders(custom?: Record<string, string>): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+  private buildHeaders(custom?: Record<string, string>, isRawBody?: boolean): Record<string, string> {
+    const headers: Record<string, string> = {};
+
+    if (!isRawBody) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (this.accessToken) {
-      headers['auth'] = this.accessToken;
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
     if (this.clientId) {

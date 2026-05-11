@@ -1,10 +1,8 @@
 import {
   TPostTransactionInitRequest,
-  TPostTransactionResponse,
   TStartRecordingResponse,
   TPauseRecordingResponse,
   TEndRecordingResponse,
-  TPatchTransactionRequest,
   TPartialResultCallback,
   TCompatibilityCallback,
   TCompatibilityTestSummary,
@@ -34,6 +32,7 @@ import {
   type SDKResult,
   type GetSessionStatusResponse,
   type PollOptions,
+  type PatchSessionResponse,
   TransportMode,
 } from 'med-scribe-alliance-ts-sdk';
 
@@ -92,11 +91,6 @@ class EkaScribe {
       this.transport = new HttpTransport(transportConfig);
     }
 
-    // Initialize sub-managers
-    this.documents = new DocumentManager(this.transport, this.hosts);
-    this.sessions = new SessionUtils(this.transport, this.hosts);
-    this.output = new OutputManager(this.transport, this.hosts);
-
     // Initialize tracker
     if (config.enableTracking) {
       this.tracker.init(config.env);
@@ -117,13 +111,17 @@ class EkaScribe {
       autoDiscovery: false,
     });
 
+    // Initialize sub-managers
+    this.documents = new DocumentManager(this.transport, this.hosts, this.allianceClient);
+    this.sessions = new SessionUtils(this.transport, this.hosts, this.allianceClient);
+    this.output = new OutputManager(this.transport, this.hosts);
+
     // Initialize recording manager
     this.recording = new RecordingManager(
       this.allianceClient,
       this.transport,
       this.hosts,
       this.tracker,
-      this.sessions,
       this.callbackRegistry
     );
 
@@ -210,14 +208,14 @@ class EkaScribe {
     return this.recording.retryUploadRecording();
   }
 
-  cancelSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
-    return this.recording.cancelSession(request);
+  cancelSession(sessionId?: string): Promise<SDKResult<PatchSessionResponse>> {
+    return this.recording.cancelSession(sessionId);
   }
 
-  uploadAudioWithPresignedUrl(
+  processPreRecordedAudio(
     request: TPostV1UploadAudioFilesRequest
   ): Promise<TStartRecordingResponse> {
-    return this.recording.uploadAudioWithPresignedUrl(request);
+    return this.recording.processPreRecordedAudio(request);
   }
 
   /** @deprecated Backward compatible */

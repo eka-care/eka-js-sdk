@@ -7,16 +7,13 @@ import {
   TStartRecordingResponse,
   TPauseRecordingResponse,
   TEndRecordingResponse,
-  TPatchTransactionRequest,
   TStartRecordingForExistingSessionRequest,
   TPostV1UploadAudioFilesRequest,
-  TPostV1FileUploadResponse,
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
 import { CallbackRegistry } from '../callbacks/callback-registry';
 import { Tracker } from '../tracker/tracker';
-import { SessionUtils } from './session-utils';
 import {
   type ScribeClient,
   type CreateSessionRequest,
@@ -26,6 +23,7 @@ import {
   type RetryUploadResult,
   type GetSessionStatusResponse,
   type PollOptions,
+  type PatchSessionResponse,
   SessionStatus,
   ScribeError,
 } from 'med-scribe-alliance-ts-sdk';
@@ -39,7 +37,6 @@ export class RecordingManager {
     private transport: ITransport,
     private hosts: EkaHosts,
     private tracker: Tracker,
-    private sessions: SessionUtils,
     private callbackRegistry: CallbackRegistry
   ) {}
 
@@ -63,13 +60,24 @@ export class RecordingManager {
         templates: request.output_format_template.map((t) => t.template_id),
         model: request.model_type,
         language_hint: request.input_language,
-        ...(request.output_language ? { transcript_language: [request.output_language] } : {}),
+        ...(request.output_language ? { transcript_language: request.output_language } : {}),
         upload_type: request.transfer || 'chunked',
         communication_protocol: 'http',
+        session_mode: request.mode,
+        txn_id: request.txn_id,
+        ...(request.patient_details
+          ? {
+              patient_details: {
+                name: request.patient_details.username,
+                age: String(request.patient_details.age),
+                gender: request.patient_details.biologicalSex,
+                mobile: request.patient_details.mobile
+                  ? Number(request.patient_details.mobile)
+                  : undefined,
+              },
+            }
+          : {}),
         additional_data: {
-          mode: request.mode,
-          txn_id: request.txn_id,
-          patient_details: request.patient_details,
           system_info: request.system_info,
           auto_download: request.auto_download,
           model_training_consent: request.model_training_consent,
@@ -329,141 +337,123 @@ export class RecordingManager {
     }
   }
 
-  // TODO: cancelSession - Alliance SDK
-  async cancelSession(request: TPatchTransactionRequest): Promise<TPostTransactionResponse> {
-    try {
-      const patchResponse = await this.sessions.patchSessionStatus(request);
+  async cancelSession(sessionId?: string): Promise<SDKResult<PatchSessionResponse>> {
+    const targetId = sessionId || this.txnID;
 
-      await this.allianceClient.reset();
-      this.storedSession = null;
-
-      if (this.callbackRegistry.hasHandlers('onSessionEvent')) {
-        await this.callbackRegistry.dispatch('onSessionEvent', {
-          callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
-          status: 'info',
-          message: `Session cancel status: ${patchResponse.status_code}`,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      return patchResponse;
-    } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to cancel session,');
+    if (!targetId) {
       return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostTransactionResponse;
+        success: false,
+        error: new ScribeError(
+          'No session ID available. Call initTransaction() first or pass a sessionId.',
+          ERROR_CODE.TXN_STATUS_MISMATCH
+        ),
+      };
     }
+
+    // Alliance SDK's cancelSession handles: forceStop() → reset() → clearSession → PATCH cancel on server
+    const result = await this.allianceClient.cancelSession(targetId);
+    this.storedSession = null;
+    this.txnID = '';
+
+    if (this.callbackRegistry.hasHandlers('onSessionEvent')) {
+      await this.callbackRegistry.dispatch('onSessionEvent', {
+        callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
+        status: 'info',
+        message: `Session cancelled: ${result.success ? 'success' : result.error.message}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return result;
   }
 
-  // TODO: Alliance integration
-  async uploadAudioWithPresignedUrl(
+  // TODO
+  async processPreRecordedAudio(
     request: TPostV1UploadAudioFilesRequest
   ): Promise<TStartRecordingResponse> {
     try {
-      const { audioFiles, audioFileNames, txn_id, action, ...initParams } = request;
+      const { audioFile, audioFileName, ...initParams } = request;
 
-      // Step 1: Get presigned URL
-      const presignedResponse = await this.transport.request<TPostV1FileUploadResponse>({
-        method: 'POST',
-        url: `${this.hosts.ekaHost}/v1/file-upload?txn_id=${txn_id}&action=${action}`,
-        body: {},
-      });
-
-      if (presignedResponse.status >= 400) {
-        return {
-          error_code: ERROR_CODE.GET_PRESIGNED_URL_FAILED,
-          status_code: presignedResponse.status,
-          message: presignedResponse.data.message || 'Get presigned URL failed',
-        };
-      }
-
-      const { uploadData, folderPath } = presignedResponse.data;
-
-      // Step 2: Upload files to S3 using presigned URL
-      const uploadPromises = audioFiles.map(async (file: File | Blob, index: number) => {
-        const fileName = audioFileNames[index];
-        const fields = { ...uploadData.fields, key: folderPath + fileName };
-        const formData = new FormData();
-        Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
-        formData.append('file', file);
-
-        try {
-          const res = await fetch(uploadData.url, { method: 'POST', body: formData });
-          return {
-            success: res.status === 204,
-            fileName,
-            error: res.status !== 204 ? `Upload failed with status: ${res.status}` : undefined,
-          };
-        } catch (err) {
-          return { success: false, fileName, error: `${err}` };
-        }
-      });
-
-      const results = await Promise.all(uploadPromises);
-      const failedUploads = results.filter((r) => !r.success);
-
-      if (failedUploads.length === audioFiles.length) {
-        return {
-          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: 'All file uploads failed.',
-        };
-      }
-
-      // Step 3: Init transaction with batch S3 URL
-      const batchS3Url = uploadData.url + folderPath;
+      // Step 1: Create session
       const allianceRequest: CreateSessionRequest = {
         templates: initParams.output_format_template.map((t) => t.template_id),
         model: initParams.model_type,
         language_hint: initParams.input_language,
-        ...(initParams.output_language
-          ? { transcript_language: [initParams.output_language] }
-          : {}),
+        ...(initParams.output_language ? { transcript_language: initParams.output_language } : {}),
         upload_type: initParams.transfer || 'single',
         communication_protocol: 'http',
+        txn_id: initParams.txn_id,
+        session_mode: initParams.mode,
+        ...(initParams.patient_details
+          ? {
+              patient_details: {
+                name: initParams.patient_details.username,
+                age: String(initParams.patient_details.age),
+                gender: initParams.patient_details.biologicalSex,
+                mobile: initParams.patient_details.mobile
+                  ? Number(initParams.patient_details.mobile)
+                  : undefined,
+              },
+            }
+          : {}),
         additional_data: {
-          mode: initParams.mode,
-          txn_id,
-          patient_details: initParams.patient_details,
           system_info: initParams.system_info,
           auto_download: initParams.auto_download,
           model_training_consent: initParams.model_training_consent,
           version: initParams.version,
-          batch_s3_url: batchS3Url,
-          audio_file_names: audioFileNames,
+          audio_file_names: [audioFileName],
           ...(initParams.additional_data || {}),
         },
       };
 
-      const result: SDKResult<CreateSessionResponse> = await this.allianceClient.createSession(
-        allianceRequest
-      );
+      const sessionResult: SDKResult<CreateSessionResponse> =
+        await this.allianceClient.createSession(allianceRequest);
 
-      if (!result.success) {
+      if (!sessionResult.success) {
         const errorCode =
-          result.error.code === 'rate_limit_exceeded'
+          sessionResult.error.code === 'rate_limit_exceeded'
             ? ERROR_CODE.TXN_LIMIT_EXCEEDED
             : ERROR_CODE.TXN_INIT_FAILED;
 
         return {
           error_code: errorCode,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Transaction initialization failed.',
+          status_code: sessionResult.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: sessionResult.error.message || 'Session creation failed.',
         };
       }
 
-      this.storedSession = result.data;
-      this.txnID = result.data.session_id;
+      this.storedSession = sessionResult.data;
+      this.txnID = sessionResult.data.session_id;
       this.tracker.setTransactionId(this.txnID);
+
+      // Step 2: Get upload URL from session response
+      const uploadUrl = sessionResult.data.upload_url;
+      const url = uploadUrl.endsWith('/')
+        ? `${uploadUrl}${audioFileName}`
+        : `${uploadUrl}/${audioFileName}`;
+
+      // Step 3: Upload audio file
+      const res = await this.transport.request({
+        method: 'POST',
+        url,
+        body: audioFile,
+      });
+
+      if (res.status < 200 || res.status >= 300) {
+        return {
+          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+          status_code: res.status,
+          message: `Audio upload failed with status: ${res.status}`,
+        };
+      }
 
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
-        message: 'Recording uploaded successfully.',
+        message: 'Audio file uploaded and session created.',
         txn_id: this.txnID,
       };
     } catch (error) {
-      const mapped = mapTransportError(error, 'Recording upload failed:');
+      const mapped = mapTransportError(error, 'Audio submission failed:');
       return {
         error_code: mapped.error_code,
         status_code: mapped.status_code,
