@@ -1,4 +1,4 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
+import { mapTransportError } from '../utils/map-transport-error';
 import {
   TGetV1TemplatesResponse,
   TPostV1TemplateRequest,
@@ -28,12 +28,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/template`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        items: [],
-      } as TGetV1TemplatesResponse;
+      const mapped = mapTransportError(error, 'Failed to fetch templates,');
+      return { status_code: mapped.status_code, items: [] } as TGetV1TemplatesResponse;
     }
   }
 
@@ -49,12 +47,10 @@ export class DocumentManager {
         body: { title, desc, section_ids },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1TemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to create template,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1TemplateResponse;
     }
   }
 
@@ -71,12 +67,10 @@ export class DocumentManager {
         body: { title, desc, section_ids },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Something went wrong! ${error}`,
-      } as TPostV1TemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to update template,');
+      return { status_code: mapped.status_code, msg: mapped.message } as TPostV1TemplateResponse;
     }
   }
 
@@ -87,12 +81,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/template/${templateId}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Something went wrong! ${error}`,
-      } as TPostV1TemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to delete template,');
+      return { status_code: mapped.status_code, msg: mapped.message } as TPostV1TemplateResponse;
     }
   }
 
@@ -106,12 +98,10 @@ export class DocumentManager {
         timeout: 60000,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostCookV1MediaAiCreateTemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to AI generate template,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostCookV1MediaAiCreateTemplateResponse;
     }
   }
 
@@ -130,12 +120,10 @@ export class DocumentManager {
         timeout: 60000,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1ConvertToTemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to convert to template,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1ConvertToTemplateResponse;
     }
   }
 
@@ -157,12 +145,10 @@ export class DocumentManager {
         timeout: 60000,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1ConvertToTemplateResponse;
+      const mapped = mapTransportError(error, 'Failed to convert transcription to template,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1ConvertToTemplateResponse;
     }
   }
 
@@ -175,12 +161,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/template/section`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        items: [],
-      } as TGetV1TemplateSectionsResponse;
+      const mapped = mapTransportError(error, 'Failed to fetch template sections,');
+      return { status_code: mapped.status_code, items: [] } as TGetV1TemplateSectionsResponse;
     }
   }
 
@@ -197,13 +181,10 @@ export class DocumentManager {
         body: { title, desc, format, example },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Something went wrong! ${error}`,
-        section_id: '',
-      } as TPostV1TemplateSectionResponse;
+      const mapped = mapTransportError(error, 'Failed to create template section,');
+      return { status_code: mapped.status_code, msg: mapped.message, section_id: '' } as TPostV1TemplateSectionResponse;
     }
   }
 
@@ -221,14 +202,10 @@ export class DocumentManager {
         body: { title, desc, format, example },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Something went wrong! ${error}`,
-        section_id: '',
-        action: 'updated',
-      } as TPostV1TemplateSectionResponse;
+      const mapped = mapTransportError(error, 'Failed to update template section,');
+      return { status_code: mapped.status_code, msg: mapped.message, section_id: '', action: 'updated' } as TPostV1TemplateSectionResponse;
     }
   }
 
@@ -239,12 +216,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/template/section/${sectionId}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Something went wrong! ${error}`,
-      } as TPostV1TemplateSectionResponse;
+      const mapped = mapTransportError(error, 'Failed to delete template section,');
+      return { status_code: mapped.status_code, msg: mapped.message } as TPostV1TemplateSectionResponse;
     }
   }
 
@@ -257,12 +232,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/documents/${documentId}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        items: [],
-      } as TPostV1DocumentResponse;
+      const mapped = mapTransportError(error, 'Failed to fetch document,');
+      return { status_code: mapped.status_code } as TPostV1DocumentResponse;
     }
   }
 
@@ -286,12 +259,10 @@ export class DocumentManager {
         },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1DocumentResponse;
+      const mapped = mapTransportError(error, 'Failed to create document,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1DocumentResponse;
     }
   }
 
@@ -315,12 +286,10 @@ export class DocumentManager {
         },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1DocumentResponse;
+      const mapped = mapTransportError(error, 'Failed to update document,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1DocumentResponse;
     }
   }
 
@@ -331,12 +300,10 @@ export class DocumentManager {
         url: `${this.hosts.voiceV1}/documents/${documentId}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TDeleteV1DocumentResponse;
+      const mapped = mapTransportError(error, 'Failed to delete document,');
+      return { status_code: mapped.status_code, message: mapped.message } as TDeleteV1DocumentResponse;
     }
   }
 
@@ -351,12 +318,10 @@ export class DocumentManager {
         body: {},
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostV1DocumentResponse;
+      const mapped = mapTransportError(error, 'Failed to publish document,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostV1DocumentResponse;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
+import { mapTransportError } from '../utils/map-transport-error';
 import {
   TGetConfigV2Response,
   TGetTransactionHistoryResponse,
@@ -97,10 +97,8 @@ export class SessionUtils {
         message: `Past ${txn_count} transactions fetched successfully.`,
       };
     } catch (error) {
-      return {
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong in fetching transactions. ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to fetch transactions,');
+      return { status_code: mapped.status_code, message: mapped.message };
     }
   }
 
@@ -112,12 +110,10 @@ export class SessionUtils {
         url: `${this.hosts.voiceV2}/transaction/${txn_id}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong in deleting transaction. ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to delete transaction,');
+      return { status_code: mapped.status_code, message: mapped.message };
     }
   }
 
@@ -143,12 +139,10 @@ export class SessionUtils {
         body,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPostTransactionResponse;
+      const mapped = mapTransportError(error, 'Failed to patch session status,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPostTransactionResponse;
     }
   }
 
@@ -162,12 +156,10 @@ export class SessionUtils {
         url: `${this.hosts.voiceV1}/sessions/${session_id}?presigned=${presigned}`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TGetV1SessionDetailsResponse;
+      const mapped = mapTransportError(error, 'Failed to fetch session details,');
+      return { status_code: mapped.status_code, message: mapped.message } as TGetV1SessionDetailsResponse;
     }
   }
 
@@ -178,12 +170,10 @@ export class SessionUtils {
         url: `${this.hosts.ekaHost}/voice/v1/session/${txnId}/suggested-medications`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch suggested medications, ${error}`,
-      } as TSuggestedMedicationResponse;
+      const mapped = mapTransportError(error, 'Failed to fetch suggested medications,');
+      return { status_code: mapped.status_code, message: mapped.message } as TSuggestedMedicationResponse;
     }
   }
 
@@ -198,12 +188,10 @@ export class SessionUtils {
         body: { context },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPatchSessionContextResponse;
+      const mapped = mapTransportError(error, 'Failed to add session context,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPatchSessionContextResponse;
     }
   }
 
@@ -218,12 +206,10 @@ export class SessionUtils {
         body: { context },
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPatchSessionContextResponse;
+      const mapped = mapTransportError(error, 'Failed to remove session context,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPatchSessionContextResponse;
     }
   }
 
@@ -240,12 +226,10 @@ export class SessionUtils {
         timeout: 30000,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      } as TPatchVoiceApiV3StatusResponse;
+      const mapped = mapTransportError(error, 'Failed to update result summary,');
+      return { status_code: mapped.status_code, message: mapped.message } as TPatchVoiceApiV3StatusResponse;
     }
   }
 
@@ -258,12 +242,10 @@ export class SessionUtils {
         url: `${this.hosts.voiceV2}/config/`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch initial configurations, ${error}`,
-      } as TGetConfigV2Response;
+      const mapped = mapTransportError(error, 'Failed to fetch configurations,');
+      return { status_code: mapped.status_code, message: mapped.message } as TGetConfigV2Response;
     }
   }
 
@@ -274,12 +256,10 @@ export class SessionUtils {
         url: `${this.hosts.voiceV2}/config/?my_templates=true`,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch initial configurations, ${error}`,
-      } as TGetConfigV2Response;
+      const mapped = mapTransportError(error, 'Failed to fetch configurations,');
+      return { status_code: mapped.status_code, message: mapped.message } as TGetConfigV2Response;
     }
   }
 
@@ -294,12 +274,10 @@ export class SessionUtils {
         body: request,
       });
 
-      return { ...response.data, code: response.status };
+      return { ...response.data, status_code: response.status };
     } catch (error) {
-      return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        msg: `Failed to fetch initial configurations, ${error}`,
-      } as TPatchVoiceApiV2ConfigResponse;
+      const mapped = mapTransportError(error, 'Failed to update config,');
+      return { status_code: mapped.status_code, msg: mapped.message } as TPatchVoiceApiV2ConfigResponse;
     }
   }
 
@@ -322,7 +300,7 @@ export class SessionUtils {
       if (!templates || templates.length === 0) {
         return {
           data: this.getDefaultHeaderFooterInfo(),
-          code: response.status,
+          status_code: response.status,
         };
       }
 
@@ -331,7 +309,7 @@ export class SessionUtils {
       if (printTemplates.length === 0) {
         return {
           data: this.getDefaultHeaderFooterInfo(),
-          code: response.status,
+          status_code: response.status,
         };
       }
 
@@ -341,7 +319,7 @@ export class SessionUtils {
         if (matchingTemplate) {
           return {
             data: this.extractHeaderFooterInfo(matchingTemplate),
-            code: response.status,
+            status_code: response.status,
           };
         }
       }
@@ -352,7 +330,7 @@ export class SessionUtils {
         if (defaultTemplate) {
           return {
             data: this.extractHeaderFooterInfo(defaultTemplate),
-            code: response.status,
+            status_code: response.status,
           };
         }
       }
@@ -360,13 +338,14 @@ export class SessionUtils {
       // 3. Return defaults if no matching template found
       return {
         data: this.getDefaultHeaderFooterInfo(),
-        code: response.status,
+        status_code: response.status,
       };
     } catch (error) {
+      const mapped = mapTransportError(error, 'Failed to fetch doctor header/footer,');
       return {
         data: this.getDefaultHeaderFooterInfo(),
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch doctor header/footer, ${error}`,
+        status_code: mapped.status_code,
+        message: mapped.message,
       };
     }
   }
@@ -385,7 +364,7 @@ export class SessionUtils {
       if (!res?.data?.clinics || res.data.clinics.length === 0) {
         return {
           data: null,
-          code: response.status,
+          status_code: response.status,
           message: 'No clinics found',
         };
       }
@@ -400,21 +379,18 @@ export class SessionUtils {
       if (doctorClinics.length === 0) {
         return {
           data: null,
-          code: response.status,
+          status_code: response.status,
           message: 'No clinics found for this doctor',
         };
       }
 
       return {
         data: doctorClinics,
-        code: response.status,
+        status_code: response.status,
       };
     } catch (error) {
-      return {
-        data: null,
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch doctor clinics, ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to fetch doctor clinics,');
+      return { data: null, status_code: mapped.status_code, message: mapped.message };
     }
   }
 

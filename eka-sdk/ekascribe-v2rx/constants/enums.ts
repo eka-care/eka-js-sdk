@@ -47,6 +47,8 @@ export enum ERROR_CODE {
   FETCH_WRAPPER_ERROR = 'fetch_wrapper_error',
   NETWORK_ERROR = 'network_error',
   UNKNOWN_ERROR = 'unknown_error',
+  UNAUTHORIZED = 'unauthorized',
+  FORBIDDEN = 'forbidden',
 }
 
 export enum PROCESSING_STATUS {

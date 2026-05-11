@@ -129,14 +129,14 @@ export type TGetConfigV2Response = {
     onboarding_step?: string;
   };
   message?: string;
-  code: number;
+  status_code: number;
 };
 
 export type TGetConfigV2TimezoneResponse = {
   timezone: string;
   current_time_utc: string;
   timestamp: number;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
@@ -261,7 +261,7 @@ export type TPostTransactionResponse = {
   oid: string;
   uuid: string;
   data: unknown;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string; display_message: string };
 };
 
@@ -402,7 +402,7 @@ export interface TPostV1TemplateRequest {
 }
 
 export interface TPostV1TemplateResponse {
-  code: number;
+  status_code: number;
   msg: string;
   template_id?: string;
   message?: string;
@@ -420,7 +420,7 @@ export interface TTemplate {
 
 export interface TGetV1TemplatesResponse {
   items: TTemplate[];
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -428,7 +428,7 @@ export type TPostCookV1MediaAiCreateTemplateResponse = {
   title: string;
   desc: string;
   sections: TSection[];
-  code: number;
+  status_code: number;
   message: string;
 };
 export interface TPostV1TemplateSectionRequest {
@@ -442,7 +442,7 @@ export interface TPostV1TemplateSectionRequest {
 export interface TPostV1TemplateSectionResponse {
   msg: string;
   section_id: string;
-  code: number;
+  status_code: number;
   action: 'updated' | 'created_custom';
   error?: { code: string; message: string };
 }
@@ -459,7 +459,7 @@ export interface TSection {
 
 export interface TGetV1TemplateSectionsResponse {
   items: TSection[];
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -489,7 +489,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
   msg: string;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -507,7 +507,7 @@ export type TPostV1ConvertToTemplateResponse = {
   template_id: string;
   document_id: string;
   b_id: string;
-  code: number;
+  status_code: number;
   msg: string;
   error?: { code: string; message: string; display_message: string };
 };
@@ -539,7 +539,7 @@ export type TPatchVoiceApiV3StatusResponse = {
   message: string;
   txn_id: string;
   b_id: string;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string; display_message: string };
 };
 
@@ -616,7 +616,7 @@ export type TDoctorHeaderFooterInfo = {
 
 export type TGetDoctorHeaderFooterResponse = {
   data: TDoctorHeaderFooterInfo;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
@@ -631,12 +631,12 @@ export type TClinicInfo = {
 
 export type TGetDoctorClinicsResponse = {
   data: TClinicInfo[] | null;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
 export type TDeleteTransactionResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   status?: string;
   txn_id?: string;
@@ -667,7 +667,7 @@ export type TSuggestedMedication = {
 };
 
 export type TSuggestedMedicationResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   session_id?: string;
   medications?: TSuggestedMedication[];
@@ -682,7 +682,7 @@ export type TPostV1DocumentRequest = {
 };
 
 export type TPostV1DocumentResponse = {
-  code: number;
+  status_code: number;
   status?: string;
   message?: string;
   data?: {
@@ -708,7 +708,7 @@ export type TPostV1DocumentResponse = {
 };
 
 export type TDeleteV1DocumentResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
 };
@@ -725,7 +725,7 @@ export type TPatchSessionContextRequest = {
 };
 
 export type TPatchSessionContextResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
 };
@@ -782,7 +782,7 @@ export type TGetV1SessionDetailsData = {
 
 export type TGetV1SessionDetailsResponse = {
   data?: TGetV1SessionDetailsData;
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
 };

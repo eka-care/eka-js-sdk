@@ -1,5 +1,5 @@
-import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
+import { mapTransportError } from '../utils/map-transport-error';
 import {
   TPartialResultCallback,
   TPollingResponse,
@@ -20,10 +20,8 @@ export class OutputManager {
     try {
       return await this.fetchV3Status(txn_id);
     } catch (error) {
-      return {
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch output templates, ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to fetch output templates,');
+      return { status_code: mapped.status_code, message: mapped.message };
     }
   }
 
@@ -31,10 +29,8 @@ export class OutputManager {
     try {
       return await this.fetchV3Status(txn_id, 'transcript=true', 15000);
     } catch (error) {
-      return {
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch output transcription, ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to fetch output transcription,');
+      return { status_code: mapped.status_code, message: mapped.message };
     }
   }
 
@@ -57,8 +53,9 @@ export class OutputManager {
       }
 
       return { success: true, data: response.data as TChunkTranscriptResponse };
-    } catch {
-      return { success: false, error: ERROR_CODE.NETWORK_ERROR };
+    } catch (error) {
+      const mapped = mapTransportError(error, 'Failed to fetch chunk transcript,');
+      return { success: false, error: mapped.error_code };
     }
   }
 
@@ -207,10 +204,8 @@ export class OutputManager {
         status_code: response.status,
       };
     } catch (error) {
-      return {
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Something went wrong! ${error}`,
-      };
+      const mapped = mapTransportError(error, 'Failed to fetch status,');
+      return { status_code: mapped.status_code, message: mapped.message };
     }
   }
 

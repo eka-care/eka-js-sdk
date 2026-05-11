@@ -1,5 +1,6 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
 import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { mapTransportError } from '../utils/map-transport-error';
 import {
   TPostTransactionInitRequest,
   TPostTransactionResponse,
@@ -340,16 +341,17 @@ export class RecordingManager {
         await this.callbackRegistry.dispatch('onSessionEvent', {
           callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
           status: 'info',
-          message: `Transaction cancel status: ${patchResponse.code}`,
+          message: `Transaction cancel status: ${patchResponse.status_code}`,
           timestamp: new Date().toISOString(),
         });
       }
 
       return patchResponse;
     } catch (error) {
+      const mapped = mapTransportError(error, 'Failed to cancel recording session,');
       return {
-        code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to cancel recording session, ${error}`,
+        status_code: mapped.status_code,
+        message: mapped.message,
       } as TPostTransactionResponse;
     }
   }
@@ -461,10 +463,11 @@ export class RecordingManager {
         txn_id: this.txnID,
       };
     } catch (error) {
+      const mapped = mapTransportError(error, 'Recording upload failed:');
       return {
-        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Recording upload failed: ${error}`,
+        error_code: mapped.error_code,
+        status_code: mapped.status_code,
+        message: mapped.message,
       };
     }
   }
@@ -499,10 +502,11 @@ export class RecordingManager {
         message: response.data.message || 'Transaction committed successfully.',
       };
     } catch (error) {
+      const mapped = mapTransportError(error, 'Failed to commit transaction,');
       return {
-        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to commit transaction, ${error}`,
+        error_code: mapped.error_code,
+        status_code: mapped.status_code,
+        message: mapped.message,
       };
     }
   }
@@ -529,10 +533,11 @@ export class RecordingManager {
         message: response.data.message || 'Transaction stopped.',
       };
     } catch (error) {
+      const mapped = mapTransportError(error, 'Failed to stop transaction,');
       return {
-        error_code: ERROR_CODE.TXN_STOP_FAILED,
-        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-        message: `Failed to stop transaction, ${error}`,
+        error_code: mapped.error_code,
+        status_code: mapped.status_code,
+        message: mapped.message,
       };
     }
   }
