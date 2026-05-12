@@ -9,7 +9,7 @@ import {
   TEndRecordingResponse,
   TStartRecordingForExistingSessionRequest,
 } from '../constants/types';
-import { ITransport } from '../transport/transport.interface';
+import { ITranspouprt } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
 import { CallbackRegistry } from '../callbacks/callback-registry';
 import { Tracker } from '../tracker/tracker';
@@ -173,13 +173,12 @@ export class RecordingManager {
     try {
       await this.allianceClient.reset();
 
-      // Construct CreateSessionResponse from existing session data
       const constructedSession: CreateSessionResponse = {
         session_id: request.txn_id,
         status: SessionStatus.CREATED,
         created_at: new Date(request.created_at * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        upload_url: `${this.hosts.voiceV2}/upload/${request.txn_id}`,
+        expires_at: request.expires_at,
+        upload_url: request.upload_url,
       };
 
       const result: SDKResult<void> = await this.allianceClient.startRecordingWithSession(

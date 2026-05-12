@@ -788,8 +788,9 @@ export type TGetV1SessionDetailsResponse = {
 
 export type TStartRecordingForExistingSessionRequest = {
   txn_id: string;
-  business_id: string;
   created_at: number;
+  expires_at: string;
+  upload_url: string;
   microphoneID?: string;
 };
 
