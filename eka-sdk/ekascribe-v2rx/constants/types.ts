@@ -1,4 +1,84 @@
-import { TGetStatusApiResponse } from '../api/transaction/get-voice-api-v3-status';
+// --- Status API types (moved from api/transaction/) ---
+
+export type TTemplateMessage = {
+  type: 'warning' | 'error';
+  code?: string;
+  msg: string;
+};
+
+export type TTemplateStatus = 'success' | 'partial_success' | 'failure';
+
+export type TOutputSummary = {
+  template_id: string;
+  value?: any;
+  type: string;
+  name: string;
+  lang?: string;
+  status: TTemplateStatus;
+  errors?: TTemplateMessage[];
+  warnings?: TTemplateMessage[];
+  document_id: string;
+  document_type: string;
+  document_path: {
+    bucket: string;
+    folder: string;
+    filename: string;
+  };
+};
+
+export type TGetStatusApiResponse = {
+  data: {
+    output: TOutputSummary[];
+    audio_matrix?: {
+      quality: string;
+    };
+    meta_data?: {
+      total_resources?: number;
+      total_parsed_resources?: number;
+    };
+    created_at?: string;
+    template_results: {
+      integration: TOutputSummary[];
+      custom: TOutputSummary[];
+      transcript: TOutputSummary[];
+    };
+    additional_data?: any;
+  };
+  error?: {
+    code: string;
+    message: string;
+    display_message: string;
+  };
+  status: string;
+};
+
+export type TGetStatusResponse = {
+  response?: TGetStatusApiResponse | null;
+  status_code: number;
+  message?: string;
+};
+
+// --- Chunk transcript types (moved from api/transaction/) ---
+
+export type TChunkTranscriptResponse = {
+  text: string;
+  confidence: number;
+  segments: unknown[];
+  audio_length: number;
+  audio_quality: string;
+  metadata: {
+    model_id: string;
+    commit_id: string;
+    context_used: unknown[];
+    lang_input: string[];
+    lang_output: string;
+    task: string | null;
+  };
+};
+
+export type TFetchChunkTranscriptResult =
+  | { success: true; data: TChunkTranscriptResponse }
+  | { success: false; error: string };
 import {
   ERROR_CODE,
   CALLBACK_TYPE,
@@ -49,14 +129,14 @@ export type TGetConfigV2Response = {
     onboarding_step?: string;
   };
   message?: string;
-  code: number;
+  status_code: number;
 };
 
 export type TGetConfigV2TimezoneResponse = {
   timezone: string;
   current_time_utc: string;
   timestamp: number;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
@@ -105,10 +185,10 @@ export type TSystemInfo = {
 };
 
 export type TNetworkInfo = {
-  effective_type: String;
-  latency: Number;
-  download_speed: Number;
-  connection_type: String;
+  effective_type: string;
+  latency: number;
+  download_speed: number;
+  connection_type: string;
 };
 
 export type TStartRecordingResponse = {
@@ -163,9 +243,8 @@ export type TPostTransactionInitRequest = {
 };
 
 export interface TPostV1UploadAudioFilesRequest extends TPostTransactionInitRequest {
-  action: string;
-  audioFiles: File[] | Blob[];
-  audioFileNames: string[];
+  audioFile: File | Blob;
+  audioFileName: string;
 }
 
 export type TPostTransactionCommitRequest = {
@@ -181,7 +260,7 @@ export type TPostTransactionResponse = {
   oid: string;
   uuid: string;
   data: unknown;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string; display_message: string };
 };
 
@@ -322,7 +401,7 @@ export interface TPostV1TemplateRequest {
 }
 
 export interface TPostV1TemplateResponse {
-  code: number;
+  status_code: number;
   msg: string;
   template_id?: string;
   message?: string;
@@ -340,7 +419,7 @@ export interface TTemplate {
 
 export interface TGetV1TemplatesResponse {
   items: TTemplate[];
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -348,7 +427,7 @@ export type TPostCookV1MediaAiCreateTemplateResponse = {
   title: string;
   desc: string;
   sections: TSection[];
-  code: number;
+  status_code: number;
   message: string;
 };
 export interface TPostV1TemplateSectionRequest {
@@ -362,7 +441,7 @@ export interface TPostV1TemplateSectionRequest {
 export interface TPostV1TemplateSectionResponse {
   msg: string;
   section_id: string;
-  code: number;
+  status_code: number;
   action: 'updated' | 'created_custom';
   error?: { code: string; message: string };
 }
@@ -379,7 +458,7 @@ export interface TSection {
 
 export interface TGetV1TemplateSectionsResponse {
   items: TSection[];
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -409,7 +488,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
   msg: string;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string };
 }
 
@@ -427,7 +506,7 @@ export type TPostV1ConvertToTemplateResponse = {
   template_id: string;
   document_id: string;
   b_id: string;
-  code: number;
+  status_code: number;
   msg: string;
   error?: { code: string; message: string; display_message: string };
 };
@@ -459,7 +538,7 @@ export type TPatchVoiceApiV3StatusResponse = {
   message: string;
   txn_id: string;
   b_id: string;
-  code: number;
+  status_code: number;
   error?: { code: string; message: string; display_message: string };
 };
 
@@ -536,7 +615,7 @@ export type TDoctorHeaderFooterInfo = {
 
 export type TGetDoctorHeaderFooterResponse = {
   data: TDoctorHeaderFooterInfo;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
@@ -551,12 +630,12 @@ export type TClinicInfo = {
 
 export type TGetDoctorClinicsResponse = {
   data: TClinicInfo[] | null;
-  code: number;
+  status_code: number;
   message?: string;
 };
 
 export type TDeleteTransactionResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   status?: string;
   txn_id?: string;
@@ -587,7 +666,7 @@ export type TSuggestedMedication = {
 };
 
 export type TSuggestedMedicationResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   session_id?: string;
   medications?: TSuggestedMedication[];
@@ -602,7 +681,7 @@ export type TPostV1DocumentRequest = {
 };
 
 export type TPostV1DocumentResponse = {
-  code: number;
+  status_code: number;
   status?: string;
   message?: string;
   data?: {
@@ -628,7 +707,7 @@ export type TPostV1DocumentResponse = {
 };
 
 export type TDeleteV1DocumentResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
 };
@@ -645,7 +724,7 @@ export type TPatchSessionContextRequest = {
 };
 
 export type TPatchSessionContextResponse = {
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
 };
@@ -702,7 +781,21 @@ export type TGetV1SessionDetailsData = {
 
 export type TGetV1SessionDetailsResponse = {
   data?: TGetV1SessionDetailsData;
-  code: number;
+  status_code: number;
   message?: string;
   [key: string]: unknown;
+};
+
+export type TStartRecordingForExistingSessionRequest = {
+  txn_id: string;
+  business_id: string;
+  created_at: number;
+  microphoneID?: string;
+};
+
+export type TPollingResponse = {
+  response?: TGetStatusApiResponse | null;
+  status_code: number;
+  errorMessage?: string;
+  errorCode?: string;
 };

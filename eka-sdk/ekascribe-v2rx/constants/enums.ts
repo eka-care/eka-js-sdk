@@ -45,6 +45,10 @@ export enum ERROR_CODE {
   UPLOAD_FULL_AUDIO = 'upload_full_audio',
   FETCH_WRAPPER_RESPONSE = 'fetch_wrapper_response',
   FETCH_WRAPPER_ERROR = 'fetch_wrapper_error',
+  NETWORK_ERROR = 'network_error',
+  UNKNOWN_ERROR = 'unknown_error',
+  UNAUTHORIZED = 'unauthorized',
+  FORBIDDEN = 'forbidden',
 }
 
 export enum PROCESSING_STATUS {

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EkaScribe SDK Test (ES6)</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+    button { margin: 4px; padding: 8px 16px; cursor: pointer; font-family: monospace; }
+    #log { white-space: pre-wrap; margin-top: 20px; padding: 12px; background: #111; border-radius: 4px; max-height: 500px; overflow-y: auto; }
+    .section { margin: 16px 0; padding: 12px; border: 1px solid #333; border-radius: 4px; }
+    h3 { color: #569cd6; margin: 0 0 8px 0; }
+    input { padding: 6px; font-family: monospace; width: 400px; background: #2d2d2d; color: #d4d4d4; border: 1px solid #555; }
+  </style>
+</head>
+<body>
+  <h2>EkaScribe SDK Test Page (ES6 / Legacy)</h2>
+
+  <div class="section">
+    <h3>Config</h3>
+    <label>Access Token: <input id="token" type="text" placeholder="paste your access token" /></label>
+    <br/><br/>
+    <label>Alliance Base URL: <input id="baseUrl" type="text" placeholder="https://..." value="" /></label>
+    <br/><br/>
+    <label>Env:
+      <select id="env"><option value="DEV">DEV</option><option value="PROD">PROD</option></select>
+    </label>
+    <br/><br/>
+    <button onclick="initSDK()">Initialize SDK</button>
+    <button onclick="initSDKWithWorker()">Initialize SDK (with SharedWorker)</button>
+  </div>
+
+  <div class="section">
+    <h3>Flow 1: Live Recording</h3>
+    <button onclick="doInitTransaction()">1. Init Transaction</button>
+    <button onclick="doStartRecording()">2. Start Recording</button>
+    <button onclick="doPause()">Pause</button>
+    <button onclick="doResume()">Resume</button>
+    <button onclick="doEndRecording()">3. End Recording</button>
+    <button onclick="doPollStatus()">4. Poll Status</button>
+  </div>
+
+  <div class="section">
+    <h3>Flow 2: Pre-recorded Audio Upload</h3>
+    <input type="file" id="audioFileInput" accept="audio/*" />
+    <br/><br/>
+    <button onclick="doCreateSession()">1. Create Session</button>
+    <button onclick="doUploadAudio()">2. Upload Audio</button>
+    <button onclick="doEndPreRecordedSession()">3. End Session</button>
+    <button onclick="doPollPreRecorded()">4. Poll Status</button>
+  </div>
+
+  <div class="section">
+    <h3>Session Management</h3>
+    <button onclick="doGetHistory()">Get History</button>
+    <button onclick="doGetConfig()">Get Config</button>
+    <button onclick="doGetTemplates()">Get Templates</button>
+    <button onclick="doGetSessionDetails()">Get Session Details</button>
+    <button onclick="doCancelSession()">Cancel Current Session</button>
+    <button onclick="doReset()">Reset Instance</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script type="module">
+    import { getEkaScribeInstance, createWorkerBlobUrl, TEMPLATE_ID } from '../../eka-sdk/ekascribe-v2rx/index';
+
+    let sdk = null;
+    let currentSessionId = null;
+    let currentUploadUrl = null;
+
+    function log(label, data) {
+      const el = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      el.textContent += `[${time}] ${label}: ${JSON.stringify(data, null, 2)}\n\n`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+
+    window.initSDK = function() {
+      const token = document.getElementById('token').value;
+      const baseUrl = document.getElementById('baseUrl').value;
+      const env = document.getElementById('env').value;
+      if (!token) { alert('Enter access token'); return; }
+      if (!baseUrl) { alert('Enter Alliance base URL'); return; }
+
+      sdk = getEkaScribeInstance({
+        access_token: token,
+        env,
+        clientId: 'test-html-es6',
+        flavour: 'web',
+        allianceConfig: { baseUrl, useWorker: false, debug: true },
+      });
+
+      sdk.registerCallback('onTokenRequired', async () => {
+        log('Callback', 'onTokenRequired fired — return new token here');
+        return token;
+      });
+
+      sdk.registerCallback('onSessionEvent', (event) => {
+        log('Callback:onSessionEvent', event);
+      });
+
+      log('SDK', 'Initialized (without SharedWorker)');
+    };
+
+    window.initSDKWithWorker = async function() {
+      const token = document.getElementById('token').value;
+      const baseUrl = document.getElementById('baseUrl').value;
+      const env = document.getElementById('env').value;
+      if (!token) { alert('Enter access token'); return; }
+      if (!baseUrl) { alert('Enter Alliance base URL'); return; }
+
+      const workerUrl = await createWorkerBlobUrl();
+
+      sdk = getEkaScribeInstance({
+        access_token: token,
+        env,
+        clientId: 'test-html-es6',
+        flavour: 'web',
+        sharedWorkerUrl: workerUrl,
+        allianceConfig: { baseUrl, debug: true },
+      });
+
+      sdk.registerCallback('onTokenRequired', async () => {
+        log('Callback', 'onTokenRequired fired');
+        return token;
+      });
+
+      sdk.registerCallback('onSessionEvent', (event) => {
+        log('Callback:onSessionEvent', event);
+      });
+
+      log('SDK', 'Initialized (with SharedWorker)');
+    };
+
+    // ─── Flow 1: Live Recording ───────────────────────────────────────────────
+
+    window.doInitTransaction = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      const result = await sdk.initTransaction({
+        txn_id: `test-${Date.now()}`,
+        mode: 'dictation',
+        input_language: ['en'],
+        output_language: 'en',
+        model_type: 'pro',
+        output_format_template: [{ template_id: '3d707c1c-311e-4424-80e9-e5d7a229d519'}],
+        patient_details: { username: 'Test Patient', age: 30, biologicalSex: 'male' },
+      });
+      if (result.txn_id) currentSessionId = result.txn_id;
+      log('initTransaction', result);
+    };
+
+    window.doStartRecording = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      const result = await sdk.startRecording();
+      log('startRecording', result);
+    };
+
+    window.doPause = function() {
+      if (!sdk) return;
+      log('pauseRecording', sdk.pauseRecording());
+    };
+
+    window.doResume = function() {
+      if (!sdk) return;
+      log('resumeRecording', sdk.resumeRecording());
+    };
+
+    window.doEndRecording = async function() {
+      if (!sdk) return;
+      const result = await sdk.endRecording();
+      log('endRecording', result);
+    };
+
+    window.doPollStatus = async function() {
+      if (!sdk || !currentSessionId) { alert('No active session'); return; }
+      log('polling', { session_id: currentSessionId, message: 'Polling started...' });
+      const result = await sdk.getSessionStatus(currentSessionId, {
+        poll: { maxAttempts: 30, intervalMs: 2000 },
+      });
+      log('getSessionStatus', result);
+    };
+
+    // ─── Flow 2: Pre-recorded Audio ───────────────────────────────────────────
+
+    window.doCreateSession = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+
+      const fileInput = document.getElementById('audioFileInput');
+      const fileName = fileInput.files?.[0]?.name || 'recording.mp3';
+
+      const result = await sdk.sessions.createSession({
+        templates: ['3d707c1c-311e-4424-80e9-e5d7a229d519'],
+        model: 'pro',
+        language_hint: ['en'],
+        transcript_language: 'en',
+        upload_type: 'single',
+        communication_protocol: 'http',
+        session_mode: 'dictation',
+        additional_data: { audio_file_names: [fileName] },
+      });
+      log('createSession', result);
+
+      if (result.success) {
+        currentSessionId = result.data.session_id;
+        currentUploadUrl = result.data.upload_url;
+        log('info', { session_id: currentSessionId, upload_url: currentUploadUrl });
+      }
+    };
+
+    window.doUploadAudio = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      if (!currentUploadUrl) { alert('Create session first (upload_url is empty)'); log('debug', { currentSessionId, currentUploadUrl }); return; }
+
+      const fileInput = document.getElementById('audioFileInput');
+      const file = fileInput.files?.[0];
+      if (!file) { alert('Select an audio file'); return; }
+
+      const result = await sdk.processPreRecordedAudio({
+        uploadUrl: currentUploadUrl,
+        audioFile: file,
+      });
+      log('processPreRecordedAudio', result);
+    };
+
+    window.doEndPreRecordedSession = async function() {
+      if (!sdk || !currentSessionId) { alert('No active session'); return; }
+      const result = await sdk.sessions.endSession(
+        { audio_files_sent: 1, audio_files_uploaded: 1 },
+        currentSessionId
+      );
+      log('endSession', result);
+    };
+
+    window.doPollPreRecorded = async function() {
+      if (!sdk || !currentSessionId) { alert('No active session'); return; }
+      log('polling', { session_id: currentSessionId, message: 'Polling started...' });
+      const result = await sdk.getSessionStatus(currentSessionId, {
+        poll: { maxAttempts: 30, intervalMs: 2000 },
+      });
+      log('getSessionStatus', result);
+    };
+
+    // ─── Session Management ───────────────────────────────────────────────────
+
+    window.doGetHistory = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      log('getSessionHistory', await sdk.sessions.getSessionHistory({ txn_count: 5 }));
+    };
+
+    window.doGetConfig = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      log('getConfig', await sdk.sessions.getConfig());
+    };
+
+    window.doGetTemplates = async function() {
+      if (!sdk) { alert('Initialize SDK first'); return; }
+      log('getAllTemplates', await sdk.documents.getAllTemplates());
+    };
+
+    window.doGetSessionDetails = async function() {
+      if (!sdk || !currentSessionId) { alert('No active session'); return; }
+      const result = await sdk.sessions.getSessionDetails({ session_id: currentSessionId });
+      log('getSessionDetails', result);
+    };
+
+    window.doCancelSession = async function() {
+      if (!sdk || !currentSessionId) { alert('No active session'); return; }
+      const result = await sdk.cancelSession(currentSessionId);
+      log('cancelSession', result);
+    };
+
+    window.doReset = async function() {
+      if (!sdk) return;
+      await sdk.resetInstance();
+      sdk = null;
+      currentSessionId = null;
+      currentUploadUrl = null;
+      log('reset', 'Instance reset');
+    };
+  </script>
+</body>
+</html>

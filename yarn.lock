@@ -33,16 +33,17 @@
   integrity sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==
 
 "@eka-care/ekascribe-ts-sdk-legacy@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es6":
-  version "2.0.30"
+  version "3.0.0"
   resolved "file:packages/es6"
   dependencies:
     core-js "^3.38.0"
+    med-scribe-alliance-ts-sdk "2.0.10"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "2.1.47"
+  version "3.0.0"
   resolved "file:packages/es11"
   dependencies:
-    vite-bundle-analyzer "^1.3.6"
+    med-scribe-alliance-ts-sdk "2.0.12"
 
 "@esbuild/darwin-arm64@0.25.12":
   version "0.25.12"
@@ -777,10 +778,10 @@ confbox@^0.2.2:
   resolved "https://registry.npmjs.org/confbox/-/confbox-0.2.2.tgz"
   integrity sha512-1NB+BKqhtNipMsov4xI/NnhCKp9XG9NamYp5PVm9klAT0fsrNPjaFICsCFhNhwZJKNh7zB/3q8qXz0E9oaMNtQ==
 
-core-js@^3.38.0:
-  version "3.47.0"
-  resolved "https://registry.npmjs.org/core-js/-/core-js-3.47.0.tgz"
-  integrity sha512-c3Q2VVkGAUyupsjRnaNX6u8Dq2vAdzm9iuPj5FW0fRxzlxgq9Q39MDq10IvmQSpLgHQNyQzQmOo6bgGHmH3NNg==
+core-js@^3.38.0, core-js@^3.48.0:
+  version "3.49.0"
+  resolved "https://registry.npmjs.org/core-js/-/core-js-3.49.0.tgz"
+  integrity sha512-es1U2+YTtzpwkxVLwAFdSpaIMyQaq0PBgm3YD1W3Qpsn1NAmO3KSgZfu+oGSWVu6NvLHoHCV/aYcsE5wiB7ALg==
 
 cross-spawn@^7.0.6:
   version "7.0.6"
@@ -1297,6 +1298,26 @@ magic-string@^0.30.17:
   integrity sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
+
+med-scribe-alliance-ts-sdk@^2.0.12, med-scribe-alliance-ts-sdk@2.0.12:
+  version "2.0.12"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.12.tgz"
+  integrity sha512-bJdL9ISal13TmO2WyBUPkv0BGH7KfVwZkAqIdBxYF8cFN57qFJDxS9II+PtXMHsgXLgNiTOmG9boho2sR/zUKw==
+  dependencies:
+    "@breezystack/lamejs" "^1.2.7"
+    "@ricky0123/vad-web" "^0.0.22"
+    core-js "^3.48.0"
+    zod "^4.4.3"
+
+med-scribe-alliance-ts-sdk@2.0.10:
+  version "2.0.10"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.10.tgz"
+  integrity sha512-gUoSA2EuhLPPsEDijPSJgZu+EY5HtpVs1vii7HY4jLn6jtdmkyDAcUMlWJgBstFyTXSXrCutSUkmJxil6oTRZw==
+  dependencies:
+    "@breezystack/lamejs" "^1.2.7"
+    "@ricky0123/vad-web" "^0.0.22"
+    core-js "^3.48.0"
+    zod "^4.4.3"
 
 merge2@^1.3.0:
   version "1.4.1"
@@ -1857,3 +1878,8 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zod@^4.4.3:
+  version "4.4.3"
+  resolved "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz"
+  integrity sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==

@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk",
-  "version": "2.1.51",
+  "version": "3.0.0",
   "description": "EkaScribe TypeScript SDK - Modern ES2020 build",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
@@ -10,8 +10,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
-    },
-    "./worker": "./dist/worker.bundle.js"
+    }
   },
   "repository": "git@github.com:eka-care/eka-js-sdk.git",
   "author": "Sanikagoyal28 <sanikagoyal9@gmail.com>",
@@ -27,8 +26,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build:main": "vite build",
-    "build:worker": "vite build --config vite.worker.config.ts",
-    "build": "yarn clean && yarn build:main && yarn build:worker",
+    "build": "yarn clean && yarn build:main",
     "prepublishOnly": "yarn build"
   },
   "publishConfig": {
@@ -39,6 +37,9 @@
     "README.md"
   ],
   "dependencies": {
+    "med-scribe-alliance-ts-sdk": "2.0.12"
+  },
+  "devDependencies": {
     "vite-bundle-analyzer": "^1.3.6"
   }
 }
