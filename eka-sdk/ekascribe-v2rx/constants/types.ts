@@ -791,6 +791,7 @@ export type TStartRecordingForExistingSessionRequest = {
   created_at: number;
   expires_at: string;
   upload_url: string;
+  business_id?: string;
   microphoneID?: string;
 };
 

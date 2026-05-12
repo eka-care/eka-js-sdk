@@ -9,7 +9,7 @@ import {
   TEndRecordingResponse,
   TStartRecordingForExistingSessionRequest,
 } from '../constants/types';
-import { ITranspouprt } from '../transport/transport.interface';
+import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
 import { CallbackRegistry } from '../callbacks/callback-registry';
 import { Tracker } from '../tracker/tracker';
@@ -205,7 +205,6 @@ export class RecordingManager {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording started for existing session.',
         txn_id: this.txnID,
-        business_id: request.business_id,
       };
     } catch (error) {
       return {
