@@ -71,6 +71,13 @@ export class IpcTransport implements ITransport {
     this.accessToken = token;
   }
 
+  destroy(): void {
+    for (const [, pending] of this.pendingRequests) {
+      pending.reject(new TransportError('Transport destroyed', 0));
+    }
+    this.pendingRequests.clear();
+  }
+
   async request<T = unknown>(config: TransportRequest): Promise<TransportResponse<T>> {
     try {
       return await this.executeRequest<T>(config);

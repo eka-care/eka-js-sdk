@@ -220,7 +220,7 @@ export class OutputManager {
         ...data,
         output: decodeOutputSummaries(data.output),
         template_results: {
-          ...data.template_results,
+          ...(data.template_results ?? {}),
           integration: decodeOutputSummaries(data.template_results?.integration),
           custom: decodeOutputSummaries(data.template_results?.custom),
           transcript: decodeOutputSummaries(data.template_results?.transcript),

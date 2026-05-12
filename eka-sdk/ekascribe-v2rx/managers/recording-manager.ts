@@ -276,6 +276,10 @@ export class RecordingManager {
         failed_files: result.data.failedUploads.length,
       });
 
+      // Clear session to prevent startRecording() on an ended session.
+      // Keep txnID for getSessionStatus() / pollSessionOutput() / retryUploadRecording().
+      this.storedSession = null;
+
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording ended successfully.',

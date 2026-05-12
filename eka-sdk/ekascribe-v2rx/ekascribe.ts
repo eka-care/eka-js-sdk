@@ -116,7 +116,9 @@ class EkaScribe {
     });
 
     // Fetch well-known discovery document
-    this.allianceClient.init();
+    this.allianceClient.init().catch((err) => {
+      console.error('[EkaScribe] Alliance SDK init failed:', err);
+    });
 
     // Initialize sub-managers
     this.documents = new DocumentManager(this.transport, this.hosts, this.allianceClient);
@@ -134,11 +136,19 @@ class EkaScribe {
 
     // Wire Alliance 401 bridge
     this.allianceClient.registerCallback('onTokenRequired', (event: TokenRequiredEvent) => {
-      this.handleUnauthorized().then((newToken) => {
-        if (newToken) {
-          event.resolve(newToken);
-        }
-      });
+      this.handleUnauthorized()
+        .then((newToken) => {
+          if (newToken) {
+            event.resolve(newToken);
+          } else {
+            console.error('[EkaScribe] Token refresh returned empty token.');
+            event.resolve('');
+          }
+        })
+        .catch((err) => {
+          console.error('[EkaScribe] Token refresh failed:', err);
+          event.resolve('');
+        });
     });
   }
 
@@ -155,7 +165,9 @@ class EkaScribe {
             `${clientChanging ? ` (clientId: ${current.clientId} → ${config.clientId})` : ''}` +
             `. Resetting instance.`
         );
-        EkaScribe.instance.resetInstance();
+        void EkaScribe.instance.resetInstance().catch((err) => {
+          console.error('[EkaScribe] Error during instance reset:', err);
+        });
       } else {
         // Update mutable config (token, flavour)
         if (config.access_token) {
@@ -327,7 +339,17 @@ class EkaScribe {
   // ─── Private ───────────────────────────────────────────────────────────────
 
   private async handleUnauthorized(): Promise<string> {
-    const newToken = (await this.callbackRegistry.dispatch('onTokenRequired')) as string;
+    const TOKEN_REFRESH_TIMEOUT = 10000;
+
+    const tokenPromise = this.callbackRegistry.dispatch('onTokenRequired') as Promise<string>;
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('[EkaScribe] Token refresh timed out after 10s.')),
+        TOKEN_REFRESH_TIMEOUT
+      )
+    );
+
+    const newToken = await Promise.race([tokenPromise, timeoutPromise]);
 
     if (newToken) {
       this.updateAuthTokens({ access_token: newToken });

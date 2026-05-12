@@ -185,10 +185,10 @@ export type TSystemInfo = {
 };
 
 export type TNetworkInfo = {
-  effective_type: String;
-  latency: Number;
-  download_speed: Number;
-  connection_type: String;
+  effective_type: string;
+  latency: number;
+  download_speed: number;
+  connection_type: string;
 };
 
 export type TStartRecordingResponse = {

@@ -30,15 +30,18 @@ export class CallbackRegistry {
     const handlers = this.handlers.get(name);
     if (!handlers || handlers.size === 0) return undefined;
 
-    let result: unknown;
+    let firstResult: unknown;
     for (const handler of handlers) {
       try {
-        result = await handler(...args);
+        const result = await handler(...args);
+        if (firstResult === undefined) {
+          firstResult = result;
+        }
       } catch (error) {
         console.error(`[EkaScribe] Callback error in '${name}':`, error);
       }
     }
-    return result;
+    return firstResult;
   }
 
   hasHandlers(name: CallbackName): boolean {
