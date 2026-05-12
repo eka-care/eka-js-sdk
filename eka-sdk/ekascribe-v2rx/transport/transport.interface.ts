@@ -23,7 +23,7 @@ export interface IpcBridge {
 }
 
 export interface TransportConfig {
-  access_token: string;
+  access_token?: string;
   clientId?: string;
   flavour?: string;
   defaultTimeout?: number;

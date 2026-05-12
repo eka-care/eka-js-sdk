@@ -8,7 +8,7 @@ import {
 const DEFAULT_TIMEOUT = 10000;
 
 export class HttpTransport implements ITransport {
-  private accessToken: string;
+  private accessToken?: string;
   private clientId?: string;
   private flavour?: string;
   private defaultTimeout: number;

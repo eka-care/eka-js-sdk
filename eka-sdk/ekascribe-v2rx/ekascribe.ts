@@ -36,7 +36,7 @@ import {
 } from 'med-scribe-alliance-ts-sdk';
 
 export interface EkaScribeConfig {
-  access_token: string;
+  access_token?: string;
   env: 'PROD' | 'DEV';
   clientId?: string;
   mode?: 'http' | 'ipc';
