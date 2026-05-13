@@ -262,7 +262,7 @@ export class RecordingManager {
         });
 
         return {
-          error_code: ERROR_CODE.TXN_STOP_FAILED,
+          error_code: ERROR_CODE.END_RECORDING_FAILED,
           status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
           message: result.error.message || 'Failed to end recording.',
         };
