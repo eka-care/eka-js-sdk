@@ -18,7 +18,7 @@ import {
   type CreateSessionRequest,
   type CreateSessionResponse,
   type SDKResult,
-  type StopRecordingResult,
+  type EndRecordingResult,
   type RetryUploadResult,
   type GetSessionStatusResponse,
   type PollOptions,
@@ -253,7 +253,7 @@ export class RecordingManager {
     try {
       this.tracker.addBreadcrumb('recording', 'endRecording', { txn_id: this.txnID });
 
-      const result: SDKResult<StopRecordingResult> = await this.allianceClient.endRecording();
+      const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording();
 
       if (!result.success) {
         this.tracker.captureEvent('Session end failed', {
