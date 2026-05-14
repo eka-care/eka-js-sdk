@@ -93,6 +93,7 @@ export type {
   TGetV1SessionDetailsResponse,
   TGetV1SessionDetailsData,
   TSessionDocument,
+  TDocumentError,
   TSessionDetailsAdditionalData,
   TGetConfigV2TimezoneResponse,
   TChunkTranscriptResponse,

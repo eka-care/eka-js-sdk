@@ -734,6 +734,12 @@ export type TGetV1SessionDetailsRequest = {
   presigned?: boolean;
 };
 
+export type TDocumentError = {
+  code: string;
+  message: string;
+  details?: unknown;
+};
+
 export type TSessionDocument = {
   document_id: string;
   session_id: string;
@@ -742,13 +748,14 @@ export type TSessionDocument = {
   document_type: 'notes' | 'context' | 'transcript' | 'integration';
   type: string;
   status: string;
-  errors: unknown[];
-  warnings: unknown[];
+  errors: TDocumentError[];
+  warnings: TDocumentError[];
   publish: Record<string, unknown>;
   created_at: number;
   presigned_url: string | null;
   presigned_url_expires_at: number | null;
   vault_doc_id: string | null;
+  lang?: string;
 };
 
 export type TSessionDetailsAdditionalData = {
