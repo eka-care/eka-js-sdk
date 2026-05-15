@@ -786,6 +786,17 @@ export type TGetV1SessionDetailsData = {
   audio_matrix: Record<string, unknown>;
   additional_data: TSessionDetailsAdditionalData;
   documents: TSessionDocument[];
+  context: {
+    past_sessions: Array<{
+      date_epoch: number;
+      session_id: string;
+    }>;
+    documents: string[];
+    attachments: Array<{
+      id: string;
+      patient_oid?: string;
+    }>;
+  };
 };
 
 export type TGetV1SessionDetailsResponse = {
