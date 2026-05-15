@@ -735,9 +735,9 @@ export type TGetV1SessionDetailsRequest = {
 };
 
 export type TDocumentError = {
+  type: null | string;
   code: string;
-  message: string;
-  details?: unknown;
+  msg: string;
 };
 
 export type TSessionDocument = {
