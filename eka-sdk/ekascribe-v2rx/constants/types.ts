@@ -776,6 +776,8 @@ export type TGetV1SessionDetailsData = {
   uuid: string;
   wid: string;
   created_at: number;
+  expires_at: number;
+  upload_url: string;
   status: string;
   user_status: 'init' | 'recording_started' | 'commit' | string;
   transfer: string;
