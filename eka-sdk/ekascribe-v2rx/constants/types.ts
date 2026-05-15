@@ -787,12 +787,12 @@ export type TGetV1SessionDetailsData = {
   additional_data: TSessionDetailsAdditionalData;
   documents: TSessionDocument[];
   context: {
-    past_sessions: Array<{
+    past_sessions?: Array<{
       date_epoch: number;
       session_id: string;
     }>;
-    documents: string[];
-    attachments: Array<{
+    documents?: string[];
+    attachments?: Array<{
       id: string;
       patient_oid?: string;
     }>;
