@@ -127,6 +127,8 @@ export type TGetConfigV2Response = {
     consult_language?: string[];
     contact_number?: string;
     onboarding_step?: string;
+    header?: TConfigHeaderFooter;
+    footer?: TConfigHeaderFooter;
   };
   message?: string;
   status_code: number;
@@ -462,6 +464,15 @@ export interface TGetV1TemplateSectionsResponse {
   error?: { code: string; message: string };
 }
 
+export type TConfigHeaderFooter = {
+  type: 'image' | 'margin';
+  data?: string;
+  content_type?: string;
+  width: number;
+  height: number;
+  unit: 'cm' | 'mm';
+};
+
 export type TPatchVoiceApiV2ConfigRequest = {
   request_type: string;
   data: {
@@ -482,6 +493,8 @@ export type TPatchVoiceApiV2ConfigRequest = {
     onboarding_step?: string;
     sys_info?: TSystemInfo;
     copy_overlay?: boolean;
+    header?: TConfigHeaderFooter;
+    footer?: TConfigHeaderFooter;
   };
   query_params?: string;
 };
