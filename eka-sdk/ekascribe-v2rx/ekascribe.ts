@@ -316,15 +316,9 @@ class EkaScribe {
   // ─── Compatibility ─────────────────────────────────────────────────────────
 
   async runSystemCompatibilityTest(
-    callback: TCompatibilityCallback,
-    sharedWorker?: SharedWorker
+    callback: TCompatibilityCallback
   ): Promise<TCompatibilityTestSummary> {
     const manager = new SystemCompatibilityManager(this.transport, this.hosts);
-
-    if (sharedWorker) {
-      manager.setCompatiblityTestSharedWorker(sharedWorker);
-    }
-
     return manager.runCompatibilityTest(callback);
   }
 

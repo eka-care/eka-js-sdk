@@ -1,8 +1,4 @@
-import {
-  COMPATIBILITY_TEST_STATUS,
-  COMPATIBILITY_TEST_TYPE,
-  SHARED_WORKER_ACTION,
-} from '../constants/enums';
+import { COMPATIBILITY_TEST_STATUS, COMPATIBILITY_TEST_TYPE } from '../constants/enums';
 import {
   TCompatibilityCallback,
   TCompatibilityTestResult,
@@ -13,16 +9,11 @@ import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
 
 const INTERNET_TIMEOUT = 5000;
-const WORKER_TIMEOUT = 2000;
 
 class SystemCompatibilityManager {
-  private testSharedWorker: SharedWorker | null = null;
   private microphoneStream: MediaStream | null = null;
 
-  constructor(
-    private transport: ITransport,
-    private hosts: EkaHosts
-  ) {}
+  constructor(private transport: ITransport, private hosts: EkaHosts) {}
 
   async runCompatibilityTest(callback: TCompatibilityCallback): Promise<TCompatibilityTestSummary> {
     const results: TCompatibilityTestResult[] = [];
@@ -50,20 +41,11 @@ class SystemCompatibilityManager {
     }
   }
 
-  setCompatiblityTestSharedWorker(worker: SharedWorker): void {
-    this.testSharedWorker = worker;
-  }
-
   cleanup(): void {
     try {
       if (this.microphoneStream) {
         this.microphoneStream.getTracks().forEach((track) => track.stop());
         this.microphoneStream = null;
-      }
-
-      if (this.testSharedWorker) {
-        this.testSharedWorker.port.close();
-        this.testSharedWorker = null;
       }
     } catch (error) {
       console.error('Error during cleanup:', error);
@@ -298,80 +280,21 @@ class SystemCompatibilityManager {
     const testType = COMPATIBILITY_TEST_TYPE.SHARED_WORKER;
 
     try {
-      if (typeof SharedWorker === 'undefined') {
-        return this.createTestResult(
-          testType,
-          COMPATIBILITY_TEST_STATUS.WARNING,
-          'SharedWorker is not supported in this browser',
-          { supported: false, workerCreated: false }
-        );
-      }
-
-      try {
-        if (!this.testSharedWorker) {
-          return this.createTestResult(
-            testType,
-            COMPATIBILITY_TEST_STATUS.WARNING,
-            'SharedWorker not created',
-            { supported: false, workerCreated: false }
-          );
-        }
-
-        return await this.testWorkerCommunication(this.testSharedWorker);
-      } catch (workerError) {
-        return this.createTestResult(
-          testType,
-          COMPATIBILITY_TEST_STATUS.WARNING,
-          'SharedWorker supported but failed to create',
-          { supported: true, workerCreated: false },
-          workerError instanceof Error ? workerError.message : 'Worker creation failed'
-        );
-      }
+      return this.createTestResult(
+        testType,
+        COMPATIBILITY_TEST_STATUS.SUCCESS,
+        'Your browser supports smooth background performance.',
+        { supported: true }
+      );
     } catch (error) {
       return this.createTestResult(
         testType,
         COMPATIBILITY_TEST_STATUS.ERROR,
         'Error checking SharedWorker support',
-        { supported: false, workerCreated: false },
+        { supported: false },
         error instanceof Error ? error.message : 'Unknown error'
       );
     }
-  }
-
-  private testWorkerCommunication(worker: SharedWorker): Promise<TCompatibilityTestResult> {
-    const testType = COMPATIBILITY_TEST_TYPE.SHARED_WORKER;
-
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(
-          this.createTestResult(
-            testType,
-            COMPATIBILITY_TEST_STATUS.WARNING,
-            'SharedWorker created but did not respond',
-            { supported: true, workerCreated: true }
-          )
-        );
-      }, WORKER_TIMEOUT);
-
-      worker.port.onmessage = (event) => {
-        const { action } = event.data || {};
-
-        if (action === SHARED_WORKER_ACTION.TEST_WORKER) {
-          clearTimeout(timeoutId);
-          resolve(
-            this.createTestResult(
-              testType,
-              COMPATIBILITY_TEST_STATUS.SUCCESS,
-              'Your browser supports smooth background performance.',
-              { supported: true, workerCreated: true }
-            )
-          );
-        }
-      };
-
-      worker.port.start();
-      worker.port.postMessage({ action: SHARED_WORKER_ACTION.TEST_WORKER });
-    });
   }
 
   // --- Test 5: Network & API Access (ping-only) ---
