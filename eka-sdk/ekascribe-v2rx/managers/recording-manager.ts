@@ -109,11 +109,11 @@ export class RecordingManager {
 
       this.tracker.captureEvent('Session started', {
         txn_id: this.txnID,
-        status_code: 200,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
       });
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Transaction initialized successfully.',
         txn_id: result.data.session_id,
       };
@@ -154,7 +154,7 @@ export class RecordingManager {
       }
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Recording started successfully.',
         txn_id: this.txnID,
       };
@@ -202,7 +202,7 @@ export class RecordingManager {
       this.tracker.setTransactionId(this.txnID);
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Recording started for existing session.',
         txn_id: this.txnID,
       };
@@ -279,7 +279,7 @@ export class RecordingManager {
       this.storedSession = null;
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Recording ended successfully.',
         failed_files: result.data.failedUploads,
         total_audio_files: result.data.endSessionResponse?.audio_files,
@@ -296,12 +296,13 @@ export class RecordingManager {
   async getSessionStatus(
     sessionId?: string,
     options?: { poll?: PollOptions }
-  ): Promise<SDKResult<GetSessionStatusResponse>> {
+  ): Promise<SDKResult<GetSessionStatusResponse> & { status_code: number }> {
     const targetId = sessionId || this.txnID;
 
     if (!targetId) {
       return {
         success: false,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
         error: new ScribeError(
           'No session ID available. Call initTransaction() first or pass a sessionId.',
           ERROR_CODE.TXN_STATUS_MISMATCH
@@ -309,7 +310,13 @@ export class RecordingManager {
       };
     }
 
-    return this.allianceClient.getSessionStatus(targetId, options);
+    const result = await this.allianceClient.getSessionStatus(targetId, options);
+    return {
+      ...result,
+      status_code: result.success
+        ? result.httpStatus ?? SDK_STATUS_CODE.SUCCESS
+        : result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+    };
   }
 
   async retryUploadRecording(): Promise<TEndRecordingResponse> {
@@ -325,7 +332,7 @@ export class RecordingManager {
       }
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: `Retried ${result.data.retried} files. ${result.data.succeeded} succeeded.`,
         failed_files: result.data.stillFailed,
       };
@@ -338,12 +345,15 @@ export class RecordingManager {
     }
   }
 
-  async cancelSession(sessionId?: string): Promise<SDKResult<PatchSessionResponse>> {
+  async cancelSession(
+    sessionId?: string
+  ): Promise<SDKResult<PatchSessionResponse> & { status_code: number }> {
     const targetId = sessionId || this.txnID;
 
     if (!targetId) {
       return {
         success: false,
+        status_code: SDK_STATUS_CODE.TXN_ERROR,
         error: new ScribeError(
           'No session ID available. Call initTransaction() first or pass a sessionId.',
           ERROR_CODE.TXN_STATUS_MISMATCH
@@ -365,7 +375,12 @@ export class RecordingManager {
       });
     }
 
-    return result;
+    return {
+      ...result,
+      status_code: result.success
+        ? result.httpStatus ?? SDK_STATUS_CODE.SUCCESS
+        : result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+    };
   }
 
   async processPreRecordedAudio({
