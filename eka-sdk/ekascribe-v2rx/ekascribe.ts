@@ -113,6 +113,7 @@ class EkaScribe {
       workerScriptUrl: config.sharedWorkerUrl,
       debug: config.allianceConfig?.debug ?? false,
       autoDiscovery: true,
+      flavour: config.flavour,
     });
 
     // Fetch well-known discovery document
