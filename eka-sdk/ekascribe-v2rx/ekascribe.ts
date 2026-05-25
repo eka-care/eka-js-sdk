@@ -22,6 +22,7 @@ import { SessionUtils } from './managers/session-utils';
 import { RecordingManager } from './managers/recording-manager';
 import { OutputManager } from './managers/output-manager';
 import SystemCompatibilityManager from './compatibility/system-compatibility-manager';
+import { WidgetManager, type WidgetConfig, type StartForPatientConfig } from './widget';
 import {
   ScribeClient,
   type TokenRequiredEvent,
@@ -49,6 +50,7 @@ export interface EkaScribeConfig {
     useWorker?: boolean | 'auto';
     debug?: boolean;
   };
+  widget?: WidgetConfig;
 }
 
 // Re-export types for consumers
@@ -66,6 +68,7 @@ class EkaScribe {
   private allianceClient: ScribeClient;
   private recording: RecordingManager;
   private output: OutputManager;
+  private widgetManager: WidgetManager | null = null;
 
   readonly documents: DocumentManager;
   readonly sessions: SessionUtils;
@@ -135,6 +138,11 @@ class EkaScribe {
       this.callbackRegistry
     );
 
+    // Initialize widget if enabled
+    if (config.widget?.enabled) {
+      this.widgetManager = new WidgetManager(this, config.widget);
+    }
+
     // Wire Alliance 401 bridge
     this.allianceClient.registerCallback('onTokenRequired', (event: TokenRequiredEvent) => {
       this.handleUnauthorized()
@@ -195,7 +203,7 @@ class EkaScribe {
     return this.recording.initTransaction(request);
   }
 
-  // TODO: change to startSession with recording
+  // TODO: change to createSession with startRecording
   startRecording(microphoneID?: string): Promise<TStartRecordingResponse> {
     return this.recording.startRecording(microphoneID);
   }
@@ -257,6 +265,17 @@ class EkaScribe {
   /** @deprecated Backward compatible */
   stopTransactionCall(): Promise<TEndRecordingResponse> {
     return this.recording.stopTransactionCall();
+  }
+
+  // ─── Widget ───────────────────────────────────────────────────────────────
+
+  startForPatient(config: StartForPatientConfig): Promise<void> {
+    if (!this.widgetManager) {
+      return Promise.reject(
+        new Error('[EkaScribe] Widget is not enabled. Set widget.enabled: true in config.')
+      );
+    }
+    return this.widgetManager.startForPatient(config);
   }
 
   // ─── Output ────────────────────────────────────────────────────────────────
@@ -326,6 +345,10 @@ class EkaScribe {
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
   async resetInstance(): Promise<void> {
+    if (this.widgetManager) {
+      this.widgetManager.destroy();
+      this.widgetManager = null;
+    }
     await this.recording.reset();
     this.callbackRegistry.removeAll();
     EkaScribe.instance = null;

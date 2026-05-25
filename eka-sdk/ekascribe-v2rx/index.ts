@@ -118,3 +118,12 @@ export {
   COMPATIBILITY_TEST_TYPE,
   COMPATIBILITY_TEST_STATUS,
 } from './constants/enums';
+
+// Re-export widget types
+export { WidgetState } from './widget';
+export type {
+  WidgetConfig,
+  WidgetTheme,
+  WidgetCallbacks,
+  StartForPatientConfig,
+} from './widget';
