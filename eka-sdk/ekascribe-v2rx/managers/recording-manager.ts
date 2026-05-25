@@ -366,15 +366,6 @@ export class RecordingManager {
     this.storedSession = null;
     this.txnID = '';
 
-    if (this.callbackRegistry.hasHandlers('onSessionEvent')) {
-      await this.callbackRegistry.dispatch('onSessionEvent', {
-        callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
-        status: 'info',
-        message: `Session cancelled: ${result.success ? 'success' : result.error.message}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
     return {
       ...result,
       status_code: result.success
