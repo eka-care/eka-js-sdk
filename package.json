@@ -42,6 +42,6 @@
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",
-    "med-scribe-alliance-ts-sdk": "2.0.21"
+    "med-scribe-alliance-ts-sdk": "2.0.23"
   }
 }
