@@ -134,8 +134,7 @@ class EkaScribe {
       this.allianceClient,
       this.transport,
       this.hosts,
-      this.tracker,
-      this.callbackRegistry
+      this.tracker
     );
 
     // Initialize widget if enabled

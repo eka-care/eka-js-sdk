@@ -1,5 +1,5 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { ERROR_CODE } from '../constants/enums';
 import { mapTransportError } from '../utils/map-transport-error';
 import {
   TPostTransactionInitRequest,
@@ -11,7 +11,6 @@ import {
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
-import { CallbackRegistry } from '../callbacks/callback-registry';
 import { Tracker } from '../tracker/tracker';
 import {
   type ScribeClient,
@@ -35,8 +34,7 @@ export class RecordingManager {
     private allianceClient: ScribeClient,
     private transport: ITransport,
     private hosts: EkaHosts,
-    private tracker: Tracker,
-    private callbackRegistry: CallbackRegistry
+    private tracker: Tracker
   ) {}
 
   get transactionId(): string {
