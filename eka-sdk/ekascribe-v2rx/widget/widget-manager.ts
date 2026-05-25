@@ -30,12 +30,12 @@ export class WidgetManager {
       config.theme || 'dark',
       config.zIndex ?? 9999,
       config.primaryColor,
+      config.position,
       {
         onPause: () => this.handlePause(),
         onResume: () => this.handleResume(),
         onStop: () => void this.handleStop(),
         onClose: () => this.handleClose(),
-        onCollapsedClick: () => {},
         onRetry: () => this.handleRetry(),
       }
     );
@@ -44,8 +44,15 @@ export class WidgetManager {
   }
 
   async startForPatient(patientConfig: StartForPatientConfig): Promise<void> {
+    const current = this.stateMachine.current;
+
+    // Auto-reset from terminal states so the next patient can start immediately
+    if (current === WidgetState.DONE || current === WidgetState.ERROR) {
+      this.resetWidget();
+    }
+
     if (this.stateMachine.current !== WidgetState.COLLAPSED) {
-      const msg = 'Cannot start: a recording session is already active.';
+      const msg = `Cannot start: a recording session is already active (txn_id: ${this.currentTxnId}).`;
       this.callbacks.onError?.({ error_code: 'session_active', message: msg });
       return;
     }
@@ -183,25 +190,25 @@ export class WidgetManager {
 
   private handleClose(): void {
     if (!this.stateMachine.canTransition(WidgetState.COLLAPSED)) return;
-
     const txnId = this.currentTxnId;
-    this.stateMachine.transition(WidgetState.COLLAPSED);
-    this.renderer.renderState(WidgetState.COLLAPSED);
-    this.currentTxnId = '';
-    this.isProcessing = false;
+    this.resetWidget();
     this.callbacks.onWidgetClose?.({ txn_id: txnId });
   }
 
   private handleRetry(): void {
     if (this.stateMachine.canTransition(WidgetState.COLLAPSED)) {
-      this.stateMachine.transition(WidgetState.COLLAPSED);
-      this.renderer.renderState(WidgetState.COLLAPSED);
-      this.currentTxnId = '';
-      this.isProcessing = false;
+      this.resetWidget();
     }
   }
 
   // ─── Private helpers ────────────────────────────────────────────────────────
+
+  private resetWidget(): void {
+    this.stateMachine.transition(WidgetState.COLLAPSED);
+    this.renderer.renderState(WidgetState.COLLAPSED);
+    this.currentTxnId = '';
+    this.isProcessing = false;
+  }
 
   private showError(code: string, message: string): void {
     if (this.stateMachine.canTransition(WidgetState.ERROR)) {

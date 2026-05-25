@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EkaScribe — Client Integration</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+
+    .topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; }
+    .topbar h1 { font-size: 18px; }
+
+    .content { padding: 24px; max-width: 800px; margin: 0 auto; }
+    .section-title { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
+
+    .patient-list { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .patient-row { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+    .patient-row:last-child { border-bottom: none; }
+    .patient-info { flex: 1; }
+    .patient-name { font-size: 14px; font-weight: 600; }
+    .patient-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    .btn-mic { width: 36px; height: 36px; border-radius: 50%; background: #6c5ce7; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+    .btn-mic:hover { transform: scale(1.1); }
+    .btn-mic svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>My Clinic App</h1>
+</div>
+
+<div class="content">
+  <p class="section-title">Today's Patients</p>
+  <div class="patient-list" id="patientList"></div>
+</div>
+
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  CLIENT INTEGRATION — This is all the code a client needs  ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<script type="module">
+  import { getEkaScribeInstance } from '../eka-sdk/ekascribe-v2rx/index.ts';
+
+  // ── Step 1: Initialize SDK once (on page load) ──────────────
+  // These values come from your backend / environment config.
+  const ekascribe = getEkaScribeInstance({
+    access_token: 'YOUR_ACCESS_TOKEN',        // from your auth system
+    env: 'DEV',                                // 'DEV' or 'PROD'
+    allianceConfig: {
+      baseUrl: 'https://api.dev.eka.care/voice/v1',
+    },
+    widget: {
+      enabled: true,
+      theme: 'dark',                           // 'dark' or 'light'
+      primaryColor: '#6c5ce7',                 // match your brand
+      position: { bottom: 20, right: 20 },     // initial position (px)
+      sessionDefaults: {
+        input_language: ['en-IN'],
+        output_format_template: [{ template_id: 'nic_template' }],
+        model_type: 'pro',
+        mode: 'consultation',
+      },
+      callbacks: {
+        onRecordingStart: (data) => {
+          console.log('[EkaScribe] Recording started', data.txn_id);
+        },
+        onRecordingStop: (data) => {
+          console.log('[EkaScribe] Recording stopped', data.txn_id, data.duration);
+        },
+        onProcessingComplete: (data) => {
+          console.log('[EkaScribe] Notes ready', data.txn_id);
+          // data.sessionData contains the structured output — use it to
+          // populate your EMR, display notes, etc.
+        },
+        onError: (data) => {
+          console.error('[EkaScribe] Error', data.error_code, data.message);
+        },
+      },
+    },
+  });
+
+  // ── Step 2: For each patient, just call startForPatient() ───
+  // The widget handles recording UI, pause/resume/stop, polling.
+
+  const patients = [
+    { id: 'p-001', name: 'Ravi Kumar',   age: 45, gender: 'M', mobile: '9876543210' },
+    { id: 'p-002', name: 'Priya Sharma', age: 32, gender: 'F', mobile: '9876543211' },
+    { id: 'p-003', name: 'Amit Patel',   age: 58, gender: 'M', mobile: '9876543212' },
+  ];
+
+  const list = document.getElementById('patientList');
+  patients.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'patient-row';
+    row.innerHTML = `
+      <div class="patient-info">
+        <div class="patient-name">${p.name}</div>
+        <div class="patient-meta">${p.age}y, ${p.gender} · ${p.mobile}</div>
+      </div>
+    `;
+    const btn = document.createElement('button');
+    btn.className = 'btn-mic';
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+    btn.addEventListener('click', () => {
+      // ── This is the only per-patient call ──
+      ekascribe.startForPatient({
+        txn_id: `${p.id}-${Date.now()}`,
+        patient_details: {
+          username: p.name,
+          age: p.age,
+          biologicalSex: p.gender,
+          mobile: p.mobile,
+        },
+      });
+    });
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+</script>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { WidgetState, type WidgetTheme } from './types';
+import { WidgetState, type WidgetTheme, type WidgetPosition } from './types';
 import { getWidgetStyles } from './styles';
 import { enableDrag } from './drag';
 
@@ -23,7 +23,6 @@ export interface RendererActions {
   onResume: () => void;
   onStop: () => void;
   onClose: () => void;
-  onCollapsedClick: () => void;
   onRetry: () => void;
 }
 
@@ -40,6 +39,7 @@ export class WidgetRenderer {
     theme: WidgetTheme,
     zIndex: number,
     primaryColor: string | undefined,
+    position: WidgetPosition | undefined,
     actions: RendererActions
   ) {
     this.actions = actions;
@@ -57,6 +57,7 @@ export class WidgetRenderer {
     this.widgetEl = document.createElement('div');
     this.widgetEl.className = 'widget';
     this.widgetEl.style.zIndex = String(zIndex);
+    this.applyPosition(position);
     this.shadow.appendChild(this.widgetEl);
 
     this.headerEl = document.createElement('div');
@@ -117,7 +118,6 @@ export class WidgetRenderer {
     this.headerEl.style.display = 'none';
     this.bodyEl.innerHTML = '';
     const btn = this.createButton('mic-btn', SVG_MIC);
-    btn.addEventListener('click', this.actions.onCollapsedClick);
     this.bodyEl.appendChild(btn);
   }
 
@@ -237,6 +237,24 @@ export class WidgetRenderer {
       this.cleanupDrag();
     }
     this.cleanupDrag = enableDrag(this.widgetEl, this.headerEl);
+  }
+
+  private applyPosition(position?: WidgetPosition): void {
+    if (!position) return;
+    if (position.top != null) {
+      this.widgetEl.style.top = `${position.top}px`;
+      this.widgetEl.style.bottom = 'auto';
+    }
+    if (position.bottom != null) {
+      this.widgetEl.style.bottom = `${position.bottom}px`;
+    }
+    if (position.left != null) {
+      this.widgetEl.style.left = `${position.left}px`;
+      this.widgetEl.style.right = 'auto';
+    }
+    if (position.right != null) {
+      this.widgetEl.style.right = `${position.right}px`;
+    }
   }
 
   private escapeHtml(text: string): string {

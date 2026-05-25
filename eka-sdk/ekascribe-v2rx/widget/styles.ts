@@ -85,14 +85,15 @@ export function getWidgetStyles(primaryColor?: string): string {
     }
 
     .header-action {
-      color: var(--eka-text-muted);
-      font-size: 15px;
+      color: var(--eka-text);
+      font-size: 18px;
       cursor: pointer;
       line-height: 1;
       background: none;
       border: none;
-      padding: 0;
+      padding: 2px;
       font-family: inherit;
+      font-weight: 600;
     }
 
     .header-action:hover {
@@ -161,12 +162,7 @@ export function getWidgetStyles(primaryColor?: string): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-
-    .mic-btn:hover {
-      transform: scale(1.05);
+      cursor: default;
     }
 
     .mic-btn svg {

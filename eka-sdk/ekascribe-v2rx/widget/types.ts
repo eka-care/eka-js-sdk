@@ -11,11 +11,19 @@ export enum WidgetState {
 
 export type WidgetTheme = 'dark' | 'light';
 
+export interface WidgetPosition {
+  bottom?: number;
+  right?: number;
+  top?: number;
+  left?: number;
+}
+
 export interface WidgetConfig {
   enabled: boolean;
   theme?: WidgetTheme;
   zIndex?: number;
   primaryColor?: string;
+  position?: WidgetPosition;
   callbacks?: WidgetCallbacks;
   sessionDefaults: {
     input_language: string[];

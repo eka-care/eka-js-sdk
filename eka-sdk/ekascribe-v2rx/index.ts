@@ -124,6 +124,7 @@ export { WidgetState } from './widget';
 export type {
   WidgetConfig,
   WidgetTheme,
+  WidgetPosition,
   WidgetCallbacks,
   StartForPatientConfig,
 } from './widget';

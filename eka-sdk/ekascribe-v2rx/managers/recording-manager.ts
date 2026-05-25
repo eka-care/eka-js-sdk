@@ -50,7 +50,7 @@ export class RecordingManager {
   // Backward compatible
   async initTransaction(request: TPostTransactionInitRequest): Promise<TStartRecordingResponse> {
     try {
-      await this.allianceClient.reset();
+      this.allianceClient.clearRecordingState();
 
       this.tracker.addBreadcrumb('recording', 'initTransaction', { txn_id: request.txn_id });
 
@@ -171,7 +171,7 @@ export class RecordingManager {
     request: TStartRecordingForExistingSessionRequest
   ): Promise<TStartRecordingResponse> {
     try {
-      await this.allianceClient.reset();
+      this.allianceClient.clearRecordingState();
 
       const constructedSession: CreateSessionResponse = {
         session_id: request.txn_id,

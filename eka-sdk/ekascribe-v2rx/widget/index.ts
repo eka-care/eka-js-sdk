@@ -3,6 +3,7 @@ export { WidgetState } from './types';
 export type {
   WidgetConfig,
   WidgetTheme,
+  WidgetPosition,
   WidgetCallbacks,
   StartForPatientConfig,
   WidgetSDKBridge,
