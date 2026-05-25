@@ -1,7 +1,7 @@
 import { WidgetState } from './types';
 
 const VALID_TRANSITIONS: Record<WidgetState, WidgetState[]> = {
-  [WidgetState.COLLAPSED]: [WidgetState.RECORDING],
+  [WidgetState.COLLAPSED]: [WidgetState.RECORDING, WidgetState.ERROR],
   [WidgetState.RECORDING]: [
     WidgetState.PAUSED,
     WidgetState.PROCESSING,

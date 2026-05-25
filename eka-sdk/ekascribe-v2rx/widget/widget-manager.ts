@@ -28,10 +28,9 @@ export class WidgetManager {
     this.stateMachine = new WidgetStateMachine();
     this.timer = new WidgetTimer((time) => this.renderer.updateTimer(time));
     this.renderer = new WidgetRenderer(
-      config.theme || 'dark',
       config.zIndex ?? 9999,
-      config.primaryColor,
       config.position,
+      config.orientation || 'horizontal',
       {
         onPause: () => this.handlePause(),
         onResume: () => this.handleResume(),
@@ -222,11 +221,7 @@ export class WidgetManager {
   }
 
   private showError(code: string, message: string): void {
-    if (this.stateMachine.canTransition(WidgetState.ERROR)) {
-      this.stateMachine.transition(WidgetState.ERROR);
-    } else {
-      this.stateMachine.reset();
-    }
+    this.stateMachine.transition(WidgetState.ERROR);
     this.renderer.renderState(WidgetState.ERROR, { error: message });
     this.callbacks.onError?.({ error_code: code, message });
   }

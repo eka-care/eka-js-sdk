@@ -24,6 +24,7 @@ export interface WidgetConfig {
   zIndex?: number;
   primaryColor?: string;
   position?: WidgetPosition;
+  orientation?: 'horizontal' | 'vertical';
   callbacks?: WidgetCallbacks;
   sessionDefaults: {
     input_language: string[];

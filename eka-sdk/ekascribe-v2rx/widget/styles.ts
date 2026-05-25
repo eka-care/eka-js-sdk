@@ -1,31 +1,7 @@
-export function getWidgetStyles(primaryColor?: string): string {
-  const primary = primaryColor || '#6c5ce7';
-
+export function getWidgetStyles(): string {
   return `
     :host {
-      --eka-primary: ${primary};
-      --eka-bg: #16213e;
-      --eka-text: #ffffff;
-      --eka-text-muted: #888888;
-      --eka-text-dim: #666666;
-      --eka-surface: #2d3436;
-      --eka-border: none;
-      --eka-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-      --eka-error: #e74c3c;
-      --eka-success: #00b894;
-      --eka-warning: #f39c12;
-      --eka-drag-color: #aaaaaa;
-    }
-
-    :host(.light) {
-      --eka-bg: #ffffff;
-      --eka-text: #1a1a2e;
-      --eka-text-muted: #777777;
-      --eka-text-dim: #bbbbbb;
-      --eka-surface: #eeeeee;
-      --eka-border: 1px solid #e0e0e0;
-      --eka-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-      --eka-drag-color: #666666;
+      all: initial;
     }
 
     * {
@@ -38,236 +14,120 @@ export function getWidgetStyles(primaryColor?: string): string {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      width: 140px;
-      height: 160px;
-      background: var(--eka-bg);
-      border-radius: 14px;
-      box-shadow: var(--eka-shadow);
-      border: var(--eka-border);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
     }
 
-    /* ── Header ── */
+    .widget.hidden {
+      display: none;
+    }
 
-    .header {
+    /* ── Pill Container ── */
+
+    .pill {
       display: flex;
       align-items: center;
-      padding: 8px 10px 0;
+      gap: 12px;
+      background: #F8F9FF;
+      border: 1.5px solid #C7D2F6;
+      border-radius: 999px;
+      padding: 8px 16px;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
       cursor: grab;
-      flex-shrink: 0;
     }
 
-    .header:active {
+    .pill:active {
       cursor: grabbing;
     }
 
-    .drag-handle {
-      display: flex;
+    .pill.vertical {
       flex-direction: column;
-      gap: 2px;
-      opacity: 0.5;
+      border-radius: 28px;
+      padding: 16px 12px;
+      gap: 10px;
     }
 
-    .drag-handle span {
-      display: block;
-      width: 16px;
-      height: 2px;
-      background: var(--eka-drag-color);
-      border-radius: 1px;
-    }
+    /* ── Buttons ── */
 
-    .spacer {
-      flex: 1;
-    }
-
-    .header-action {
-      color: var(--eka-text);
-      font-size: 18px;
-      cursor: pointer;
-      line-height: 1;
-      background: none;
+    .btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       border: none;
-      padding: 2px;
-      font-family: inherit;
-      font-weight: 600;
-    }
-
-    .header-action:hover {
-      opacity: 0.8;
-    }
-
-    /* ── Badges ── */
-
-    .badge-rec {
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
     }
 
-    .badge-rec .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--eka-error);
-      animation: pulse 1.5s ease-in-out infinite;
+    .btn:hover {
+      transform: scale(1.08);
     }
 
-    .badge-rec .txt {
-      color: var(--eka-error);
-      font-size: 9px;
-      font-weight: 700;
+    .btn-play-pause {
+      background: #2563EB;
     }
 
-    .badge-paused {
-      color: var(--eka-warning);
-      font-size: 9px;
-      font-weight: 700;
+    .btn-play-pause svg {
+      width: 14px;
+      height: 14px;
+      fill: #fff;
     }
 
-    /* ── Animations ── */
+    .btn-stop {
+      background: #DC2626;
+    }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+    .btn-stop svg {
+      width: 12px;
+      height: 12px;
+      fill: #fff;
+    }
+
+    /* ── Timer ── */
+
+    .timer {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      color: #1A1A1A;
+      flex-shrink: 0;
+      min-width: 36px;
+      text-align: center;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    /* ── Body ── */
-
-    .body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 0 12px 12px;
-      text-align: center;
-    }
-
-    /* ── Collapsed: mic icon ── */
-
-    .mic-btn {
-      width: 48px;
-      height: 48px;
-      background: var(--eka-primary);
-      border-radius: 50%;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: default;
-    }
-
-    .mic-btn svg {
-      width: 22px;
-      height: 22px;
-      stroke: #fff;
-      fill: none;
-      stroke-width: 2;
-    }
-
-    /* ── Timer ── */
-
-    .timer {
-      font-size: 24px;
-      font-weight: 300;
-      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-      color: var(--eka-text);
-    }
-
-    .timer.dimmed {
-      color: var(--eka-text-dim);
-    }
-
-    /* ── Buttons ── */
-
-    .btn-row {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    .btn-circle {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-
-    .btn-circle:hover {
-      transform: scale(1.08);
-    }
-
-    .btn-circle svg {
-      width: 12px;
-      height: 12px;
-    }
-
-    .btn-pause {
-      background: var(--eka-surface);
-    }
-
-    .btn-pause svg {
-      fill: var(--eka-text);
-    }
-
-    .btn-stop {
-      background: var(--eka-error);
-    }
-
-    .btn-stop svg {
-      fill: #fff;
-    }
-
-    .btn-resume {
-      background: var(--eka-primary);
-    }
-
-    .btn-resume svg {
-      fill: #fff;
-    }
-
-    /* ── Spinner ── */
-
     .spinner {
-      width: 26px;
-      height: 26px;
-      border: 3px solid var(--eka-surface);
-      border-top-color: var(--eka-primary);
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      border: 3px solid #E0E7FF;
+      border-top-color: #2563EB;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-bottom: 10px;
     }
 
     .status-text {
-      font-size: 10px;
-      color: var(--eka-text-muted);
+      font-size: 11px;
+      color: #6B7280;
     }
 
     /* ── Done ── */
 
     .done-icon {
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
-      background: var(--eka-success);
+      background: #16A34A;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 10px;
+      flex-shrink: 0;
     }
 
     .done-icon svg {
@@ -279,22 +139,46 @@ export function getWidgetStyles(primaryColor?: string): string {
     }
 
     .done-text {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--eka-success);
+      color: #16A34A;
+    }
+
+    .btn-x {
+      width: 28px;
+      height: 28px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .btn-x svg {
+      width: 16px;
+      height: 16px;
+      stroke: #9CA3AF;
+      stroke-width: 2.5;
+    }
+
+    .btn-x:hover svg {
+      stroke: #4B5563;
     }
 
     /* ── Error ── */
 
     .error-icon {
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
-      background: var(--eka-error);
+      background: #DC2626;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      flex-shrink: 0;
     }
 
     .error-icon svg {
@@ -306,9 +190,10 @@ export function getWidgetStyles(primaryColor?: string): string {
     }
 
     .error-text {
-      font-size: 9px;
-      color: var(--eka-error);
-      max-width: 110px;
+      font-size: 10px;
+      color: #DC2626;
+      text-align: center;
+      max-width: 120px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -317,19 +202,18 @@ export function getWidgetStyles(primaryColor?: string): string {
     }
 
     .btn-retry {
-      margin-top: 6px;
       background: none;
-      border: 1px solid var(--eka-error);
-      color: var(--eka-error);
-      font-size: 9px;
-      padding: 3px 10px;
-      border-radius: 10px;
+      border: 1px solid #DC2626;
+      color: #DC2626;
+      font-size: 10px;
+      padding: 4px 12px;
+      border-radius: 999px;
       cursor: pointer;
       font-family: inherit;
     }
 
     .btn-retry:hover {
-      background: var(--eka-error);
+      background: #DC2626;
       color: #fff;
     }
   `;

@@ -47,7 +47,7 @@ export class WidgetTimer {
 
   private format(): string {
     const totalSec = this.getDurationSeconds();
-    const min = String(Math.floor(totalSec / 60)).padStart(2, '0');
+    const min = String(Math.floor(totalSec / 60));
     const sec = String(totalSec % 60).padStart(2, '0');
     return `${min}:${sec}`;
   }

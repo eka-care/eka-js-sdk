@@ -93,6 +93,13 @@
       <option value="light">Light</option>
     </select>
   </div>
+  <div class="field">
+    <label>Orientation</label>
+    <select id="orientation">
+      <option value="horizontal">Horizontal</option>
+      <option value="vertical">Vertical</option>
+    </select>
+  </div>
   <button class="btn-init" id="btnInit" onclick="handleInit()">Initialize SDK + Widget</button>
 </div>
 
@@ -182,6 +189,7 @@
 
     const env = document.getElementById('env').value;
     const theme = document.getElementById('theme').value;
+    const orientation = document.getElementById('orientation').value;
     const inputLang = document.getElementById('inputLang').value;
 
     // ──────────────────────────────────────────────────────────
@@ -194,6 +202,7 @@
       widget: {
         enabled: true,
         theme,
+        orientation,
         primaryColor: '#6c5ce7',
         sessionDefaults: {
           input_language: [inputLang],

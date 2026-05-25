@@ -7,6 +7,9 @@ export function enableDrag(
   let isDragging = false;
 
   function onPointerDown(e: MouseEvent | TouchEvent): void {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+
     isDragging = true;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
