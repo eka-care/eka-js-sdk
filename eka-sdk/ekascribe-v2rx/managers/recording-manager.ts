@@ -1,5 +1,5 @@
 import { SDK_STATUS_CODE } from '../constants/constant';
-import { CALLBACK_TYPE, ERROR_CODE } from '../constants/enums';
+import { ERROR_CODE } from '../constants/enums';
 import { mapTransportError } from '../utils/map-transport-error';
 import {
   TPostTransactionInitRequest,
@@ -11,7 +11,6 @@ import {
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
-import { CallbackRegistry } from '../callbacks/callback-registry';
 import { Tracker } from '../tracker/tracker';
 import {
   type ScribeClient,
@@ -35,8 +34,7 @@ export class RecordingManager {
     private allianceClient: ScribeClient,
     private transport: ITransport,
     private hosts: EkaHosts,
-    private tracker: Tracker,
-    private callbackRegistry: CallbackRegistry
+    private tracker: Tracker
   ) {}
 
   get transactionId(): string {
@@ -50,7 +48,7 @@ export class RecordingManager {
   // Backward compatible
   async initTransaction(request: TPostTransactionInitRequest): Promise<TStartRecordingResponse> {
     try {
-      await this.allianceClient.reset();
+      this.allianceClient.clearRecordingState();
 
       this.tracker.addBreadcrumb('recording', 'initTransaction', { txn_id: request.txn_id });
 
@@ -171,7 +169,7 @@ export class RecordingManager {
     request: TStartRecordingForExistingSessionRequest
   ): Promise<TStartRecordingResponse> {
     try {
-      await this.allianceClient.reset();
+      this.allianceClient.clearRecordingState();
 
       const constructedSession: CreateSessionResponse = {
         session_id: request.txn_id,
@@ -365,15 +363,6 @@ export class RecordingManager {
     const result = await this.allianceClient.cancelSession(targetId);
     this.storedSession = null;
     this.txnID = '';
-
-    if (this.callbackRegistry.hasHandlers('onSessionEvent')) {
-      await this.callbackRegistry.dispatch('onSessionEvent', {
-        callback_type: CALLBACK_TYPE.TRANSACTION_STATUS,
-        status: 'info',
-        message: `Session cancelled: ${result.success ? 'success' : result.error.message}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
 
     return {
       ...result,
