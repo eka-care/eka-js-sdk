@@ -18,6 +18,7 @@ export class WidgetManager {
   private callbacks: WidgetCallbacks;
   private currentTxnId = '';
   private isProcessing = false;
+  private isStarting = false;
 
   constructor(sdk: WidgetSDKBridge, config: WidgetConfig) {
     this.sdk = sdk;
@@ -44,6 +45,11 @@ export class WidgetManager {
   }
 
   async startForPatient(patientConfig: StartForPatientConfig): Promise<void> {
+    if (this.isStarting) {
+      this.callbacks.onError?.({ error_code: 'session_starting', message: 'A session is already being started.' });
+      return;
+    }
+
     const current = this.stateMachine.current;
 
     // Auto-reset from terminal states so the next patient can start immediately
@@ -57,6 +63,7 @@ export class WidgetManager {
       return;
     }
 
+    this.isStarting = true;
     try {
       const defaults = this.config.sessionDefaults;
 
@@ -92,6 +99,8 @@ export class WidgetManager {
         'unexpected_error',
         err instanceof Error ? err.message : 'Failed to start recording'
       );
+    } finally {
+      this.isStarting = false;
     }
   }
 
@@ -204,10 +213,12 @@ export class WidgetManager {
   // ─── Private helpers ────────────────────────────────────────────────────────
 
   private resetWidget(): void {
+    this.timer.stop();
     this.stateMachine.transition(WidgetState.COLLAPSED);
     this.renderer.renderState(WidgetState.COLLAPSED);
     this.currentTxnId = '';
     this.isProcessing = false;
+    this.isStarting = false;
   }
 
   private showError(code: string, message: string): void {
