@@ -9,6 +9,8 @@ export const getEkaScribeInstance = (config: EkaScribeConfig) => EkaScribe.getIn
 // Re-export config and class types
 export type {
   EkaScribeConfig,
+  EkaCallbackMap,
+  EkaCallbackName,
   TStartRecordingForExistingSessionRequest,
   TPollingResponse,
 } from './ekascribe';
@@ -22,6 +24,7 @@ export type {
   PatchSessionResponse,
   CreateSessionRequest,
   CreateSessionResponse,
+  RecordingOptions,
   ProcessTemplateResponse,
   EndSessionRequest,
   EndSessionResponse,

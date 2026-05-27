@@ -16,6 +16,7 @@ import {
   type ScribeClient,
   type CreateSessionRequest,
   type CreateSessionResponse,
+  type RecordingOptions,
   type SDKResult,
   type EndRecordingResult,
   type RetryUploadResult,
@@ -90,7 +91,7 @@ export class RecordingManager {
 
       if (!result.success) {
         const errorCode =
-          result.error.code === 'rate_limit_exceeded'
+          result.error.code === 'txn_limit_exceeded'
             ? ERROR_CODE.TXN_LIMIT_EXCEEDED
             : ERROR_CODE.TXN_INIT_FAILED;
 
@@ -120,6 +121,51 @@ export class RecordingManager {
         error_code: ERROR_CODE.TXN_INIT_FAILED,
         status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
         message: `Failed to initialize transaction. ${error}`,
+      };
+    }
+  }
+
+  async startRecordingV2(options: RecordingOptions): Promise<TStartRecordingResponse> {
+    try {
+      this.allianceClient.clearRecordingState();
+
+      this.tracker.addBreadcrumb('recording', 'startRecordingV2', {
+        sessionId: options.sessionId,
+      });
+
+      const result = await this.allianceClient.startRecording(options);
+
+      if (!result.success) {
+        const errorCode =
+          result.error.code === 'txn_limit_exceeded'
+            ? ERROR_CODE.TXN_LIMIT_EXCEEDED
+            : ERROR_CODE.TXN_INIT_FAILED;
+
+        return {
+          error_code: errorCode,
+          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: result.error.message || 'Failed to start recording.',
+        };
+      }
+
+      this.storedSession = result.data;
+      this.txnID = result.data.session_id;
+      this.tracker.setTransactionId(this.txnID);
+      this.tracker.captureEvent('Session started (v2)', {
+        txn_id: this.txnID,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+      });
+
+      return {
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        message: 'Recording started successfully.',
+        txn_id: result.data.session_id,
+      };
+    } catch (error) {
+      return {
+        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to start recording. ${error}`,
       };
     }
   }
