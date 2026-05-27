@@ -60,26 +60,19 @@ export interface WidgetCallbacks {
  * EkaScribe passes `this` (which satisfies this interface) to WidgetManager.
  */
 export interface WidgetSDKBridge {
-  initTransaction(request: {
-    txn_id: string;
-    mode: string;
-    input_language: string[];
-    output_format_template: {
-      template_id: string;
-      template_name?: string;
-      template_type?: string;
-    }[];
-    model_type: string;
-    patient_details?: Omit<TPatientDetails, 'oid'>;
-    encounter_id?: string;
-    additional_data?: Record<string, unknown>;
+  startRecordingV2(options: {
+    templates: string[];
+    sessionMode?: string;
+    languageHint?: string[];
+    model?: string;
+    patientDetails?: {
+      name?: string;
+      age?: string;
+      gender?: string;
+    };
+    additionalData?: Record<string, unknown>;
+    sessionId?: string;
   }): Promise<{
-    status_code: number;
-    message: string;
-    error_code?: string;
-    txn_id?: string;
-  }>;
-  startRecording(microphoneID?: string): Promise<{
     status_code: number;
     message: string;
     error_code?: string;

@@ -1,28 +1,16 @@
-# Eka Care Ekascribe Typescript SDK Integration
+# EkaScribe TypeScript SDK
 
-This guide explains how to integrate the Eka Care Ekascribe Typescript SDK into your application.
-
-## Overview
-
-The Eka Care Ekascribe SDK allows you to capture and process audio, generating structured medical documentation using Eka Care's voice transcription API.
-
-## Documentation
-
-[Visit the documentation site](https://developer.eka.care/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
+Browser SDK for capturing audio and generating structured medical documentation using Eka Care's voice transcription API.
 
 ## Prerequisites
 
-Before getting started, ensure you have:
-
-- Node 14 or higher
-- `npm` or `yarn` for dependency management
-- Access and refresh tokens from Eka Care (optional for some methods)
+- Node 14+
+- `npm` or `yarn`
 - Microphone access via browser permissions
 - Stable network connectivity
+- Access token from Eka Care
 
 ## Installation
-
-Install the SDK using `npm` or `yarn`:
 
 ```bash
 npm install @eka-care/ekascribe-ts-sdk
@@ -32,20 +20,19 @@ yarn add @eka-care/ekascribe-ts-sdk
 
 ## Bundler Setup
 
-The SDK uses a SharedWorker for background audio uploads. Modern bundlers (Webpack 5, Vite) automatically handle the worker bundling.
+The SDK uses a SharedWorker for background audio uploads. Modern bundlers handle this automatically.
 
 ### Vite
 
-Works out of the box - no configuration needed.
+Works out of the box.
 
 ```ts
-// Just import and use
 import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
 ```
 
 ### Webpack 5
 
-Works out of the box with default configuration. The `new URL(..., import.meta.url)` pattern is natively supported.
+Works out of the box. The `new URL(..., import.meta.url)` pattern is natively supported.
 
 ```ts
 import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
@@ -53,1591 +40,1141 @@ import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
 
 ### Next.js
 
-For Next.js projects, ensure the SDK is only used on the client side:
+Ensure the SDK is only used on the client side:
 
 ```tsx
 'use client';
 
 import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
-
-// Use inside a client component
-const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
 ```
 
 ### Browser (Script Tag)
 
-For direct browser usage without a bundler:
-
 ```html
 <script type="module">
   import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
-
-  const ekascribe = getEkaScribeInstance({ access_token: 'your_token' });
 </script>
 ```
 
-## Usage
+---
 
-### 1. Get Ekascribe Instance
+## Instance Management
 
-Get the SDK instance once and use it everywhere in your application to call all methods.
+The SDK uses a **singleton pattern**. `getEkaScribeInstance()` always returns the same instance for a given `env` + `clientId` combination.
 
 ```ts
-// Create a config variable to manage tokens
-const sdkConfig = {
+const ekascribe = getEkaScribeInstance(config);
+```
+
+- Calling `getEkaScribeInstance()` multiple times with the same config returns the same instance.
+- If `env` or `clientId` changes, the old instance is automatically reset.
+- If only `access_token` changes, the token is updated on the existing instance without resetting.
+- The SDK supports **one active recording at a time**. Always call `endRecording()` or `cancelSession()` before starting a new recording. If you call `startRecordingV2()` while a recording is active, the SDK cleans up the old recording locally but does **not** end the session on the server — the old session will be left abandoned until it expires.
+
+---
+
+## Integration Guide
+
+### Step 1: Initialize the SDK
+
+```ts
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+import type { EkaScribeConfig } from '@eka-care/ekascribe-ts-sdk';
+
+const config: EkaScribeConfig = {
   access_token: '<your_access_token>',
+  env: 'PROD',                             // 'PROD' | 'DEV'
+  clientId: '<your_client_id>',            // optional
+  allianceConfig: {
+    baseUrl: 'https://api.eka.care/voice/v1',  // required
+    useWorker: 'auto',                              // optional: true | false | 'auto'
+    debug: false,                                   // optional
+  },
+  sharedWorkerUrl: workerUrl,              // optional — see SharedWorker section
 };
 
-// Get instance and use it throughout your application
-const ekascribe = getEkaScribeInstance(sdkConfig);
+const ekascribe = getEkaScribeInstance(config);
 ```
 
-**Important:** Use this same `ekascribe` instance for all SDK method calls.
-
-### 2. Fetch configurations list
-
-Get supported input languages, output formats, and consultation modes.
+#### `EkaScribeConfig`
 
 ```ts
-const config = await ekascribe.getEkascribeConfig();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "data": {
-    "supported_languages": [
-      { "id": "en", "name": "English" },
-      { "id": "hi", "name": "Hindi" }
-    ],
-    "supported_output_formats": [{ "id": "clinical-notes-template", "name": "Clinical Notes" }],
-    "consultation_modes": [
-      {
-        "id": "consultation",
-        "name": "Consultation",
-        "desc": "Eka Scribe will listen to your conversation and create clinical notes"
-      }
-    ],
-    "max_selection": {
-      "supported_languages": 2,
-      "supported_output_formats": 2,
-      "consultation_modes": 1
-    },
-    "user_details": {
-      "fn": "Dr. John",
-      "mn": "",
-      "ln": "Doe",
-      "dob": "1985-06-15",
-      "gen": "M",
-      "s": "active",
-      "is_paid_doc": true,
-      "uuid": "user-uuid-123"
-    },
-    "wid": "workspace-id-456"
-  },
-  "message": "Configuration fetched successfully",
-  "code": 200
-}
-```
-
-### 3. Fetch user's favorite templates
-
-Get the list of templates marked as favorites by the user (configured via `my_templates` in the config).
-
-```ts
-const myTemplates = await ekascribe.getConfigMyTemplates();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "data": {
-    "my_templates": [
-      {
-        "id": "template_123",
-        "name": "General Consultation"
-      },
-      {
-        "id": "template_456",
-        "name": "Cardiology Template"
-      }
-    ],
-  },
-  "message": "Configuration fetched successfully",
-  "code": 200
-}
-```
-
-**Note:** The `my_templates` field contains templates that were previously saved using the `updateConfig()` method (see Templates SDK Methods section).
-
-### 4. Init transaction
-
-Initialize a transaction before starting recording. This sets up the session with your configuration.
-
-```ts
-const response = await ekascribe.initTransaction({
-  mode: 'consultation',
-  input_language: ['en-IN'],
-  output_format_template: [{
-    template_id: 'your_template_id',
-    codification_needed?: true    // optional
-  }],
-  txn_id: 'unique-transaction-id',
-  transfer: 'vaded' | 'non-vaded',
-  model_type: 'pro' | 'lite',
-  system_info: {
-    platform: 'web',
-    language: 'en',
-    time_zone: 'Asia/Kolkata',
-  },
-  patient_details: {
-    username: 'John Doe',
-    age: 35,
-    biologicalSex: 'M',
-  },
-  version: '1.0.0',
-  additional_data: {},
-},
-  sharedWorkerUrl: 'worker-url', // optional - see Shared Worker Configuration below
-);
-```
-
-**Key Parameters:**
-
-- `input_language`: Language code array (e.g., `['en-IN']`)
-- `output_format_template`: Array with `template_id` - depends on your end user's template selection
-- `system_info`: Optional - Pass your system configuration to backend
-- `patient_details`: Optional - Patient information
-- `version`: SDK version
-- `additional_data`: Optional - Pass any data you want to receive unchanged in the response
-- `transfer`: Audio mode. Use `vaded` for audio already processed with Voice Activity Detection (SDK does this by default); use `non-vaded` only if you are sending raw audio without VAD.
-- `model_type`: Transcription model choice. `pro` = most accurate; `lite` = lower latency, more performant.
-- `sharedWorkerUrl`: Optional - Custom URL for the shared worker script. See **Shared Worker Configuration** section below for usage details.
-
-- #### Sample Response:
-
-```ts
-{
-  error_code?: ERROR_CODE,
-  status_code: 200,
-  message: "Transaction initialized successfully",
-  business_id: "biz_abc123def456",
-  txn_id: "abc-123",
-  oid: "org_789xyz",
-  uuid: "user_uuid_456"
-}
-```
-
-**Error handling:**
-
-Possible Error Codes in `error_code`:
-
-- `txn_limit_exceeded`: Maximum number of transactions exceeded
-- `txn_init_failed`: Something went wrong. Retry with the same method call
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and reinitialize the instance:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now you can retry the method call
-const response = await ekascribe.initTransaction({ ... });
-```
-
-#### Shared Worker Configuration
-
-The SDK supports using a shared worker for efficient background audio file uploads. If you provide a `sharedWorkerUrl`, the SDK will use a shared worker for file uploads. If not provided, the SDK will use the main thread for file uploads.
-
-**Why use Shared Worker:**
-
-- **Better Performance**: Offloads file uploads to a background thread, keeping the main thread free for UI interactions
-- **Resource Efficiency**: A single shared worker instance can handle uploads across multiple tabs/windows
-- **Improved User Experience**: Prevents UI blocking during large file uploads
-
-**How to configure:**
-
-```ts
-// Step 1: Create a function to fetch and prepare the worker URL
-async function getSharedWorkerUrl() {
-  // Fetch the worker script from CDN (or your own hosting) - update the latest sdk version
-  const workerScriptResponse = await fetch(
-    'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk@2.0.48/dist/worker.bundle.js'
-  );
-  const workerScript = await workerScriptResponse.text();
-
-  // Create a blob from the worker script
-  const blob = new Blob([workerScript], { type: 'application/javascript' });
-
-  // Generate an object URL for the blob
-  const workerUrl = URL.createObjectURL(blob);
-
-  return workerUrl;
-}
-
-// Step 2: Use the worker URL in initTransaction
-const sharedWorkerUrl = await getSharedWorkerUrl();
-
-const response = await ekascribe.initTransaction(
-  {
-    mode: 'consultation',
-    input_language: ['en-IN'],
-    output_format_template: [{ template_id: 'your_template_id' }],
-    txn_id: 'unique-transaction-id',
-    transfer: 'vaded',
-    model_type: 'pro',
-    // ... other parameters
-  },
-  sharedWorkerUrl // Pass the custom worker URL;
-);
-```
-
-**Important notes:**
-
-- Make sure to use the correct SDK version in the CDN URL
-- The worker URL must be accessible from the same origin or have proper CORS headers
-- Remember to revoke the object URL when you're done: `URL.revokeObjectURL(workerUrl)`
-- If `sharedWorkerUrl` is not provided, the SDK will use the main thread for file uploads (no shared worker)
-
-### 5. Start recording
-
-Start recording audio after initializing the transaction.
-
-```ts
-const response = await ekascribe.startRecording();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "Recording started successfully",
-  "txn_id": "abc-123",
-  // Possible error codes:
-  // - "microphone" -> microphone permission not granted
-  // - "vad_not_initialized" -> VAD failed to initialize; reinitialize and retry the same function call
-  error_code?: ERROR_CODE
-}
-```
-
-### 6. Pause recording
-
-Pause the ongoing voice recording.
-
-```ts
-const response = await ekascribe.pauseRecording();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "Recording paused successfully",
-  "is_paused": true,
-  error_code?: ERROR_CODE,
-}
-```
-
-### 7. Resume recording
-
-Resume a paused recording.
-
-```ts
-const response = await ekascribe.resumeRecording();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "Recording resumed successfully",
-  "is_paused": false,
-  error_code?: ERROR_CODE,
-}
-```
-
-### 8. End recording
-
-End the recording session. This method:
-
-- Stops the recording
-- Uploads all audio chunks to the server
-- Automatically retries failed uploads once
-- Calls the commit API to finalize the transaction
-
-```ts
-const response = await ekascribe.endRecording();
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "Recording ended and files uploaded successfully",
-  failed_files?: ['1.mp3', '2.mp3'], // Only present if some files failed to upload
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'], // List of all audio files generated
-  error_code?: ERROR_CODE;
-}
-```
-
-**Error handling:**
-
-Possible Error Codes in `error_code`:
-
-- `txn_stop_failed`: Call `endRecording` again.
-- `audio_upload_failed`: Use `retryUploadRecording` (step 9).
-- `txn_commit_failed`: Call `commitTransactionCall` (step 11).
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.endRecording();
-```
-
-### 9. Get output recorded prescription
-
-The SDK polls for you and resolves when processing finishes (default max wait: 2 minutes; override via `max_polling_time`, pass time in milliseconds).
-
-```ts
-// Waits up to 2 minutes by default; override as needed
-const res = await ekascribe.pollSessionOutput({
-  txn_id: 'transaction-id',
-  max_polling_time: 2 * 60 * 1000, // optional
-  template_id: 'template-id', // optional
-});
-```
-
-**Note:**
-
-1. On passing `template_id` in request params, the function will return output only for that specific template ID. If `template_id` is not passed, it will return all template responses generated for that `txn_id`.
-2. Use `onPartialResultCallback` (see Generic Callbacks section) before calling `pollSessionOutput` to receive real-time updates during polling, display partial transcription results, and improve user experience with processing progress indicators.
-
-Status codes to handle:
-
-- `200`: Success; all templates processed.
-- `202`: Templates are still processing; poll again (or let `pollSessionOutput` continue).
-- `206`: Partial success; some templates not processed fully.
-- `401`: Authentication token expired. Update the token.
-- `403`: Invalid Authentication token. Pass new token.
-- `500`: All template processing failed, or internal server error; stop and surface error.
-
-- #### Response type:
-
-```ts
-{
-  response?: {
-    data: {
-      output: TOutputSummary[];
-      template_results: {
-        integration: TOutputSummary[];
-        custom: TOutputSummary[];
-        transcript: TOutputSummary[];
-      };
-      audio_matrix?: {
-        quality: string;
-      };
-      additional_data?: {};
-      created_at?: string;
-    };
-    error?: {
-      code: string;
-      msg: string;
-    };
-  } | null;
-  status_code: number;
-  message?: string;
-}
-
-type TOutputSummary = {
-  template_id: string;
-  value?: JSON | Array | string;
-  type: string;
-  name: string;
-  status: 'success' | 'partial_success' | 'failure';
-  errors?: Array<{
-    type: 'warning' | 'error';
-    code?: string;
-    msg: string;
-  }>;
-  warnings?: Array<{
-    type: 'warning' | 'error';
-    code?: string;
-    msg: string;
-  }>;
-};
-```
-
-- #### Example Response:
-
-```ts
-{
-  status_code: 200,
-  response: {
-    data: {
-      output: [
-        {
-          template_id: "template_id_passed_in_initTransaction",
-          value: "Output Data for this template",
-          type: "custom",
-          name: "General Prescription",
-          status: "success"
-        }
-      ],
-      template_results: {
-        custom: [
-          {
-            template_id: "custom_template",
-            value: "Output prescription",
-            type: "custom",
-            name: "Custom Medication Template",
-            status: "partial_success",
-            warnings: [
-              {
-                type: "warning",
-                code: "FIELD_MISSING",
-                msg: "Dosage information not found"
-              }
-            ]
-          }
-        ]
-      },
-      audio_matrix: {
-        quality: "4.5"
-      },
-      created_at: "2024-11-19T10:30:00Z"
-    }
-  }
-}
-```
-
-### 10. Retry upload recording
-
-Retry uploading failed audio files after `endRecording`.
-
-```ts
-const response = await ekascribe.retryUploadRecording({ force_commit: true });
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status_code": 200,
-  "message": "All files uploaded successfully after retry",
-  error_code?: ERROR_CODE;
-  failed_files?: ['1.mp3', '2.mp3'];
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
-}
-```
-
-**`force_commit` behavior:**
-
-- `force_commit: true` - Model will initiate the processing if some files still fail after retry
-- `force_commit: false` - It will waits until all files are uploaded successfully before processing.
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.retryUploadRecording({ force_commit: true });
-```
-
-### 11. Patch recording session status
-
-Cancel or update the status of a recording session.
-
-```ts
-const response = await ekascribe.patchSessionStatus({
-  sessionId: 'abc-123', // txn_id of the session you want to cancel
-  processing_status: 'cancelled', // pass exactly this value
-  processing_error: {
-    error: {
-      // Pass these exact values without changing them
-      type: 'user_action',
-      code: 'cancelled_by_user',
-      msg: 'Session cancelled by user',
-    },
-  },
-});
-```
-
-- #### Sample Response:
-
-```ts
-{
-  "status": "success",
-  "message": "Session status updated successfully",
-  "code": 200,
-  error?: {
-    code: string;
-    message: string;
-    display_message: string;
+interface EkaScribeConfig {
+  access_token?: string;          // Bearer token for authentication
+  env: 'PROD' | 'DEV';           // Environment
+  clientId?: string;              // Your client identifier
+  mode?: 'http' | 'ipc';         // Transport mode (default: 'http')
+  ipcBridge?: IpcBridge;          // Required when mode is 'ipc' (Electron apps)
+  enableTracking?: boolean;       // Enable internal analytics tracking
+  flavour?: string;               // Client flavour identifier
+  sharedWorkerUrl?: string;       // URL to worker.bundle.js for background uploads
+  allianceConfig?: {
+    baseUrl?: string;             // Scribe service URL (required)
+    useWorker?: boolean | 'auto'; // SharedWorker: true | false | 'auto' (default: 'auto')
+    debug?: boolean;              // Enable debug logging (default: false)
   };
+  widget?: WidgetConfig;          // Widget configuration — see Widget section
 }
 ```
 
-**Handling 401 Status Code:**
+### Step 2: Register Callbacks
 
-If you receive a `code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.patchSessionStatus({ ... });
-```
-
-### 12. Commit transaction
-
-Call this if `endRecording` returns `error_code: 'txn_commit_failed'` or the transaction is not yet committed.
+Register callbacks **before** starting a recording. Events fire immediately once recording starts.
 
 ```ts
-const response = await ekascribe.commitTransactionCall();
-```
+import type { EkaCallbackMap } from '@eka-care/ekascribe-ts-sdk';
 
-- #### Response type:
-
-```ts
-{
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-};
-```
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.commitTransactionCall();
-```
-
-### 13. Stop transaction
-
-Use this method to stop a transaction that has not yet been stopped or returned a `txn_stop_failed` error in a previous step.
-
-```ts
-const response = await ekascribe.stopTransactionCall();
-```
-
-- #### Response type:
-
-```ts
-{
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-};
-```
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.stopTransactionCall();
-```
-
-### 14. Get previous sessions
-
-Fetch previous sessions. `txn_count` controls how many sessions the API returns.
-
-```ts
-const sessions = await ekascribe.getSessionHistory({ txn_count: 10 }); // txn_count = number of sessions to fetch
-```
-
-- #### Response type:
-
-```ts
-{
-  data: [
-    {
-      b_id: "7174661713699045", // business ID
-      created_at: "2025-12-10T10:28:00Z",
-      mode: "consultation",
-      oid: "174661713843153", // logged-in doctor's org ID
-      patient_details: {      // present only if sent in initTransaction
-        "age": 18,
-        "biologicalSex": "M",
-        "username": ""
-      },
-      // processing_status can be: success | system_failure | request_failure | cancelled | in-progress
-      processing_status: "in-progress",
-      txn_id: "sc-c2e9be8b-46e5-489a-9473-236ddb5b24fb",
-      // user_status can be: init | commit
-      user_status: "init",
-      uuid: "c44fd76d-8de1-4011-aa54-5ddcca140f0f" // logged-in doctor's user ID
-    }
-  ],
-  status: "success",
-  code: 200,
-  message: "Sessions fetched",
-  retrieved_count: 1
-}
-```
-
-### 15. Convert response to other template post session
-
-Use this method to convert an existing transcription from a completed transaction into a different template format. This is useful when you want to reformat existing transcription data without re-recording.
-
-```ts
-const response = await ekascribe.postTransactionConvertToTemplate({
-  txn_id: 'transaction-id-123',
-  template_id: 'new-template-id',
+// Token refresh — SDK calls this automatically on 401
+ekascribe.registerCallback('onTokenRequired', async () => {
+  const newToken = await fetchFreshToken(); // your token refresh logic
+  return newToken; // must return the new token string
 });
-```
 
-**Key Parameters:**
-
-- `txn_id`: The transaction ID of the completed session you want to convert
-- `template_id`: The ID of the template format you want to convert the transcription into
-
-- #### Sample Response:
-
-```ts
-{
-  status: 'success' | 'failed';
-  message: string;
-  txn_id: string;
-  template_id: string;
-  b_id: string;
-  code: number;
-  msg: string;
-  error?: {
-    code: string;
-    message: string;
-    display_message: string;
-  };
-}
-```
-
-**When to use:**
-
-- When you need to apply a different template to an existing transcription
-- To generate multiple template formats from the same recording session
-- After completing a session, when you want to see the output in a different template structure
-
-**Note:** After getting success response from this method, call `pollSessionOutput` (Point 9) to get the output for the new template_id.
-
-### 16. Convert transcription to template
-
-Use this method to convert a transcription text to a specific template format.
-
-```ts
-const response = await ekascribe.convertTranscriptionToTemplate({
-  txn_id: 'transaction-id-123',
-  template_id: 'target-template-id',
-  transcript: 'custom transcript text',
+// Recording state changes
+ekascribe.registerCallback('onRecordingStateChange', (event) => {
+  console.log('State:', event.type); // 'started' | 'paused' | 'resumed' | 'ended'
 });
-```
 
-**Key Parameters:**
-
-- `txn_id`: The transaction ID of the session
-- `template_id`: The ID of the template format you want to convert to
-- `transcript`: Custom transcript text to use for conversion
-
-- #### Sample Response:
-
-```ts
-{
-  status: 'success' | 'failed';
-  message: string;
-  txn_id: string;
-  template_id: string;
-  b_id: string;
-  code: number;
-  msg: string;
-  error?: { code: string; message: string; display_message: string };
-}
-```
-
-### 17. Update result summary
-
-Use this method to update/edit the result summary (template output) for a transaction.
-
-```ts
-const response = await ekascribe.updateResultSummary({
-  txnId: 'transaction-id-123',
-  data: [
-    {
-      'template-id': 'template-123',
-      data: 'Updated template output content', // Base64 Encoded data
-    },
-  ],
-});
-```
-
-**Key Parameters:**
-
-- `txnId`: The transaction ID
-- `data`: Array of objects containing `template-id` and the updated `data` base64 encoded data
-
-- #### Sample Response:
-
-```ts
-{
-  status: string;
-  message: string;
-  txn_id: string;
-  b_id: string;
-  code: number;
-  error?: { code: string; message: string; display_message: string };
-}
-```
-
-### 18. Run system compatibility test
-
-Use this method to run a comprehensive system compatibility test to ensure the user's browser and device support all SDK features.
-
-```ts
-const summary = await ekascribe.runSystemCompatibilityTest(
-  (testResult) => {
-    // Callback receives individual test results
-    console.log('Test:', testResult.name, 'Result:', testResult.status);
-  },
-  sharedWorker // Optional: SharedWorker instance for testing worker compatibility
-);
-```
-
-- #### Sample Response:
-
-```ts
-{
-  // TCompatibilityTestSummary
-  microphone: { status: 'pass' | 'fail'; message?: string };
-  audioContext: { status: 'pass' | 'fail'; message?: string };
-  sharedWorker: { status: 'pass' | 'fail'; message?: string };
-  // ... other compatibility tests
-}
-```
-
-**When to use:**
-
-- Before starting a recording session to ensure user's system is compatible
-- To provide user feedback about missing permissions or unsupported features
-- During onboarding to identify potential issues
-
-## Templates SDK Methods
-
-### 1. Get All Templates
-
-Use this method to retrieve all available templates for the current user.
-
-```ts
-const templates = await ekascribe.getAllTemplates();
-```
-
-- #### Response type:
-
-```ts
-{
-  items: [
-    {
-      id: "123;
-      title: "Template Name";
-      desc: "Template Description";
-      section_ids: ["section-1", "section-2"];
-      is_editable: true | false;
-    }
-  ];
-  code: number;
-  error?: { code: string; message: string };
-}
-```
-
-### 2. Create Template
-
-Use this method to create a new custom template.
-
-```ts
-const newTemplate = await ekascribe.createTemplate({
-  title: 'My Custom Template',
-  desc: 'Description of the template',
-  section_ids: ['section1', 'section2', 'section3'],
-});
-```
-
-- #### Response type:
-
-```ts
-{
-  code: number;
-  msg: string;
-  template_id?: string;
-  message?: string;
-  error?: { code: string; message: string };
-}
-```
-
-### 3. Edit Template
-
-Use this method to update an existing template.
-
-```ts
-const updatedTemplate = await ekascribe.updateTemplate({
-  template_id: 'template-123',
-  title: 'Updated Template Title',
-  desc: 'Updated description',
-  section_ids: ['section1', 'section2', 'section4'],
-});
-```
-
-- #### Response type:
-
-```ts
-{
-  code: number;
-  msg: string;
-  template_id?: string;
-  message?: string;
-  error?: { code: string; message: string };
-}
-```
-
-### 4. Delete Template
-
-Use this method to delete an existing template.
-
-```ts
-const deleteResult = await ekascribe.deleteTemplate('template-123');
-```
-
-- #### Response type:
-
-```ts
-{
-  code: number;
-  msg: string;
-  template_id?: string;
-  message?: string;
-  error?: { code: string; message: string };
-}
-```
-
-### 5. Generate Template with AI by giving a prompt
-
-Use this method to generate a template using AI with a text prompt.
-
-```ts
-const formData = new FormData();
-formData.append('content', 'Create a cardiology consultation template');
-formData.append('file', file);
-formData.append('contentType', 'text/file');
-
-const aiTemplate = await ekascribe.aiGenerateTemplate(formData);
-```
-
-- #### Response type:
-
-```ts
-{
-  title: string;
-  desc: string;
-  sections: [
-    {
-      id: string;
-      title: string;
-      desc: string;
-      format: 'P' | 'B';
-      example: string;
-      default?: boolean;
-      parent_section_id?: string;
-    }
-  ];
-  code: number;
-  message: string;
-}
-```
-
-### 6. Add templates to list
-
-Use this method to mark templates as favourite templates.
-
-```ts
-const configUpdate = await ekascribe.updateConfig({
-  my_templates: ['template1', 'template2'],
-});
-```
-
-- #### Response type:
-
-```ts
-{
-  auto_download?: boolean;
-  default_languages?: string[];
-  my_templates?: string[];
-  scribe_enabled?: boolean;
-  msg: string;
-  code: number;
-  error?: { code: string; message: string };
-}
-```
-
-### 7. Get All Sections
-
-Use this method to retrieve all available template sections.
-
-```ts
-const sections = await ekascribe.getAllTemplateSections();
-```
-
-- #### Response type:
-
-```ts
-{
-  items: [
-    {
-      id: string;
-      title: string;
-      desc: string;
-      format: 'P' | 'B';
-      example: string;
-      default?: boolean;
-      parent_section_id?: string;
-    }
-  ];
-  code: number;
-  error?: { code: string; message: string };
-}
-```
-
-### 8. Create Section in a template
-
-Use this method to create a new section that can be used in templates.
-
-```ts
-const newSection = await ekascribe.createTemplateSection({
-  title: 'Chief Complaint',
-  desc: "Patient's primary concern",
-  format: 'P', // 'P' for paragraph, 'B' for bullet points
-  example: 'Patient presents with chest pain for 2 days',
-});
-```
-
-- #### Response type:
-
-```ts
-{
-  msg: string;
-  section_id: string;
-  code: number;
-  action: 'updated' | 'created_custom';
-  error?: { code: string; message: string };
-}
-```
-
-### 9. Edit Section in a template
-
-Use this method to update an existing template section.
-
-```ts
-const updatedSection = await ekascribe.updateTemplateSection({
-  section_id: 'section-123',
-  title: 'Updated Chief Complaint',
-  desc: 'Updated description',
-  format: 'B',
-  example: 'Updated example text',
-});
-```
-
-- #### Response type:
-
-```ts
-{
-  msg: string;
-  section_id: string;
-  code: number;
-  action: 'updated' | 'created_custom';
-  error?: { code: string; message: string };
-}
-```
-
-### 10. Delete Section from a template
-
-Use this method to delete a template section.
-
-```ts
-const deleteResult = await ekascribe.deleteTemplateSection('section-123');
-```
-
-- #### Response type:
-
-```ts
-{
-  msg: string;
-  section_id: string;
-  code: number;
-  action: 'updated' | 'created_custom';
-  error?: { code: string; message: string };
-}
-```
-
-## Non-vaded flow: Upload raw audio to get output summary
-
-Use this method to upload pre-recorded audio files directly and get transcription output without real-time recording. This is useful when you have existing audio files and want to process them.
-
-**What this method does:**
-
-- Gets a presigned URL from the server
-- Uploads audio files to S3 via presigned URL
-- Initializes a transaction with the uploaded files
-- Returns the transaction details
-
-```ts
-const audioFiles = [file1, file2]; // File or Blob objects
-const audioFileNames = ['audio1.mp3', 'audio2.mp3'];
-
-const response = await ekascribe.uploadAudioWithPresignedUrl({
-  action: 'ekascribe-v2', // Pass this exact value without changing
-  audioFiles,
-  audioFileNames,
-  mode: 'consultation',
-  txn_id: 'unique-transaction-id',
-  input_language: ['en-IN'],
-  output_format_template: [{ template_id: 'your_template_id' }],
-  transfer: 'non-vaded', // Use 'non-vaded' for raw audio files
-  model_type: 'pro' | 'lite',
-  system_info: {
-    platform: 'web',
-    language: 'en',
-    time_zone: 'Asia/Kolkata',
-  },
-  patient_details: {
-    username: 'John Doe',
-    age: 35,
-    biologicalSex: 'M',
-  },
-  version: '1.0.0',
-  additional_data: {},
-});
-```
-
-**Key Parameters:**
-
-- `action`: Pass `ekascribe-v2` exactly as shown
-- `audioFiles`: Array of File or Blob objects
-- `audioFileNames`: Array of file names corresponding to audio files
-- `transfer`: Use `non-vaded` for raw audio files (not processed with VAD)
-- Other parameters: Same as `initTransaction` (see step 3)
-
-- #### Sample Response:
-
-```ts
-{
-  error_code?: ERROR_CODE,
-  status_code: 200,
-  message: 'Recording uploaded successfully.',
-}
-```
-
-**Error handling:**
-
-Possible Error Codes in `error_code`:
-
-- `get_presigned_url_failed`: Failed to get presigned URL from server, retry with the same method
-- `audio_upload_failed`: Failed to upload audio files to S3, retry with the same method
-- `txn_limit_exceeded`: Maximum number of transactions exceeded
-- `txn_init_failed`: Failed to initialize transaction after upload, retry with the same method
-
-**Handling 401 Status Code:**
-
-If you receive a `status_code: 401`, update the tokens in your config and retry:
-
-```ts
-// Update tokens in your config variable
-sdkConfig.access_token = '<new_access_token>';
-
-// Update tokens in the instance
-ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
-
-// Now retry the method call
-const response = await ekascribe.uploadAudioWithPresignedUrl({ ... });
-```
-
-## Utility Methods
-
-### 1. Get total uploaded files
-
-Use this method to retrieve all the audio files generated for a specific session.
-
-```ts
-const files = ekascribe.getTotalAudioFiles();
-```
-
-- #### Response type:
-
-```ts
-['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
-```
-
-### 2. Get successfully uploaded files
-
-Use this method to retrieve all the audio files that were uploaded successfully.
-
-```ts
-const successFiles = ekascribe.getSuccessFiles();
-```
-
-- #### Response type:
-
-```ts
-['3.mp3', '4.mp3'];
-```
-
-### 3. Get failed audio files
-
-Use this method to retrieve all the audio files that failed to upload.
-
-```ts
-const failedFiles = ekascribe.getFailedFiles();
-```
-
-- #### Response type:
-
-```ts
-['1.mp3', '2.mp3'];
-```
-
-### 4. Reset Class Instance
-
-Use this method to reset the EkaScribe instance and clear all stored data.
-
-```ts
-ekaScribe.resetEkaScribe();
-```
-
-### 5. Reinitialise VAD Instance
-
-Use this method to reinitialize the Voice Activity Detection (VAD) instance.
-
-```ts
-ekaScribe.reinitializeVad();
-```
-
-### 6. Pause VAD Instance
-
-Use this method to pause the Voice Activity Detection without stopping the recording session.
-
-```ts
-ekaScribe.pauseVad();
-```
-
-### 7. Destroy VAD Instance
-
-Use this method to completely destroy the VAD instance and free up resources.
-
-```ts
-ekaScribe.destroyVad();
-```
-
-### 8. Update Authentication Tokens
-
-Use this method to update the access token when it expires (e.g., when you receive a 401 error).
-
-```ts
-ekascribe.updateAuthTokens({ access_token: 'new_access_token' });
-```
-
-**When to use:**
-
-- When any API method returns `status_code: 401`
-- When `eventCallback` returns `error.code: 401` in `file_upload_status`
-- Before token expiration to prevent upload failures
-
-### 9. Get Doctor Header and Footer
-
-Use this method to retrieve the header and footer images for a doctor's prescription template.
-
-```ts
-const headerFooter = await ekascribe.getDoctorHeaderFooter({
-  doctor_oid: '161459684229004',
-  clinic_id: '60532c7fcb46901ba3a3e477', // optional
-});
-```
-
-**Key Parameters:**
-
-- `doctor_oid`: The doctor's OID (required)
-- `clinic_id`: The clinic ID (optional) - if provided, returns header/footer for this specific clinic
-
-**Selection Logic:**
-
-1. If `clinic_id` is provided and a matching PRINT template exists, returns that template's header/footer
-2. Otherwise, looks for the doctor's default clinic and returns its header/footer
-3. If no matching template is found, returns `null`
-
-- #### Response type:
-
-```ts
-{
-  data: {
-    _id: string | null;                                        // Template ID
-    clinic_id: string | null;                                  // Clinic ID
-    doctor_id: string | null;                                  // Doctor ID
-    type: string | null;                                       // Template type (e.g., "PRINT")
-    header_img: string | null;                                 // URL of the header image
-    header_height: string | null;                              // Height of the header (e.g., "5cm")
-    header_top_margin: string | null;                          // Top margin for header (e.g., "0.5cm")
-    footer_img: string | null;                                 // URL of the footer image
-    footer_height: string | null;                              // Height of the footer (e.g., "6.7cm")
-    margin_left: string | null;                                // Left margin (e.g., "1.27cm")
-    margin_right: string | null;                               // Right margin (e.g., "1.27cm")
-    page_size: string | null;                                  // Page size (e.g., "A4")
-    show_eka_logo: boolean | null;                             // Show Eka logo on prescription
-    show_name_in_signature: boolean | null;                    // Show name in signature
-    show_not_valid_for_medical_legal_purpose_message: boolean | null; // Show disclaimer message
-    show_page_number: boolean | null;                          // Show page numbers
-    show_prescription_id: boolean | null;                      // Show prescription ID
-    show_signature: boolean | null;                            // Show signature
-  } | null;
-  code: number;
-  message?: string;
-}
-```
-
-- #### Example Response:
-
-```ts
-{
-  data: {
-    _id: "64b8e093efdee1eaaf052e3e",
-    clinic_id: "60532c7fcb46901ba3a3e477",
-    doctor_id: "161459684229004",
-    type: "PRINT",
-    header_img: "https://rafale-assets.eka.care/161459684229004-60532c7fcb46901ba3a3e477-header.png",
-    header_height: "5cm",
-    header_top_margin: "0.5cm",
-    footer_img: "https://rafale-assets.eka.care/161459684229004-60532c7fcb46901ba3a3e477-footer.png",
-    footer_height: "6.7cm",
-    margin_left: "1.27cm",
-    margin_right: "1.27cm",
-    page_size: "A4",
-    show_eka_logo: true,
-    show_name_in_signature: true,
-    show_not_valid_for_medical_legal_purpose_message: true,
-    show_page_number: true,
-    show_prescription_id: true,
-    show_signature: true
-  },
-  code: 200
-}
-```
-
-### 10. Reset Singleton Instance
-
-Use this method to completely reset the singleton instance. Useful for testing or when you need to reinitialize the SDK with different configuration.
-
-```ts
-ekascribe.resetInstance();
-```
-
-**Note:** After calling this method, you'll need to call `getEkaScribeInstance()` again to get a new instance.
-
-### 11. Configure VAD Constants
-
-Use this method to customize Voice Activity Detection parameters for your specific use case.
-
-```ts
-ekascribe.configureVadConstants({
-  pref_length: 10, // Preferred chunk length in seconds
-  desp_length: 5, // Desperation chunk length in seconds
-  max_length: 30, // Maximum chunk length in seconds
-  sr: 16000, // Sample rate in Hz
-  frame_size: 512, // Frame size in samples
-  pre_speech_pad_frames: 10, // Pre-speech padding frames count
-  short_thsld: 0.5, // Short silence threshold in seconds
-  long_thsld: 0.8, // Long silence threshold in seconds
-});
-```
-
-**Key Parameters:**
-
-- `pref_length`: Preferred audio chunk length before clipping (in seconds)
-- `desp_length`: Desperation length - will clip even if not ideal (in seconds)
-- `max_length`: Maximum audio chunk length (in seconds)
-- `sr`: Sample rate in Hz (typically 16000)
-- `frame_size`: VAD frame size in samples
-- `pre_speech_pad_frames`: Number of frames to include before speech starts
-- `short_thsld`: Short silence threshold for clipping decisions (in seconds)
-- `long_thsld`: Long silence threshold for clipping decisions (in seconds)
-
-### 12. Destroy Shared Worker
-
-Use this method to terminate the shared worker instance and free up resources.
-
-```ts
-await ekascribe.destroySharedWorker();
-```
-
-**When to use:**
-
-- When cleaning up resources after the SDK is no longer needed
-- Before reinitializing with a new shared worker configuration
-
-## Generic Callbacks
-
-### 1. Event callback
-
-This callback provides information about SDK operations. Use it to monitor file uploads, transaction status, AWS configuration, and authentication errors.
-
-```ts
-ekascribe.onEventCallback((eventData) => {
-  console.log('Event callback:', eventData);
-
-  // Handle different callback types
-  switch (eventData.callback_type) {
-    case 'file_upload_status':
-      // Track audio chunk upload progress
-      console.log(`Uploaded ${eventData.data?.success}/${eventData.data?.total} chunks`);
-      break;
-    case 'transaction_status':
-      // Monitor transaction lifecycle (init, stop, commit, cancel)
-      console.log('Transaction update:', eventData.message);
-      break;
-    case 'aws_configure_status':
-      // AWS S3 configuration status
-      console.log('AWS config:', eventData.status);
-      break;
-    case 'authentication_status':
-      // API authentication errors
-      console.error('Auth error:', eventData.message);
-      break;
+// Upload progress
+ekascribe.registerCallback('onUploadEvent', (event) => {
+  if (event.type === 'progress') {
+    console.log(`Uploaded ${event.data.successCount}/${event.data.totalCount}`);
   }
 });
+
+// Errors
+ekascribe.registerCallback('onError', (event) => {
+  console.error(`[${event.error.code}] ${event.error.message}`);
+});
 ```
 
-- #### Callback Structure:
+See [Callbacks Reference](#callbacks-reference) for all callback types and payloads.
+
+### Step 3: Start Recording
+
+Creates a session and starts the microphone in one call.
 
 ```ts
-{
-  callback_type: 'file_upload_status' | 'transaction_status' | 'aws_configure_status' | 'authentication_status',
-  status: 'success' | 'error' | 'info',
-  message: string,
-  timestamp: string, // ISO timestamp
-  error?: {
-    code: number,
-    msg: string,
-    details: any
+import type { RecordingOptions } from '@eka-care/ekascribe-ts-sdk';
+
+const options: RecordingOptions = {
+  templates: ['template-id'],             // required: template IDs for output
+  sessionMode: 'consultation',            // optional: 'consultation' | 'dictation'
+  languageHint: ['en', 'hi'],            // optional: input audio language hints
+  transcriptLanguage: 'en',              // optional: output transcript language
+  model: 'pro',                          // optional: 'pro' | 'lite'
+  uploadType: 'chunked',                 // optional: 'chunked' (default) | 'single'
+  deviceId: microphoneId,                // optional: specific microphone device ID
+  patientDetails: {                      // optional
+    name: 'John Doe',
+    age: '45',
+    gender: 'male',
   },
-  data?: {
-    success?: number,      // Number of successfully uploaded chunks
-    total?: number,        // Total number of chunks
-    is_uploaded?: boolean, // Whether current chunk uploaded successfully
-    fileName?: string,     // Current file name
-    chunkData?: Uint8Array[], // Audio chunk data for current audiofile
-    request?: any,         // API request details
-    response?: any         // API response details
+  additionalData: {},                    // optional: any extra data for the session
+};
+
+const result = await ekascribe.startRecordingV2(options);
+
+if (result.error_code) {
+  console.error(result.error_code, result.message);
+  return;
+}
+
+const sessionId = result.txn_id;
+console.log('Recording started:', sessionId);
+```
+
+#### `RecordingOptions`
+
+```ts
+interface RecordingOptions {
+  templates: string[];                   // Template IDs for extraction (required)
+  model?: string;                        // Model ID ('pro' | 'lite')
+  languageHint?: string[];               // Language codes for audio input
+  transcriptLanguage?: string;           // Language code for transcript output
+  uploadType?: string;                   // 'chunked' | 'single' (default: 'chunked')
+  communicationProtocol?: string;        // 'http' (default)
+  additionalData?: Record<string, any>;  // Extra data for the session
+  deviceId?: string;                     // Specific microphone device ID
+  sessionMode?: string;                  // 'consultation' | 'dictation'
+  patientDetails?: PatientDetails;       // Patient info
+  sessionId?: string;                    // External session/transaction ID
+}
+
+interface PatientDetails {
+  oid?: string;
+  name?: string;
+  age?: string;
+  gender?: string;
+  mobile?: number;
+}
+```
+
+#### Response: `TStartRecordingResponse`
+
+```ts
+type TStartRecordingResponse = {
+  error_code?: ERROR_CODE;  // present only on error
+  status_code: number;
+  message: string;
+  txn_id?: string;          // session ID — present on success
+  business_id?: string;
+  oid?: string;
+  uuid?: string;
+};
+```
+
+### Step 4: Pause / Resume
+
+```ts
+const pauseResult = ekascribe.pauseRecording();
+// later...
+const resumeResult = ekascribe.resumeRecording();
+```
+
+#### Response: `TPauseRecordingResponse`
+
+```ts
+type TPauseRecordingResponse = {
+  status_code: number;
+  message: string;
+  error_code?: ERROR_CODE;
+  is_paused?: boolean;
+};
+```
+
+### Step 5: End Recording
+
+Stops the microphone, flushes pending audio, waits for all uploads, and ends the session on the server (triggers processing).
+
+```ts
+const endResult = await ekascribe.endRecording();
+
+if (endResult.error_code) {
+  switch (endResult.error_code) {
+    case 'end_recording_failed':
+      // Retry ending
+      await ekascribe.endRecording();
+      break;
+    case 'audio_upload_failed':
+      // Retry failed uploads
+      await ekascribe.retryUploadRecording();
+      break;
   }
 }
 ```
 
-- #### Callback Types Explained:
+#### Response: `TEndRecordingResponse`
 
-**`file_upload_status`** - Track audio chunk upload progress
+```ts
+type TEndRecordingResponse = {
+  error_code?: ERROR_CODE;
+  status_code: number;
+  message: string;
+  failed_files?: string[];       // files that failed to upload
+  total_audio_files?: string[];  // all audio files generated
+};
+```
 
-Use this to monitor upload progress of audio chunks:
+### Step 6: Get Output
 
-- `status: 'info'` - Audio chunk info
+Use `getSessionStatus()` to poll for results after ending the recording.
 
-  - `data.success`: Count of successfully uploaded chunks
-  - `data.total`: Total chunks generated
-  - `data.fileName`: Current chunk file name
-  - `data.chunkData`: Audio data for current chunk
-
-- `status: 'success'` - Chunk uploaded successfully
-
-  - `data.success`: Updated successful upload count
-  - `data.total`: Total chunks
-  - `data.is_uploaded`: true
-
-- `status: 'error'` - Chunk upload failed
-
-  - `error.code`: HTTP error code
-  - `error.msg`: Error message
-  - `error.details`: Additional error details
-
-- Status codes to handle:
-
-  If `error.code === 401`, it means your access token has expired. Update tokens immediately:
-
-  ```ts
-  ekascribe.onEventCallback((eventData) => {
-    if (eventData.callback_type === 'file_upload_status' && eventData.status === 'error') {
-      if (eventData.error?.code === 401) {
-        // Token expired - update it
-        sdkConfig.access_token = '<new_access_token>';
-        ekascribe.updateAuthTokens({ access_token: sdkConfig.access_token });
+```ts
+const status = await ekascribe.getSessionStatus(sessionId, {
+  poll: {
+    maxAttempts: 60,
+    intervalMs: 2000,
+    signal: abortController.signal,   // optional: cancel polling early
+    onProgress: (sessionData) => {
+      console.log('Status:', sessionData.status);
+      // Display partial results as they come in
+      if (sessionData.templates) {
+        console.log('Templates:', sessionData.templates);
       }
-    }
-  });
-  ```
+    },
+  },
+});
 
-### 2. User speech callback
+if (status.success) {
+  console.log('Final status:', status.data.status);
+  console.log('Templates:', status.data.templates);
+  console.log('Transcript:', status.data.transcript);
+}
+```
 
-Triggered by Voice Activity Detection (VAD) when user starts or stops speaking.
+#### Response: `SDKResult<GetSessionStatusResponse>`
 
 ```ts
-ekascribe.onUserSpeechCallback((isSpeech) => {
-  if (isSpeech) {
-    console.log('User started speaking');
-  } else {
-    console.log('User stopped speaking');
+// All async Alliance methods return SDKResult — check result.success
+type SDKResult<T> =
+  | { success: true; data: T; httpStatus?: number }
+  | { success: false; error: ScribeError };
+
+type GetSessionStatusResponse = {
+  session_id: string;
+  status: SessionStatus;
+  created_at: string;
+  expires_at?: string | null;
+  completed_at?: string | null;
+  model_used?: string | null;
+  language_detected?: string | null;
+  audio_files_received: number;
+  audio_files: string[];
+  audio_files_processed?: number;
+  additional_data: Record<string, any>;
+  templates?: TemplateEntry[];
+  transcript?: string;
+  processing_errors?: ProcessingError[];
+  error?: { code: string; message: string };
+};
+```
+
+### Step 7: Clean Up
+
+```ts
+// Reset the singleton — clears all state, destroys widget, removes callbacks
+await ekascribe.resetInstance();
+```
+
+After calling `resetInstance()`, you must call `getEkaScribeInstance()` again to get a new instance.
+
+### Flow Diagram
+
+```
+  getEkaScribeInstance(config)
+         |
+         v
+  registerCallback()  ──  Set up event handlers before recording
+         |
+         v
+  startRecordingV2()  ──  Creates session + starts mic + begins upload
+         |
+    pause / resume    ──  Optional during recording
+         |
+         v
+  endRecording()      ──  Stops mic + flushes audio + ends session
+         |
+         v
+  getSessionStatus()  ──  Poll until completed/failed
+         |
+         v
+  Read results        ──  templates, transcript, errors
+```
+
+---
+
+## Callbacks Reference
+
+Register with `registerCallback(name, handler)`. Remove with `removeCallback(name, handler)`.
+
+### `onTokenRequired`
+
+Called automatically when the SDK receives a 401 from any API call. Your handler must return a fresh access token. The SDK will update its internal token and retry the failed request.
+
+```ts
+ekascribe.registerCallback('onTokenRequired', async () => {
+  // Call your auth service to get a fresh token
+  const newToken = await myAuthService.refreshToken();
+  return newToken; // return the token string
+});
+```
+
+**Important:**
+- The handler must return `Promise<string>` or `string`
+- The SDK times out after 10 seconds — if your refresh takes longer, the request fails
+- Once the token is returned, the SDK calls `updateAuthTokens()` internally — you don't need to call it yourself
+- This replaces the old pattern of manually checking `status_code: 401` in every response
+
+#### Type
+
+```ts
+// Consumer-facing type (EkaScribe SDK)
+onTokenRequired: () => Promise<string> | string;
+```
+
+### `onRecordingStateChange`
+
+Fired when recording state transitions.
+
+```ts
+ekascribe.registerCallback('onRecordingStateChange', (event) => {
+  console.log(event.type); // 'started' | 'paused' | 'resumed' | 'ended'
+});
+```
+
+#### Type
+
+```ts
+interface RecordingStateChangeEvent {
+  type: 'started' | 'paused' | 'resumed' | 'ended';
+  timestamp: string;
+  data?: any;
+}
+```
+
+### `onAudioEvent`
+
+Fired for speech detection, silence warnings, chunk creation, and frame processing.
+
+```ts
+ekascribe.registerCallback('onAudioEvent', (event) => {
+  switch (event.type) {
+    case 'user_speech':
+      console.log('Speaking:', event.data.isSpeaking);
+      break;
+    case 'silence_warning':
+      console.log('Silence duration:', event.data.durationMs, 'ms');
+      break;
+    case 'chunk_ready':
+      console.log('Chunk:', event.data.fileName);
+      break;
+    case 'frame_processed':
+      // Raw audio frame data
+      break;
   }
 });
 ```
 
-### 3. Partial result callback
-
-This callback provides real-time partial results while polling for the final output. Use it to display intermediate transcription and template results to users before processing is complete.
+#### Type
 
 ```ts
-ekascribe.onPartialResultCallback((partialData) => {
-  console.log('Partial result received:', partialData);
+type AudioEvent =
+  | { type: 'user_speech'; timestamp: string; data: { isSpeaking: boolean } }
+  | { type: 'silence_warning'; timestamp: string; data: { durationMs: number } }
+  | { type: 'chunk_ready'; timestamp: string; data: { chunkIndex: number; fileName: string; chunkData: Uint8Array[] } }
+  | { type: 'frame_processed'; timestamp: string; data: { isSpeech: number; notSpeech: number; frame: Float32Array; duration: number } };
+```
 
-  // Handle different poll statuses
-  switch (partialData.poll_status) {
-    case 'in-progress':
-      // Processing is still ongoing, display partial results
-      console.log('Processing...', partialData.response);
-      break;
-    case 'success':
-      // Final result received
-      console.log('Processing complete:', partialData.response);
+### `onUploadEvent`
+
+Fired for upload progress, failures, and retries.
+
+```ts
+ekascribe.registerCallback('onUploadEvent', (event) => {
+  switch (event.type) {
+    case 'progress':
+      console.log(`${event.data.successCount}/${event.data.totalCount} uploaded`);
       break;
     case 'failed':
-      // Processing failed
-      console.error('Processing failed:', partialData.message);
+      console.error(`Upload failed: ${event.data.fileName}`, event.data.error);
       break;
-    case 'timeout':
-      // Polling timed out
-      console.warn('Polling timeout:', partialData.message);
+    case 'retry':
+      console.log(`Retrying ${event.data.fileName}, attempt ${event.data.attempt}`);
       break;
   }
 });
 ```
 
-- #### Callback Structure:
+#### Type
 
 ```ts
-{
-  txn_id: string; // Transaction ID
-  response: TGetStatusApiResponse | null; // The response structure is the same as returned by `pollSessionOutput` method
-  status_code: number; // HTTP status code
-  message: string; // Status message
-  poll_status: 'in-progress' | 'success' | 'failed' | 'timeout'; // Current polling state
+type UploadEvent =
+  | { type: 'progress'; timestamp: string; data: { successCount: number; totalCount: number } }
+  | { type: 'failed'; timestamp: string; data: { fileName: string; error: string } }
+  | { type: 'retry'; timestamp: string; data: { fileName: string; attempt: number } };
+```
+
+### `onSessionEvent`
+
+Fired on session lifecycle events.
+
+```ts
+ekascribe.registerCallback('onSessionEvent', (event) => {
+  switch (event.type) {
+    case 'created':
+      console.log('Session created:', event.data.session_id);
+      break;
+    case 'ended':
+      console.log('Session ended:', event.data.session_id);
+      break;
+    case 'status_update':
+      console.log('Status update:', event.data.status);
+      break;
+    case 'partial_result':
+      console.log('Partial result:', event.data);
+      break;
+  }
+});
+```
+
+#### Type
+
+```ts
+type SessionEvent =
+  | { type: 'created'; timestamp: string; data: CreateSessionResponse }
+  | { type: 'ended'; timestamp: string; data: EndSessionResponse }
+  | { type: 'status_update'; timestamp: string; data: GetSessionStatusResponse }
+  | { type: 'partial_result'; timestamp: string; data: any };
+```
+
+### `onError`
+
+Fired on SDK errors — VAD failures, worker errors, network issues, validation errors.
+
+```ts
+ekascribe.registerCallback('onError', (event) => {
+  console.error(`[${event.type}] ${event.error.code}: ${event.error.message}`);
+});
+```
+
+#### Type
+
+```ts
+interface ErrorEvent {
+  type: 'vad_error' | 'worker_error' | 'transport_error' | 'validation_error';
+  timestamp: string;
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }
 ```
 
-**When to use:**
-
-- Set this callback before calling `pollSessionOutput` to receive real-time updates
-- Display partial transcription results to improve user experience
-- Show processing progress indicators
-- Handle intermediate template results
-
-**Note:** This callback is triggered multiple times during polling - once for each poll attempt until processing completes or times out.
-
-### 4. VAD frames callback
-
-This callback is triggered when VAD (Voice Activity Detection) processes audio frames. Use it to access raw audio frame data for custom processing.
+### Removing Callbacks
 
 ```ts
-ekascribe.onVadFramesCallback((framesData) => {
-  console.log('VAD frames received:', framesData);
+const handler = (event) => { /* ... */ };
+
+ekascribe.registerCallback('onUploadEvent', handler);
+// later...
+ekascribe.removeCallback('onUploadEvent', handler);
+```
+
+### Retry Failed Uploads
+
+If `endRecording()` reports `audio_upload_failed`, retry the failed uploads:
+
+```ts
+const result = await ekascribe.retryUploadRecording();
+```
+
+#### Response: `TEndRecordingResponse`
+
+```ts
+{
+  status_code: number;
+  message: string;
+  error_code?: ERROR_CODE;
+  failed_files?: string[];       // files still failing after retry
+  total_audio_files?: string[];
+}
+```
+
+### Cancel a Session
+
+Cancel a session **without** triggering server-side processing.
+
+```ts
+// Cancel current active session
+await ekascribe.cancelSession();
+
+// Or cancel a specific session by ID
+await ekascribe.cancelSession('session-id');
+```
+
+#### Response: `SDKResult<PatchSessionResponse>`
+
+```ts
+const result = await ekascribe.cancelSession();
+if (result.success) {
+  console.log('Session cancelled');
+}
+```
+
+### Pre-Recorded Audio Upload
+
+Upload a pre-recorded audio file instead of live recording. Use this for non-real-time flows.
+
+**Flow:**
+
+1. Create session via `ekascribe.sessions.createSession()`
+2. Upload audio via `processPreRecordedAudio()`
+3. End session via `ekascribe.sessions.endSession()`
+
+```ts
+const result = await ekascribe.processPreRecordedAudio({
+  uploadUrl: session.upload_url,       // from createSession response
+  audioFile: audioBlob,                // File or Blob
 });
 ```
 
-### 5. VAD frame processed callback
-
-This callback is triggered after VAD has finished processing a frame. Use it to track VAD processing progress.
+#### Request
 
 ```ts
-ekascribe.onVadFrameProcessedCallback((processedData) => {
-  console.log('VAD frame processed:', processedData);
+{
+  uploadUrl: string;        // S3 upload URL from session
+  audioFile: File | Blob;   // the audio file
+}
+```
+
+#### Response: `TStartRecordingResponse`
+
+```ts
+{
+  status_code: number;
+  message: string;
+  error_code?: ERROR_CODE;
+}
+```
+
+---
+
+## Session Utils
+
+### `getSessionHistory(request)`
+
+Fetch previous sessions.
+
+```ts
+const sessions = await ekascribe.sessions.getSessionHistory({
+  txn_count: 10,        // number of sessions to fetch
+  oid: 'org-id',        // optional: filter by org
 });
 ```
 
-### Error codes
+#### Response: `TGetTransactionHistoryResponse`
 
-| Error Code            | Description                                                 |
-| --------------------- | ----------------------------------------------------------- |
-| `microphone`          | Microphone access error (permission denied or unavailable)  |
-| `txn_init_failed`     | Failed to initialize transaction                            |
-| `txn_limit_exceeded`  | Maximum number of concurrent transactions exceeded          |
-| `unknown_error`       | An unknown or unclassified error occurred                   |
-| `txn_stop_failed`     | Error occurred while stopping the transaction               |
-| `audio_upload_failed` | Audio file upload to server failed                          |
-| `txn_commit_failed`   | Commit call failed for the current transaction              |
-| `invalid_request`     | Request to SDK was malformed or missing required parameters |
-| `vad_not_initialized` | Voice activity detection engine was not initialized         |
-| `no_audio_capture`    | No audio was captured during the recording session          |
-| `txn_status_mismatch` | Invalid operation due to mismatched transaction status      |
+```ts
+{
+  data: Array<{
+    txn_id: string;
+    b_id: string;
+    created_at: string;
+    mode: string;
+    oid: string;
+    patient_details?: TPatientDetails;
+    processing_status: 'success' | 'system_failure' | 'request_failure' | 'cancelled' | 'in-progress';
+    user_status: 'init' | 'commit';
+    uuid: string;
+  }>;
+  status: string;
+  code: number;
+  message: string;
+  retrieved_count: number;
+}
+```
+
+### `getSessionDetails(request)`
+
+Get detailed information about a specific session, including documents, context, and presigned URLs.
+
+```ts
+const details = await ekascribe.sessions.getSessionDetails({
+  session_id: 'session-id',
+  presigned: true,         // include presigned URLs for documents
+});
+```
+
+Each document in the response contains a `presigned_url`. To get the actual document content (notes, transcript, etc.), you need to fetch it from this URL:
+
+```ts
+const doc = details.data?.documents[0];
+if (doc?.presigned_url) {
+  const response = await fetch(doc.presigned_url);
+  const content = await response.json();
+}
+```
+
+> Presigned URLs are temporary — check `presigned_url_expires_at` (epoch timestamp) before using. Call `getDocument(documentId)` to get a fresh presigned URL if expired.
+
+#### Request
+
+```ts
+type TGetV1SessionDetailsRequest = {
+  session_id: string;
+  presigned?: boolean;   // default: false
+};
+```
+
+#### Response: `TGetV1SessionDetailsResponse`
+
+```ts
+type TGetV1SessionDetailsResponse = {
+  data?: {
+    schema_version: string;
+    session_id: string;
+    uuid: string;
+    wid: string;
+    created_at: number;
+    expires_at: number;
+    upload_url: string;
+    status: string;
+    user_status: 'init' | 'recording_started' | 'commit' | string;
+    transfer: string;
+    flavour: string;
+    patient_details: TPatientDetails | Record<string, unknown>;
+    audio_matrix: Record<string, unknown>;
+    additional_data: {
+      input_languages?: { id: string; name: string }[];
+      output_format_template?: {
+        template_id: string;
+        template_name?: string;
+        template_type?: string;
+      }[];
+      [key: string]: unknown;
+    };
+    documents: Array<{
+      document_id: string;
+      session_id: string;
+      template_id: string;
+      document_name: string;
+      document_type: 'notes' | 'context' | 'transcript' | 'integration';
+      type: string;
+      status: string;
+      errors: Array<{ type: string | null; code: string; msg: string }>;
+      warnings: Array<{ type: string | null; code: string; msg: string }>;
+      publish: Record<string, unknown>;
+      created_at: number;
+      presigned_url: string | null;
+      presigned_url_expires_at: number | null;
+      vault_doc_id: string | null;
+      lang?: string;
+    }>;
+    context: {
+      past_sessions?: Array<{ date_epoch: number; session_id: string }>;
+      documents?: string[];
+      attachments?: Array<{ id: string; patient_oid?: string }>;
+    };
+  };
+  status_code: number;
+  message?: string;
+};
+```
+
+### `getDocument(documentId)`
+
+Fetch a single document by ID. Use this to get a fresh presigned URL if the previous one has expired.
+
+```ts
+const doc = await ekascribe.documents.getDocument('document-id');
+if (doc.data?.presigned_url) {
+  const response = await fetch(doc.data.presigned_url);
+  const content = await response.json();
+}
+```
+
+#### Response: `TPostV1DocumentResponse`
+
+```ts
+type TPostV1DocumentResponse = {
+  status_code: number;
+  status?: string;
+  message?: string;
+  data?: {
+    document_id: string;
+    session_id: string;
+    template_id: string;
+    document_name: string;
+    type: string;
+    status: string;
+    errors: unknown[];
+    warnings: unknown[];
+    usage_information: Record<string, unknown>;
+    document_path: {
+      bucket: string;
+      folder: string;
+      filename: string;
+    };
+    presigned_url: string;
+    created_at: string;
+    updated_at: number;
+    publish: Record<string, unknown>;
+  };
+};
+```
+
+### `patchSessionStatus(request, sessionId?)`
+
+Update session properties (patient details, status, templates).
+
+```ts
+await ekascribe.sessions.patchSessionStatus({
+  patient_details: { name: 'Jane Doe', age: '30', gender: 'female' },
+  additional_data: { notes: 'Follow-up visit' },
+  templates: ['soap', 'prescription'],
+}, sessionId);
+```
+
+---
+
+## Discovery
+
+### `getDiscoveryDocument()`
+
+Get the raw discovery document fetched during initialization. Contains server capabilities (supported models, languages, upload methods, audio formats).
+
+```ts
+const discovery = ekascribe.sessions.getDiscoveryDocument();
+```
+
+Returns `DiscoveryDocument | null`.
+
+### `getDiscoveryConfig()`
+
+Get the resolved configuration derived from the discovery document.
+
+```ts
+const config = ekascribe.sessions.getDiscoveryConfig();
+
+if (config.success) {
+  console.log('Resolved config:', config.data);
+}
+```
+
+Returns `SDKResult<ResolvedConfig>`.
+
+---
+
+## Widget
+
+The SDK provides an optional pre-built recording UI. When enabled, the SDK injects a floating widget into your page via Shadow DOM — you write zero UI code.
+
+### Integration
+
+**Step 1:** Enable the widget in SDK config with session defaults and callbacks:
+
+```ts
+const ekascribe = getEkaScribeInstance({
+  access_token: token,
+  env: 'PROD',
+  allianceConfig: { baseUrl: '...' },
+  widget: {
+    enabled: true,
+    orientation: 'horizontal',          // 'horizontal' | 'vertical'
+    zIndex: 9999,                       // optional
+    position: { bottom: 20, right: 20 }, // optional
+    sessionDefaults: {
+      input_language: ['en'],
+      output_format_template: [{ template_id: 'soap' }],
+      model_type: 'pro',
+      mode: 'consultation',
+    },
+    callbacks: {
+      onRecordingStart: ({ txn_id }) => {},
+      onRecordingStop: ({ txn_id, duration }) => {},
+      onProcessingComplete: ({ txn_id, sessionData }) => {
+        // sessionData contains templates, transcript, etc.
+      },
+      onError: ({ error_code, message }) => {},
+    },
+  },
+});
+```
+
+**Step 2:** Call `startForPatient()` for each patient — the widget appears and the user interacts with it directly (pause, resume, stop). You receive results via callbacks.
+
+```ts
+await ekascribe.startForPatient({
+  txn_id: 'unique-session-id',
+  patient_details: {                  // optional
+    username: 'John Doe',
+    age: 45,
+    biologicalSex: 'M',
+  },
+  additional_data: {},                // optional
+});
+```
+
+That's it. The widget handles `startRecordingV2()`, `pauseRecording()`, `resumeRecording()`, `endRecording()`, and `getSessionStatus()` internally.
+
+### Widget State Flow
+
+```
+COLLAPSED ──> RECORDING ──> PAUSED ──> RECORDING ──> PROCESSING ──> DONE
+     ^             │                                       │           │
+     │             └──── (user clicks stop) ───────────────┘           │
+     │                                                                 │
+     └──────────── (user clicks close) ────────────────────────────────┘
+                                                   │
+                                               ERROR
+```
+
+### Types
+
+```ts
+interface WidgetConfig {
+  enabled: boolean;
+  theme?: 'light' | 'dark';
+  zIndex?: number;
+  primaryColor?: string;
+  position?: { bottom?: number; right?: number; top?: number; left?: number };
+  orientation?: 'horizontal' | 'vertical';
+  callbacks?: WidgetCallbacks;
+  sessionDefaults: {
+    input_language: string[];
+    output_format_template: { template_id: string; template_name?: string; template_type?: string }[];
+    model_type: string;
+    mode: string;
+  };
+}
+
+interface StartForPatientConfig {
+  txn_id: string;
+  patient_details?: {
+    username?: string;
+    age?: number;
+    biologicalSex?: string;
+    mobile?: string;
+  };
+  additional_data?: Record<string, unknown>;
+}
+
+interface WidgetCallbacks {
+  onRecordingStart?: (data: { txn_id: string }) => void;
+  onRecordingPause?: (data: { txn_id: string; duration: number }) => void;
+  onRecordingResume?: (data: { txn_id: string }) => void;
+  onRecordingStop?: (data: { txn_id: string; duration: number }) => void;
+  onProcessingStart?: (data: { txn_id: string }) => void;
+  onProcessingComplete?: (data: { txn_id: string; sessionData: unknown }) => void;
+  onError?: (data: { error_code: string; message: string }) => void;
+  onWidgetClose?: (data: { txn_id: string }) => void;
+}
+```
+
+---
+
+## Authentication
+
+### `updateAuthTokens(token)`
+
+Manually update the access token. This propagates the token to all internal transports and the worker.
+
+```ts
+ekascribe.updateAuthTokens({ access_token: 'new-token' });
+```
+
+> If you have `onTokenRequired` registered, the SDK handles 401s automatically. You only need `updateAuthTokens()` for proactive token rotation (e.g., before expiry).
+
+---
+
+## SharedWorker Configuration
+
+The SDK offloads audio compression and upload to a SharedWorker for better main-thread performance. If SharedWorker is unavailable or fails, the SDK silently falls back to main-thread processing.
+
+### Setup
+
+```ts
+import { createWorkerBlobUrl } from '@eka-care/ekascribe-ts-sdk';
+
+// Option 1: Use the built-in helper (recommended)
+const workerUrl = await createWorkerBlobUrl();
+
+// Option 2: Fetch from CDN
+async function getWorkerUrl() {
+  const res = await fetch(
+    'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk@latest/dist/worker.bundle.js'
+  );
+  const script = await res.text();
+  const blob = new Blob([script], { type: 'application/javascript' });
+  return URL.createObjectURL(blob);
+}
+const workerUrl = await getWorkerUrl();
+
+// Option 3: Copy to public directory
+// cp node_modules/@eka-care/ekascribe-ts-sdk/dist/worker.bundle.js public/
+const workerUrl = '/worker.bundle.js';
+```
+
+Pass the URL in config:
+
+```ts
+const ekascribe = getEkaScribeInstance({
+  // ...
+  sharedWorkerUrl: workerUrl,
+});
+```
+
+**Notes:**
+
+- The worker URL must be accessible from the same origin or have proper CORS headers
+- Remember to revoke blob URLs when done: `URL.revokeObjectURL(workerUrl)`
+- If `sharedWorkerUrl` is not provided, the SDK uses the main thread (no SharedWorker)
+
+---
+
+## Error Codes
+
+| Error Code | Description |
+|---|---|
+| `microphone` | Microphone access error (permission denied or unavailable) |
+| `txn_init_failed` | Failed to initialize session |
+| `txn_limit_exceeded` | Maximum concurrent sessions exceeded |
+| `internal_server_error` | Unexpected server-side error |
+| `end_recording_failed` | Failed to end recording |
+| `audio_upload_failed` | Audio file upload to server failed |
+| `txn_commit_failed` | Commit call failed |
+| `txn_status_mismatch` | Invalid operation for current session state |
+| `network_error` | Network connectivity issue |
+| `unknown_error` | Unclassified error |
+| `unauthorized` | Authentication failed (invalid or expired token) |
+| `forbidden` | Insufficient permissions |
+
+---
+
+## Deprecated Methods
+
+These methods are from the older SDK version. They still work but are not recommended for new integrations.
+
+| Deprecated Method | Use Instead |
+|---|---|
+| `initTransaction()` + `startRecording()` | `startRecordingV2()` |
+| `getTemplateOutput()` | `getSessionStatus()` with polling |
+| `getOutputTranscription()` | `getSessionStatus()` with polling |
+| `commitTransactionCall()` | Handled automatically by `endRecording()` |
+| `stopTransactionCall()` | Handled automatically by `endRecording()` |
+
+### `initTransaction(request)`
+
+Creates a session on the server. Must be followed by `startRecording()`.
+
+```ts
+const result = await ekascribe.initTransaction({
+  mode: 'consultation',
+  input_language: ['en-IN'],
+  output_format_template: [{ template_id: 'template-id' }],
+  txn_id: 'unique-id',
+  transfer: 'chunked',
+  model_type: 'pro',
+  patient_details: {                // optional
+    username: 'John Doe',
+    age: 45,
+    biologicalSex: 'M',
+  },
+});
+// result: { status_code, message, txn_id?, error_code? }
+```
+
+### `startRecording(microphoneID?)`
+
+Starts recording for an already initialized session.
+
+```ts
+const result = await ekascribe.startRecording();
+// result: { status_code, message, txn_id?, error_code? }
+```
+
+### `getTemplateOutput(request)`
+
+Fetches processed template output for a session.
+
+```ts
+const result = await ekascribe.getTemplateOutput({ txn_id: 'session-id' });
+// result: { status_code, message?, response? }
+```
+
+### `getOutputTranscription(request)`
+
+Fetches the transcription output for a session.
+
+```ts
+const result = await ekascribe.getOutputTranscription({ txn_id: 'session-id' });
+// result: { status_code, message?, response? }
+```
+
+### `commitTransactionCall()`
+
+Commits the current transaction on the server.
+
+```ts
+const result = await ekascribe.commitTransactionCall();
+// result: { status_code, message, error_code?, failed_files? }
+```
+
+### `stopTransactionCall()`
+
+Stops the current transaction on the server.
+
+```ts
+const result = await ekascribe.stopTransactionCall();
+// result: { status_code, message, error_code? }
+```
+
+---
+
+## Full Example
+
+```ts
+import {
+  getEkaScribeInstance,
+  type EkaScribeConfig,
+  type RecordingOptions,
+} from '@eka-care/ekascribe-ts-sdk';
+
+// 1. Initialize
+const config: EkaScribeConfig = {
+  access_token: token,
+  env: 'PROD',
+  allianceConfig: {
+    baseUrl: 'https://api.eka.care/voice/api/v2',
+  },
+};
+
+const ekascribe = getEkaScribeInstance(config);
+
+// 2. Register callbacks
+ekascribe.registerCallback('onTokenRequired', async () => {
+  return await refreshToken();
+});
+
+ekascribe.registerCallback('onUploadEvent', (event) => {
+  if (event.type === 'progress') {
+    updateProgressUI(event.data.successCount, event.data.totalCount);
+  }
+});
+
+ekascribe.registerCallback('onError', (event) => {
+  showErrorToast(event.error.message);
+});
+
+// 3. Start recording
+const startResult = await ekascribe.startRecordingV2({
+  templates: ['soap'],
+  sessionMode: 'consultation',
+  languageHint: ['en'],
+  patientDetails: { name: 'John Doe', age: '45', gender: 'male' },
+});
+
+if (startResult.error_code) {
+  showError(startResult.message);
+  return;
+}
+
+const sessionId = startResult.txn_id!;
+
+// 4. User interacts...
+// pauseBtn.onclick = () => ekascribe.pauseRecording();
+// resumeBtn.onclick = () => ekascribe.resumeRecording();
+
+// 5. End recording
+const endResult = await ekascribe.endRecording();
+
+if (endResult.error_code === 'audio_upload_failed') {
+  await ekascribe.retryUploadRecording();
+}
+
+// 6. Get results
+const status = await ekascribe.getSessionStatus(sessionId, {
+  poll: {
+    maxAttempts: 60,
+    intervalMs: 2000,
+    onProgress: (s) => updateStatusUI(s.status),
+  },
+});
+
+if (status.success) {
+  displayResults(status.data.templates, status.data.transcript);
+}
+
+// 7. Cleanup on unmount
+await ekascribe.resetInstance();
+```
+
+---
 
 ## Contribution Guidelines
 
-This is a continually updated, open source project.
-Contributions are welcome!
+This is a continually updated, open source project. Contributions are welcome!
 
-## Tips
-
-- The SDK internally handles shared worker logic to reduce load on the main thread. Try to execute these functions in the main thread to avoid unnecessary issues.
-
-## Advanced Usage (for later use)
-
-- Maximum retries for file upload in case of failure.
-- Update VAD configurations
-
-## Under Development
-
-- Opus compression of audio files
-- Test cases
-
-Refer [Ekascribe](https://github.com/eka-care/v2rx-extension) for SDK implementations.
+Refer [EkaScribe TS SDK](https://github.com/eka-care/eka-js-sdk) for SDK implementation.

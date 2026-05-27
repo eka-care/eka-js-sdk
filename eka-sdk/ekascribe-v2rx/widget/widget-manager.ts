@@ -66,28 +66,30 @@ export class WidgetManager {
     try {
       const defaults = this.config.sessionDefaults;
 
-      const initResult = await this.sdk.initTransaction({
-        txn_id: patientConfig.txn_id,
-        mode: defaults.mode,
-        input_language: defaults.input_language,
-        output_format_template: defaults.output_format_template,
-        model_type: defaults.model_type,
-        patient_details: patientConfig.patient_details,
-        additional_data: patientConfig.additional_data,
+      const result = await this.sdk.startRecordingV2({
+        templates: defaults.output_format_template.map((t) => t.template_id),
+        sessionMode: defaults.mode,
+        languageHint: defaults.input_language,
+        model: defaults.model_type,
+        sessionId: patientConfig.txn_id,
+        patientDetails: patientConfig.patient_details
+          ? {
+              name: patientConfig.patient_details.username,
+              age: patientConfig.patient_details.age != null
+                ? String(patientConfig.patient_details.age)
+                : undefined,
+              gender: patientConfig.patient_details.biologicalSex,
+            }
+          : undefined,
+        additionalData: patientConfig.additional_data,
       });
 
-      if (initResult.error_code) {
-        this.showError(initResult.error_code, initResult.message);
+      if (result.error_code) {
+        this.showError(result.error_code, result.message);
         return;
       }
 
-      this.currentTxnId = initResult.txn_id || patientConfig.txn_id;
-
-      const startResult = await this.sdk.startRecording();
-      if (startResult.error_code) {
-        this.showError(startResult.error_code, startResult.message);
-        return;
-      }
+      this.currentTxnId = result.txn_id || patientConfig.txn_id;
 
       this.stateMachine.transition(WidgetState.RECORDING);
       this.renderer.renderState(WidgetState.RECORDING);
