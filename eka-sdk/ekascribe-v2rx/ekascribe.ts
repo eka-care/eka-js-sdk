@@ -221,7 +221,6 @@ class EkaScribe {
     return this.recording.resumeRecording();
   }
 
-  // TODO: change to endSession
   endRecording(): Promise<TEndRecordingResponse> {
     return this.recording.endRecording();
   }

@@ -412,7 +412,6 @@ export class RecordingManager {
     }
   }
 
-  /** @deprecated Backward compatible */
   async commitTransactionCall(): Promise<TEndRecordingResponse> {
     try {
       if (!this.txnID) {
@@ -451,7 +450,6 @@ export class RecordingManager {
     }
   }
 
-  /** @deprecated Backward compatible */
   async stopTransactionCall(): Promise<TEndRecordingResponse> {
     try {
       if (!this.txnID) {

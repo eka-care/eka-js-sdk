@@ -42,9 +42,7 @@ export class HttpTransport implements ITransport {
 
   private async executeRequest<T>(config: TransportRequest): Promise<TransportResponse<T>> {
     const isRawBody =
-      config.body instanceof Blob ||
-      config.body instanceof File ||
-      config.body instanceof FormData;
+      config.body instanceof Blob || config.body instanceof File || config.body instanceof FormData;
 
     const headers = this.buildHeaders(config.headers, isRawBody);
     const timeout = config.timeout ?? this.defaultTimeout;
@@ -56,9 +54,12 @@ export class HttpTransport implements ITransport {
       const response = await fetch(config.url, {
         method: config.method,
         headers,
-        body: config.body != null
-          ? (isRawBody ? (config.body as BodyInit) : JSON.stringify(config.body))
-          : undefined,
+        body:
+          config.body != null
+            ? isRawBody
+              ? (config.body as BodyInit)
+              : JSON.stringify(config.body)
+            : undefined,
         signal: controller.signal,
         credentials: 'include',
       });
@@ -89,7 +90,10 @@ export class HttpTransport implements ITransport {
     }
   }
 
-  private buildHeaders(custom?: Record<string, string>, isRawBody?: boolean): Record<string, string> {
+  private buildHeaders(
+    custom?: Record<string, string>,
+    isRawBody?: boolean
+  ): Record<string, string> {
     const headers: Record<string, string> = {};
 
     if (!isRawBody) {
@@ -141,10 +145,7 @@ export class HttpTransport implements ITransport {
 }
 
 export class TransportError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  constructor(message: string, public readonly status: number) {
     super(message);
     this.name = 'TransportError';
   }

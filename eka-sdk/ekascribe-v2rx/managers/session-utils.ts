@@ -216,7 +216,7 @@ export class SessionUtils {
     }
   }
 
-  // @deprecated
+  /** @deprecated Backward compatible */
   async updateResultSummary({
     txnId,
     data,
@@ -405,9 +405,7 @@ export class SessionUtils {
 
   // --- Alliance SDK methods ---
 
-  async createSession(
-    request: CreateSessionRequest
-  ): Promise<SDKResult<CreateSessionResponse>> {
+  async createSession(request: CreateSessionRequest): Promise<SDKResult<CreateSessionResponse>> {
     return this.allianceClient.createSession(request);
   }
 
