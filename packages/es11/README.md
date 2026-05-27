@@ -252,13 +252,13 @@ const endResult = await ekascribe.endRecording();
 
 if (endResult.error_code) {
   switch (endResult.error_code) {
-    case 'end_recording_failed':
-      // Retry ending
-      await ekascribe.endRecording();
-      break;
     case 'audio_upload_failed':
-      // Retry failed uploads
+      // Some audio files failed to upload — retry
       await ekascribe.retryUploadRecording();
+      break;
+    case 'end_recording_failed':
+    case 'internal_server_error':
+      console.error(endResult.error_code, endResult.message);
       break;
   }
 }
@@ -544,7 +544,7 @@ ekascribe.removeCallback('onUploadEvent', handler);
 
 ### Retry Failed Uploads
 
-If `endRecording()` reports `audio_upload_failed`, retry the failed uploads:
+If `endRecording()` returns `audio_upload_failed`, retry the failed uploads:
 
 ```ts
 const result = await ekascribe.retryUploadRecording();
@@ -630,7 +630,7 @@ Fetch previous sessions.
 ```ts
 const sessions = await ekascribe.sessions.getSessionHistory({
   txn_count: 10,        // number of sessions to fetch
-  oid: 'org-id',        // optional: filter by org
+  oid: 'patient-oid',        // optional: filter by patient oid
 });
 ```
 

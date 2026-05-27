@@ -322,10 +322,19 @@ export class RecordingManager {
       // Keep txnID for getSessionStatus() / pollSessionOutput() / retryUploadRecording().
       this.storedSession = null;
 
+      if (result.data.failedUploads.length > 0) {
+        return {
+          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+          status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+          message: `Recording ended but ${result.data.failedUploads.length} audio file(s) failed to upload.`,
+          failed_files: result.data.failedUploads,
+          total_audio_files: result.data.endSessionResponse?.audio_files,
+        };
+      }
+
       return {
         status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Recording ended successfully.',
-        failed_files: result.data.failedUploads,
         total_audio_files: result.data.endSessionResponse?.audio_files,
       };
     } catch (error) {
