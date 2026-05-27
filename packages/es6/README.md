@@ -879,6 +879,12 @@ await ekascribe.startForPatient({
 
 That's it. The widget handles `startRecordingV2()`, `pauseRecording()`, `resumeRecording()`, `endRecording()`, and `getSessionStatus()` internally.
 
+### Behavior
+
+- **Draggable** — the widget can be repositioned anywhere on screen.
+- **One recording at a time** — calling `startForPatient()` while a recording is active returns an error. If the widget is in DONE or ERROR state, it auto-resets and starts the new session.
+- **Done state** — after processing, the widget expands to show transcript and rendered markdown notes. If both are available, they appear in separate tabs.
+
 ### Widget State Flow
 
 ```
