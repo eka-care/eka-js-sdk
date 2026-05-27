@@ -53,9 +53,16 @@ export interface EkaScribeConfig {
   widget?: WidgetConfig;
 }
 
+/** Consumer-facing callback map: overrides onTokenRequired to expect a token return */
+export interface EkaCallbackMap extends Omit<CallbackMap, 'onTokenRequired'> {
+  onTokenRequired: () => Promise<string> | string;
+}
+
+export type EkaCallbackName = keyof EkaCallbackMap;
+
 // Re-export types for consumers
 export type { TStartRecordingForExistingSessionRequest, TPollingResponse };
-export type { AllianceCallbackName as CallbackName };
+export type { EkaCallbackName as CallbackName };
 
 class EkaScribe {
   private static instance: EkaScribe | null = null;
@@ -306,19 +313,19 @@ class EkaScribe {
 
   // ─── Callbacks ─────────────────────────────────────────────────────────────
 
-  registerCallback<K extends AllianceCallbackName>(name: K, handler: CallbackMap[K]): void {
+  registerCallback<K extends EkaCallbackName>(name: K, handler: EkaCallbackMap[K]): void {
     this.callbackRegistry.register(name, handler as any);
 
     if (name !== 'onTokenRequired') {
-      this.allianceClient.registerCallback(name, handler);
+      this.allianceClient.registerCallback(name, handler as CallbackMap[K & AllianceCallbackName]);
     }
   }
 
-  removeCallback<K extends AllianceCallbackName>(name: K, handler: CallbackMap[K]): void {
+  removeCallback<K extends EkaCallbackName>(name: K, handler: EkaCallbackMap[K]): void {
     this.callbackRegistry.remove(name, handler as any);
 
     if (name !== 'onTokenRequired') {
-      this.allianceClient.removeCallback(name, handler);
+      this.allianceClient.removeCallback(name, handler as CallbackMap[K & AllianceCallbackName]);
     }
   }
 
