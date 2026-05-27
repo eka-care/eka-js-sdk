@@ -235,6 +235,7 @@ export class WidgetManager {
   }
 
   private showError(code: string, message: string): void {
+    this.timer.stop();
     this.stateMachine.transition(WidgetState.ERROR);
     this.renderer.renderState(WidgetState.ERROR, { error: message });
     this.callbacks.onError?.({ error_code: code, message });

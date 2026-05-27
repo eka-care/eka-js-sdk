@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EkaScribe Widget - ES6 Compatibility Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+
+    .topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 18px; }
+    .topbar .env-badge { font-size: 11px; background: #fff3e0; color: #e65100; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+
+    .config-bar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 12px 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .config-bar .field { display: flex; flex-direction: column; gap: 3px; }
+    .config-bar label { font-size: 11px; color: #888; font-weight: 600; }
+    .config-bar input, .config-bar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px; }
+    .config-bar input:focus, .config-bar select:focus { outline: none; border-color: #6c5ce7; }
+    .btn-init { padding: 7px 16px; background: #6c5ce7; color: #fff; border: none; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-init:hover { opacity: 0.9; }
+    .btn-init:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .content { padding: 24px; max-width: 900px; margin: 0 auto; }
+    .section-title { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
+
+    .patient-list { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .patient-row { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+    .patient-row:last-child { border-bottom: none; }
+    .patient-info { flex: 1; }
+    .patient-name { font-size: 14px; font-weight: 600; }
+    .patient-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    .btn-mic { width: 36px; height: 36px; border-radius: 50%; background: #6c5ce7; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+    .btn-mic:hover { transform: scale(1.1); }
+    .btn-mic:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .btn-mic svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; }
+
+    .log { background: #1e1e1e; border-radius: 8px; padding: 16px; margin-top: 24px; max-height: 300px; overflow-y: auto; }
+    .log-title { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .log-entry { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; padding: 3px 0; color: #ccc; border-bottom: 1px solid #2a2a2a; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-time { color: #616161; margin-right: 8px; }
+    .log-cb { color: #ce93d8; }
+    .log-data { color: #81c784; }
+    .log-err { color: #e57373; }
+
+    .init-hint { text-align: center; padding: 40px; color: #aaa; font-size: 13px; }
+
+    .build-hint { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; color: #e65100; }
+    .build-hint code { background: #fbe9e7; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <h1>EkaScribe Widget - ES6 Build Test</h1>
+  <span class="env-badge" id="envBadge">ES6 LEGACY BUILD</span>
+</div>
+
+<!-- Config bar -->
+<div class="config-bar">
+  <div class="field">
+    <label>Access Token *</label>
+    <input type="text" id="accessToken" placeholder="Your token" style="width:200px;" />
+  </div>
+  <div class="field">
+    <label>Env</label>
+    <select id="env">
+      <option value="DEV">DEV</option>
+      <option value="PROD">PROD</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Alliance Base URL *</label>
+    <input type="text" id="baseUrl" placeholder="https://..." style="width:220px;" />
+  </div>
+  <div class="field">
+    <label>Template ID *</label>
+    <input type="text" id="templateId" placeholder="e.g. clinical_notes_template" style="width:180px;" />
+  </div>
+  <div class="field">
+    <label>Language</label>
+    <select id="inputLang">
+      <option value="en-IN">English (India)</option>
+      <option value="hi">Hindi</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Orientation</label>
+    <select id="orientation">
+      <option value="horizontal">Horizontal</option>
+      <option value="vertical">Vertical</option>
+    </select>
+  </div>
+  <button class="btn-init" id="btnInit">Initialize SDK + Widget</button>
+</div>
+
+<!-- Main content -->
+<div class="content">
+
+  <div class="build-hint">
+    <strong>ES6 Build Test:</strong> This page loads the pre-built ES6 bundle from
+    <code>packages/es6/dist/index.esm.js</code>.<br/>
+    Run <code>cd packages/es6 && yarn build</code> first, then open this file via a local server
+    (e.g. <code>npx serve .</code> from the repo root).
+  </div>
+
+  <div id="initHint" class="init-hint">
+    Fill config above and click "Initialize SDK + Widget" to begin.
+  </div>
+
+  <!-- Patient list — shown after init -->
+  <div id="patientSection" style="display:none;">
+    <p class="section-title">Patients — Click mic to start recording</p>
+    <div class="patient-list" id="patientList"></div>
+
+    <!-- Callback log -->
+    <div class="log">
+      <div class="log-title">Widget Callbacks</div>
+      <div id="logContainer"></div>
+    </div>
+  </div>
+
+</div>
+
+<!--
+  Load the ES6 build.
+  Uses <script type="module"> so we can use `import` — but the bundle itself is ES6-targeted.
+  This verifies that the built output runs without ES2020+ syntax errors.
+-->
+<script type="module">
+  import { getEkaScribeInstance } from '../packages/es6/dist/index.esm.js';
+
+  var ekascribe = null;
+
+  // ─── Sample patient data ────────────────────────────────────
+  var patients = [
+    { id: 'p-001', name: 'Ravi Kumar',     age: 45, gender: 'M', mobile: '9876543210' },
+    { id: 'p-002', name: 'Priya Sharma',   age: 32, gender: 'F', mobile: '9876543211' },
+    { id: 'p-003', name: 'Amit Patel',     age: 58, gender: 'M', mobile: '9876543212' },
+    { id: 'p-004', name: 'Sunita Verma',   age: 27, gender: 'F', mobile: '9876543213' },
+  ];
+
+  // ─── Logger ─────────────────────────────────────────────────
+  function log(callbackName, data, isError) {
+    var container = document.getElementById('logContainer');
+    var entry = document.createElement('div');
+    var now = new Date();
+    var time = now.toLocaleTimeString('en-US', {
+      hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    var cls = isError ? 'log-err' : 'log-data';
+    entry.className = 'log-entry';
+    entry.innerHTML = '<span class="log-time">' + time + '</span><span class="log-cb">' + callbackName + '</span> <span class="' + cls + '">' + JSON.stringify(data) + '</span>';
+    container.insertBefore(entry, container.firstChild);
+  }
+
+  // ─── Render patient list ────────────────────────────────────
+  function renderPatients() {
+    var list = document.getElementById('patientList');
+    list.innerHTML = '';
+    patients.forEach(function(p) {
+      var row = document.createElement('div');
+      row.className = 'patient-row';
+      row.innerHTML =
+        '<div class="patient-info">' +
+          '<div class="patient-name">' + p.name + '</div>' +
+          '<div class="patient-meta">' + p.age + 'y, ' + p.gender + ' &middot; ' + p.mobile + '</div>' +
+        '</div>';
+      var btn = document.createElement('button');
+      btn.className = 'btn-mic';
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+      btn.addEventListener('click', function() { startForPatient(p); });
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }
+
+  // ─── Start recording for a patient ──────────────────────────
+  function startForPatient(patient) {
+    if (!ekascribe) return;
+
+    ekascribe.startForPatient({
+      txn_id: patient.id + '-' + Date.now(),
+      patient_details: {
+        username: patient.name,
+        age: patient.age,
+        biologicalSex: patient.gender,
+        mobile: patient.mobile,
+      },
+    });
+
+    log('startForPatient', { patient: patient.name }, false);
+  }
+
+  // ─── Initialize SDK + Widget ────────────────────────────────
+  document.getElementById('btnInit').addEventListener('click', function() {
+    var accessToken = document.getElementById('accessToken').value.trim();
+    var baseUrl = document.getElementById('baseUrl').value.trim();
+    var templateId = document.getElementById('templateId').value.trim();
+
+    if (!accessToken || !baseUrl || !templateId) {
+      alert('Access Token, Alliance Base URL, and Template ID are required.');
+      return;
+    }
+
+    var env = document.getElementById('env').value;
+    var orientation = document.getElementById('orientation').value;
+    var inputLang = document.getElementById('inputLang').value;
+
+    ekascribe = getEkaScribeInstance({
+      access_token: accessToken,
+      env: env,
+      allianceConfig: { baseUrl: baseUrl },
+      widget: {
+        enabled: true,
+        orientation: orientation,
+        sessionDefaults: {
+          input_language: [inputLang],
+          output_format_template: [{ template_id: templateId }],
+          model_type: 'pro',
+          mode: 'consultation',
+        },
+        callbacks: {
+          onRecordingStart: function(data) { log('onRecordingStart', data, false); },
+          onRecordingPause: function(data) { log('onRecordingPause', data, false); },
+          onRecordingResume: function(data) { log('onRecordingResume', data, false); },
+          onRecordingStop: function(data) { log('onRecordingStop', data, false); },
+          onProcessingStart: function(data) { log('onProcessingStart', data, false); },
+          onProcessingComplete: function(data) { log('onProcessingComplete', data, false); },
+          onError: function(data) { log('onError', data, true); },
+          onWidgetClose: function(data) { log('onWidgetClose', data, false); },
+        },
+      },
+    });
+
+    document.getElementById('envBadge').textContent = env + ' — ES6 Widget Active';
+    document.getElementById('envBadge').style.background = '#e8f5e9';
+    document.getElementById('envBadge').style.color = '#2e7d32';
+    document.getElementById('btnInit').disabled = true;
+    document.getElementById('initHint').style.display = 'none';
+    document.getElementById('patientSection').style.display = 'block';
+    renderPatients();
+    log('SDK_INIT', { env: env, build: 'es6' }, false);
+  });
+</script>
+
+</body>
+</html>
