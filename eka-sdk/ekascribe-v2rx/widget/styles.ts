@@ -14,6 +14,7 @@ export function getWidgetStyles(): string {
       position: fixed;
       bottom: 20px;
       right: 20px;
+      max-height: calc(100vh - 40px);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
@@ -32,7 +33,7 @@ export function getWidgetStyles(): string {
       border: 1.5px solid #C7D2F6;
       border-radius: 999px;
       padding: 8px 16px;
-      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
       cursor: grab;
     }
 
@@ -215,6 +216,182 @@ export function getWidgetStyles(): string {
     .btn-retry:hover {
       background: #DC2626;
       color: #fff;
+    }
+
+    /* ── Expanded Done State ── */
+
+    .content-expanded {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: flex-end;
+      gap: 8px;
+      cursor: grab;
+    }
+
+    .content-expanded:active {
+      cursor: grabbing;
+    }
+
+    .panel {
+      background: #F8F9FF;
+      border: 1.5px solid #C7D2F6;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+      overflow: hidden;
+      width: 340px;
+    }
+
+    .drag-bar {
+      display: flex;
+      justify-content: center;
+      padding: 6px 0 2px;
+      cursor: grab;
+    }
+
+    .drag-bar:active {
+      cursor: grabbing;
+    }
+
+    .drag-bar span {
+      width: 32px;
+      height: 4px;
+      background: #C7D2F6;
+      border-radius: 2px;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid #C7D2F6;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      background: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #9CA3AF;
+      cursor: pointer;
+      font-family: inherit;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: #2563EB;
+      border-bottom-color: #2563EB;
+    }
+
+    .tab:hover:not(.active) {
+      color: #6B7280;
+    }
+
+    .tab-body {
+      padding: 12px 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #374151;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      cursor: auto;
+      user-select: text;
+    }
+
+    .tab-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .tab-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .tab-body::-webkit-scrollbar-thumb {
+      background: #C7D2F6;
+      border-radius: 2px;
+    }
+
+    /* ── Markdown content ── */
+
+    .md-content {
+      white-space: normal;
+    }
+
+    .md-content h1,
+    .md-content h2,
+    .md-content h3,
+    .md-content h4,
+    .md-content h5,
+    .md-content h6 {
+      margin: 12px 0 6px;
+      color: #1F2937;
+      line-height: 1.3;
+    }
+
+    .md-content h1 { font-size: 18px; }
+    .md-content h2 { font-size: 16px; }
+    .md-content h3 { font-size: 14px; }
+    .md-content h4 { font-size: 13px; }
+
+    .md-content p {
+      margin: 6px 0;
+    }
+
+    .md-content ul,
+    .md-content ol {
+      padding-left: 20px;
+      margin: 6px 0;
+    }
+
+    .md-content li {
+      margin: 2px 0;
+    }
+
+    .md-content code {
+      background: #E0E7FF;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    .md-content pre {
+      background: #1F2937;
+      color: #E5E7EB;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+
+    .md-content pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .md-content strong {
+      font-weight: 600;
+    }
+
+    .md-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+
+    .md-content th,
+    .md-content td {
+      border: 1px solid #C7D2F6;
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .md-content th {
+      background: #E0E7FF;
+      font-weight: 600;
     }
   `;
 }

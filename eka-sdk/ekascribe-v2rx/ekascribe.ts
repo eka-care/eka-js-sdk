@@ -30,6 +30,7 @@ import {
   type CallbackName as AllianceCallbackName,
   type IpcBridge as AllianceIpcBridge,
   type SDKResult,
+  type RecordingOptions,
   type GetSessionStatusResponse,
   type PollOptions,
   type PatchSessionResponse,
@@ -209,9 +210,17 @@ class EkaScribe {
     return this.recording.initTransaction(request);
   }
 
-  // TODO: change to createSession with startRecording
+  /** @deprecated Backward compatible */
   startRecording(microphoneID?: string): Promise<TStartRecordingResponse> {
     return this.recording.startRecording(microphoneID);
+  }
+
+  /**
+   * Creates a session and starts recording in one step.
+   * This is the recommended method for new integrations.
+   */
+  startRecordingV2(options: RecordingOptions): Promise<TStartRecordingResponse> {
+    return this.recording.startRecordingV2(options);
   }
 
   startRecordingForExistingSession(

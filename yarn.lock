@@ -33,16 +33,17 @@
   integrity sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==
 
 "@eka-care/ekascribe-ts-sdk-legacy@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es6":
-  version "3.0.0"
+  version "3.0.2"
   resolved "file:packages/es6"
   dependencies:
     core-js "^3.38.0"
     med-scribe-alliance-ts-sdk "^2.0.25"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "3.0.23"
+  version "3.0.25"
   resolved "file:packages/es11"
   dependencies:
+    marked "^18.0.4"
     med-scribe-alliance-ts-sdk "^2.0.25"
 
 "@esbuild/darwin-arm64@0.25.12":
@@ -1298,6 +1299,11 @@ magic-string@^0.30.17:
   integrity sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
+
+marked@^18.0.4:
+  version "18.0.4"
+  resolved "https://registry.npmjs.org/marked/-/marked-18.0.4.tgz"
+  integrity sha512-c/BTaKzg0G6ezQx97DAkYU7k0HM6ys0FqYeKBL6hlBByZwy+ycA1+f0vDdjMHKKeEjdgkx0GOv9Il6D+85cOqA==
 
 med-scribe-alliance-ts-sdk@^2.0.25:
   version "2.0.25"

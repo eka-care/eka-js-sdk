@@ -1,3 +1,8 @@
+import { marked } from 'marked';
+import type {
+  GetSessionStatusResponse,
+  TemplateEntryData,
+} from 'med-scribe-alliance-ts-sdk';
 import {
   WidgetState,
   type WidgetConfig,
@@ -66,28 +71,30 @@ export class WidgetManager {
     try {
       const defaults = this.config.sessionDefaults;
 
-      const initResult = await this.sdk.initTransaction({
-        txn_id: patientConfig.txn_id,
-        mode: defaults.mode,
-        input_language: defaults.input_language,
-        output_format_template: defaults.output_format_template,
-        model_type: defaults.model_type,
-        patient_details: patientConfig.patient_details,
-        additional_data: patientConfig.additional_data,
+      const result = await this.sdk.startRecordingV2({
+        templates: defaults.output_format_template.map((t) => t.template_id),
+        sessionMode: defaults.mode,
+        languageHint: defaults.input_language,
+        model: defaults.model_type,
+        sessionId: patientConfig.txn_id,
+        patientDetails: patientConfig.patient_details
+          ? {
+              name: patientConfig.patient_details.username,
+              age: patientConfig.patient_details.age != null
+                ? String(patientConfig.patient_details.age)
+                : undefined,
+              gender: patientConfig.patient_details.biologicalSex,
+            }
+          : undefined,
+        additionalData: patientConfig.additional_data,
       });
 
-      if (initResult.error_code) {
-        this.showError(initResult.error_code, initResult.message);
+      if (result.error_code) {
+        this.showError(result.error_code, result.message);
         return;
       }
 
-      this.currentTxnId = initResult.txn_id || patientConfig.txn_id;
-
-      const startResult = await this.sdk.startRecording();
-      if (startResult.error_code) {
-        this.showError(startResult.error_code, startResult.message);
-        return;
-      }
+      this.currentTxnId = result.txn_id || patientConfig.txn_id;
 
       this.stateMachine.transition(WidgetState.RECORDING);
       this.renderer.renderState(WidgetState.RECORDING);
@@ -181,7 +188,14 @@ export class WidgetManager {
 
       if (statusResult.success) {
         this.stateMachine.transition(WidgetState.DONE);
-        this.renderer.renderState(WidgetState.DONE);
+
+        const parsed = this.parseSessionData(statusResult.data);
+        if (parsed.transcript || parsed.notesHtml) {
+          this.renderer.renderDoneExpanded(parsed);
+        } else {
+          this.renderer.renderState(WidgetState.DONE);
+        }
+
         this.callbacks.onProcessingComplete?.({
           txn_id: this.currentTxnId,
           sessionData: statusResult.data,
@@ -221,9 +235,55 @@ export class WidgetManager {
   }
 
   private showError(code: string, message: string): void {
+    this.timer.stop();
     this.stateMachine.transition(WidgetState.ERROR);
     this.renderer.renderState(WidgetState.ERROR, { error: message });
     this.callbacks.onError?.({ error_code: code, message });
+  }
+
+  private parseSessionData(
+    data: GetSessionStatusResponse,
+    templateId?: string
+  ): { transcript: string | null; notesHtml: string | null } {
+    const result = { transcript: null as string | null, notesHtml: null as string | null };
+
+    // Transcript — direct string field
+    if (data.transcript) {
+      result.transcript = data.transcript;
+    }
+
+    // Notes — find template output to render as markdown
+    if (data.templates) {
+      let targetData: TemplateEntryData['data'] = undefined;
+
+      for (const entry of data.templates) {
+        for (const [id, entryData] of Object.entries(entry)) {
+          const t = entryData as TemplateEntryData;
+          if (!t.data || t.status === 'failure') continue;
+
+          if (templateId) {
+            if (id === templateId) {
+              targetData = t.data;
+              break;
+            }
+          } else if (t.document_type === 'custom' || t.document_type === 'notes') {
+            targetData = t.data;
+            break;
+          }
+        }
+        if (targetData) break;
+      }
+
+      if (targetData) {
+        const content =
+          typeof targetData === 'string'
+            ? targetData
+            : JSON.stringify(targetData, null, 2);
+        result.notesHtml = marked.parse(content) as string;
+      }
+    }
+
+    return result;
   }
 
 }
