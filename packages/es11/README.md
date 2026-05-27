@@ -1107,7 +1107,7 @@ const config: EkaScribeConfig = {
   access_token: token,
   env: 'PROD',
   allianceConfig: {
-    baseUrl: 'https://api.eka.care/voice/api/v2',
+    baseUrl: 'https://api.eka.care/voice/v1',
   },
 };
 

@@ -72,6 +72,7 @@ export class WidgetRenderer {
     data?: { time?: string; error?: string }
   ): void {
     this.stopAnimation();
+    this.contentEl.className = '';
 
     switch (state) {
       case WidgetState.COLLAPSED:
@@ -180,8 +181,7 @@ export class WidgetRenderer {
     this.widgetEl.classList.remove('hidden');
     this.contentEl.innerHTML = '';
 
-    const pill = document.createElement('div');
-    pill.className = 'pill';
+    const pill = this.createPill();
     pill.innerHTML = `
       <div class="spinner"></div>
       <span class="status-text">Processing notes...</span>
@@ -239,19 +239,106 @@ export class WidgetRenderer {
     this.bindDrag(pill);
   }
 
+  renderDoneExpanded(data: {
+    transcript: string | null;
+    notesHtml: string | null;
+  }): void {
+    this.stopAnimation();
+    this.widgetEl.classList.remove('hidden');
+    this.contentEl.innerHTML = '';
+    this.contentEl.className = 'content-expanded';
+
+    // Pill header
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    pill.innerHTML = `
+      <div class="done-icon">${SVG_CHECK}</div>
+      <span class="done-text">Notes ready</span>
+    `;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn-x';
+    closeBtn.innerHTML = SVG_X;
+    closeBtn.addEventListener('click', this.actions.onClose);
+    pill.appendChild(closeBtn);
+    this.contentEl.appendChild(pill);
+
+    const hasTranscript = !!data.transcript;
+    const hasNotes = !!data.notesHtml;
+
+    if (hasTranscript || hasNotes) {
+      // Panel
+      const panel = document.createElement('div');
+      panel.className = 'panel';
+
+      const dragBar = document.createElement('div');
+      dragBar.className = 'drag-bar';
+      dragBar.innerHTML = '<span></span>';
+      panel.appendChild(dragBar);
+
+      // Content containers
+      const transcriptBody = document.createElement('div');
+      transcriptBody.className = 'tab-body';
+      transcriptBody.textContent = data.transcript || '';
+
+      const notesBody = document.createElement('div');
+      notesBody.className = 'tab-body md-content';
+      notesBody.innerHTML = data.notesHtml || '';
+
+      if (hasTranscript && hasNotes) {
+        const tabBar = document.createElement('div');
+        tabBar.className = 'tab-bar';
+
+        const transcriptTab = document.createElement('button');
+        transcriptTab.className = 'tab active';
+        transcriptTab.textContent = 'Transcript';
+
+        const notesTab = document.createElement('button');
+        notesTab.className = 'tab';
+        notesTab.textContent = 'Notes';
+
+        notesBody.style.display = 'none';
+
+        transcriptTab.addEventListener('click', () => {
+          transcriptTab.classList.add('active');
+          notesTab.classList.remove('active');
+          transcriptBody.style.display = '';
+          notesBody.style.display = 'none';
+        });
+
+        notesTab.addEventListener('click', () => {
+          notesTab.classList.add('active');
+          transcriptTab.classList.remove('active');
+          notesBody.style.display = '';
+          transcriptBody.style.display = 'none';
+        });
+
+        tabBar.appendChild(transcriptTab);
+        tabBar.appendChild(notesTab);
+        panel.appendChild(tabBar);
+        panel.appendChild(transcriptBody);
+        panel.appendChild(notesBody);
+      } else if (hasTranscript) {
+        panel.appendChild(transcriptBody);
+      } else {
+        panel.appendChild(notesBody);
+      }
+
+      this.contentEl.appendChild(panel);
+    }
+
+    // Bind drag on the whole expanded wrapper so pill + panel are both draggable
+    this.bindDrag(this.contentEl);
+  }
+
   // ─── Waveform ─────────────────────────────────────────────────────────────
 
   private createWaveform(): { svg: SVGSVGElement; bars: SVGRectElement[] } {
-    const isVertical = this.orientation === 'vertical';
-    const count = isVertical ? V_BAR_COUNT : H_BAR_COUNT;
-    const maxHeight = isVertical ? 60 : 28;
+    const count =
+      this.orientation === 'vertical' ? V_BAR_COUNT : H_BAR_COUNT;
+    const maxHeight = 28;
 
-    const svgWidth = isVertical
-      ? maxHeight
-      : count * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
-    const svgHeight = isVertical
-      ? count * (BAR_WIDTH + BAR_GAP) - BAR_GAP
-      : maxHeight;
+    const svgWidth = count * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
+    const svgHeight = maxHeight;
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', String(svgWidth));
@@ -259,6 +346,7 @@ export class WidgetRenderer {
     svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
     const bars: SVGRectElement[] = [];
+    const h = maxHeight * 0.4;
 
     for (let i = 0; i < count; i++) {
       const rect = document.createElementNS(
@@ -268,20 +356,11 @@ export class WidgetRenderer {
       rect.setAttribute('fill', '#2563EB');
       rect.setAttribute('rx', '1.5');
 
-      const h = maxHeight * 0.4;
-      if (isVertical) {
-        const y = i * (BAR_WIDTH + BAR_GAP);
-        rect.setAttribute('x', String((maxHeight - h) / 2));
-        rect.setAttribute('y', String(y));
-        rect.setAttribute('width', String(h));
-        rect.setAttribute('height', String(BAR_WIDTH));
-      } else {
-        const x = i * (BAR_WIDTH + BAR_GAP);
-        rect.setAttribute('x', String(x));
-        rect.setAttribute('y', String((maxHeight - h) / 2));
-        rect.setAttribute('width', String(BAR_WIDTH));
-        rect.setAttribute('height', String(h));
-      }
+      const x = i * (BAR_WIDTH + BAR_GAP);
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String((maxHeight - h) / 2));
+      rect.setAttribute('width', String(BAR_WIDTH));
+      rect.setAttribute('height', String(h));
 
       rect.style.opacity = '0.35';
       svg.appendChild(rect);
@@ -292,8 +371,7 @@ export class WidgetRenderer {
   }
 
   private startAnimation(): void {
-    const isVertical = this.orientation === 'vertical';
-    const maxDim = isVertical ? 60 : 28;
+    const maxDim = 28;
     const count = this.waveformBars.length;
 
     const animate = () => {
@@ -304,14 +382,8 @@ export class WidgetRenderer {
         const scale = Math.min(1, Math.max(0.15, wave));
         const h = maxDim * scale;
 
-        if (isVertical) {
-          bar.setAttribute('width', String(h));
-          bar.setAttribute('x', String((maxDim - h) / 2));
-        } else {
-          bar.setAttribute('height', String(h));
-          bar.setAttribute('y', String((maxDim - h) / 2));
-        }
-
+        bar.setAttribute('height', String(h));
+        bar.setAttribute('y', String((maxDim - h) / 2));
         bar.style.opacity = String(0.5 + scale * 0.5);
       }
       this.animationId = requestAnimationFrame(animate);

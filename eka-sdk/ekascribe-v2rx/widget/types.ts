@@ -1,4 +1,5 @@
 import type { TPatientDetails } from '../constants/types';
+import type { GetSessionStatusResponse } from 'med-scribe-alliance-ts-sdk';
 
 export enum WidgetState {
   COLLAPSED = 'collapsed',
@@ -97,7 +98,7 @@ export interface WidgetSDKBridge {
     sessionId?: string,
     options?: { poll?: unknown }
   ): Promise<
-    | { success: true; data: unknown; httpStatus?: number }
+    | { success: true; data: GetSessionStatusResponse; httpStatus?: number }
     | { success: false; error: { message: string; code?: string }; httpStatus?: number }
   >;
 }

@@ -1,3 +1,8 @@
+import { marked } from 'marked';
+import type {
+  GetSessionStatusResponse,
+  TemplateEntryData,
+} from 'med-scribe-alliance-ts-sdk';
 import {
   WidgetState,
   type WidgetConfig,
@@ -183,7 +188,14 @@ export class WidgetManager {
 
       if (statusResult.success) {
         this.stateMachine.transition(WidgetState.DONE);
-        this.renderer.renderState(WidgetState.DONE);
+
+        const parsed = this.parseSessionData(statusResult.data);
+        if (parsed.transcript || parsed.notesHtml) {
+          this.renderer.renderDoneExpanded(parsed);
+        } else {
+          this.renderer.renderState(WidgetState.DONE);
+        }
+
         this.callbacks.onProcessingComplete?.({
           txn_id: this.currentTxnId,
           sessionData: statusResult.data,
@@ -226,6 +238,51 @@ export class WidgetManager {
     this.stateMachine.transition(WidgetState.ERROR);
     this.renderer.renderState(WidgetState.ERROR, { error: message });
     this.callbacks.onError?.({ error_code: code, message });
+  }
+
+  private parseSessionData(
+    data: GetSessionStatusResponse,
+    templateId?: string
+  ): { transcript: string | null; notesHtml: string | null } {
+    const result = { transcript: null as string | null, notesHtml: null as string | null };
+
+    // Transcript — direct string field
+    if (data.transcript) {
+      result.transcript = data.transcript;
+    }
+
+    // Notes — find template output to render as markdown
+    if (data.templates) {
+      let targetData: TemplateEntryData['data'] = undefined;
+
+      for (const entry of data.templates) {
+        for (const [id, entryData] of Object.entries(entry)) {
+          const t = entryData as TemplateEntryData;
+          if (!t.data || t.status === 'failure') continue;
+
+          if (templateId) {
+            if (id === templateId) {
+              targetData = t.data;
+              break;
+            }
+          } else if (t.document_type === 'custom' || t.document_type === 'notes') {
+            targetData = t.data;
+            break;
+          }
+        }
+        if (targetData) break;
+      }
+
+      if (targetData) {
+        const content =
+          typeof targetData === 'string'
+            ? targetData
+            : JSON.stringify(targetData, null, 2);
+        result.notesHtml = marked.parse(content) as string;
+      }
+    }
+
+    return result;
   }
 
 }
