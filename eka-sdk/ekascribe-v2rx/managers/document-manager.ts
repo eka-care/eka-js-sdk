@@ -254,7 +254,7 @@ export class DocumentManager {
       const queryParams = params ? `?${params}` : '';
       const response = await this.transport.request<TPostV1DocumentResponse>({
         method: 'GET',
-        url: `${this.hosts.voiceV1}/documents/${documentId}/${queryParams}`,
+        url: `${this.hosts.voiceV1}/documents/${documentId}${queryParams}`,
       });
 
       return { ...response.data, status_code: response.status };
@@ -306,7 +306,7 @@ export class DocumentManager {
     try {
       const response = await this.transport.request<TPostV1DocumentResponse>({
         method: 'POST',
-        url: `${this.hosts.voiceV1}/documents/${params ? `?${params}` : ''}`,
+        url: `${this.hosts.voiceV1}/documents${params ? `?${params}` : ''}`,
         body: {
           session_id,
           type,
