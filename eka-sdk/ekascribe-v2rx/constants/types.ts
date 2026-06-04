@@ -691,6 +691,8 @@ export type TPostV1DocumentRequest = {
   type?: string;
   document_id?: string;
   publish?: Record<string, unknown>;
+  tiptap_json?: Record<string, unknown>;
+  params?: string;
 };
 
 export type TPostV1DocumentResponse = {
@@ -716,6 +718,7 @@ export type TPostV1DocumentResponse = {
     created_at: string;
     updated_at: number;
     publish: Record<string, unknown>;
+    tiptap_json?: Record<string, unknown>;
   };
 };
 

@@ -243,11 +243,18 @@ export class DocumentManager {
 
   // --- Documents ---
 
-  async getDocument(documentId: string): Promise<TPostV1DocumentResponse> {
+  async getDocument({
+    documentId,
+    params,
+  }: {
+    documentId: string;
+    params?: string;
+  }): Promise<TPostV1DocumentResponse> {
     try {
+      const queryParams = params ? `?${params}` : '';
       const response = await this.transport.request<TPostV1DocumentResponse>({
         method: 'GET',
-        url: `${this.hosts.voiceV1}/documents/${documentId}`,
+        url: `${this.hosts.voiceV1}/documents/${documentId}/${queryParams}`,
       });
 
       return { ...response.data, status_code: response.status };
@@ -293,17 +300,20 @@ export class DocumentManager {
     type,
     document_id,
     publish,
+    tiptap_json,
+    params,
   }: TPostV1DocumentRequest): Promise<TPostV1DocumentResponse> {
     try {
       const response = await this.transport.request<TPostV1DocumentResponse>({
         method: 'POST',
-        url: `${this.hosts.voiceV1}/documents`,
+        url: `${this.hosts.voiceV1}/documents/${params ? `?${params}` : ''}`,
         body: {
           session_id,
           type,
           ...(document_name ? { document_name } : {}),
           ...(document_id ? { document_id } : {}),
           ...(publish ? { publish } : {}),
+          ...(tiptap_json ? { tiptap_json } : {}),
         },
       });
 

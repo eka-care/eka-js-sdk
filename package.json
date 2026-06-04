@@ -21,7 +21,8 @@
     "build:es11": "yarn workspace @eka-care/ekascribe-ts-sdk build",
     "build:es6": "yarn workspace @eka-care/ekascribe-ts-sdk-legacy build",
     "build": "yarn build:es11 && yarn build:es6",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "dev": "vite --config vite.dev.config.ts"
   },
   "publishConfig": {
     "access": "public"
@@ -42,6 +43,6 @@
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",
-    "med-scribe-alliance-ts-sdk": "2.0.27"
+    "med-scribe-alliance-ts-sdk": "2.0.28"
   }
 }

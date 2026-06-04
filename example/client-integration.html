@@ -48,18 +48,17 @@
   // These values come from your backend / environment config.
   const ekascribe = getEkaScribeInstance({
     access_token: 'YOUR_ACCESS_TOKEN',        // from your auth system
-    env: 'DEV',                                // 'DEV' or 'PROD'
+    env: 'PROD',                                // 'DEV' or 'PROD'
     allianceConfig: {
-      baseUrl: 'https://api.dev.eka.care/voice/v1',
+      baseUrl: 'https://api.eka.care/voice/v1',
     },
     widget: {
       enabled: true,
-      theme: 'dark',                           // 'dark' or 'light'
-      primaryColor: '#6c5ce7',                 // match your brand
+      theme: 'light',                           // 'dark' or 'light'
       position: { bottom: 20, right: 20 },     // initial position (px)
       sessionDefaults: {
-        input_language: ['en-IN'],
-        output_format_template: [{ template_id: 'nic_template' }],
+        input_language: ['en', 'hi'],
+        output_format_template: [{ template_id: "7d03dd95-45b2-41e1-a5d3-fba98fee0418" }],
         model_type: 'pro',
         mode: 'consultation',
       },

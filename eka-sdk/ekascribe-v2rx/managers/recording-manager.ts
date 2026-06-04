@@ -325,7 +325,7 @@ export class RecordingManager {
       if (result.data.failedUploads.length > 0) {
         return {
           error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+          status_code: result.httpStatus ?? SDK_STATUS_CODE.AUDIO_ERROR,
           message: `Recording ended but ${result.data.failedUploads.length} audio file(s) failed to upload.`,
           failed_files: result.data.failedUploads,
           total_audio_files: result.data.endSessionResponse?.audio_files,
