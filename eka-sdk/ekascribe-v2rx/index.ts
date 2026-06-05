@@ -30,6 +30,7 @@ export type {
   EndSessionResponse,
   DiscoveryDocument,
   ResolvedConfig,
+  PatientDetails,
 } from 'med-scribe-alliance-ts-sdk';
 
 // Re-export Alliance SDK worker utilities
