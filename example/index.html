@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EkaScribe SDK - Example Integration</title>
+  <title>EkaScribe SDK — UI Controlled by Client</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 24px; max-width: 800px; margin: 0 auto; }
@@ -57,71 +57,29 @@
 </head>
 <body>
 
-<h1>EkaScribe SDK - Example Integration</h1>
-<p class="subtitle">Standalone HTML using the SDK via CDN script tag. No bundler or npm install required.</p>
+<h1>EkaScribe SDK — UI Controlled by Client</h1>
+<br/>
 
-<!-- Configuration -->
-<div class="config-section">
-  <h2>Configuration</h2>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Access Token *</label>
-      <input type="text" id="accessToken" placeholder="Your access token" />
-    </div>
-    <div class="form-group">
-      <label>Environment</label>
-      <select id="env">
-        <option value="DEV">DEV</option>
-        <option value="PROD">PROD</option>
-      </select>
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Client ID</label>
-      <input type="text" id="clientId" placeholder="Optional client ID" />
-    </div>
-    <div class="form-group">
-      <label>Template ID *</label>
-      <input type="text" id="templateId" placeholder="Template ID for output format" />
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Input Language</label>
-      <select id="inputLang">
-        <option value="en-IN">English (India)</option>
-        <option value="hi">Hindi</option>
-        <option value="en">English</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Mode</label>
-      <select id="mode">
-        <option value="consultation">Consultation</option>
-        <option value="dictation">Dictation</option>
-      </select>
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Model Type</label>
-      <select id="modelType">
-        <option value="pro">Pro (Most Accurate)</option>
-        <option value="lite">Lite (Lower Latency)</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Patient Name (Optional)</label>
-      <input type="text" id="patientName" placeholder="e.g. John Doe" />
-    </div>
+<div class="config-section" style="font-size:13px; color:#555;">
+  <h2>How this works</h2>
+  The buttons below are <strong>your</strong> UI. Each one calls an SDK method directly. 
+  Package is loaded straight from npm via CDN — no bundler or build step.
+  Open the script in this file and set the values in <code>CONFIG</code> (access token,
+  template id, etc.), then drive recording with the controls. (For the SDK-rendered widget instead, see <code>client-integration.html</code>.)
+  <div style="margin-top:12px;">
+    <div style="color:#777; margin-bottom:6px;">Create the instance <strong>once</strong> on page load and reuse it for every recording. Instance management matters here: spinning up a new instance per patient gains you nothing — the SDK keeps a single shared (singleton) instance regardless.</div>
+    <pre style="background:#f8f8f8; border:1px solid #eee; border-radius:6px; padding:12px; font-family:'SF Mono',Consolas,monospace; font-size:12px; overflow-x:auto; color:#333; margin:0;">const ekascribe = getEkaScribeInstance({
+  access_token: '&lt;your token&gt;',
+  env: 'PROD',                                    // 'DEV' | 'PROD'
+  allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
+});</pre>
   </div>
 </div>
 
 <!-- Status Bar -->
 <div class="status-bar">
   <div class="status-dot dot-idle" id="statusDot"></div>
-  <span class="status-text" id="statusText">Idle - Fill config and click Start Recording</span>
+  <span class="status-text" id="statusText">Idle - Set CONFIG in the script, then click Start Recording</span>
   <span class="timer" id="timer" style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; color:#333; display:none;">00:00</span>
   <span class="mic-status" id="micStatus"></span>
 </div>
@@ -148,11 +106,37 @@
 </div>
 
 <script type="module">
-  // Use local build for development (run: cd packages/es11 && yarn build)
-  // Switch to CDN for production: 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs'
-  import { getEkaScribeInstance } from '../packages/es11/dist/index.mjs';
+  // ── SDK loaded from npm via CDN — vanilla HTML/JS, no bundler. ──
+  // We use esm.sh (NOT jsdelivr's "+esm"): the SDK depends on onnxruntime-web for
+  // voice-activity detection, and jsdelivr flattens it into one bundle, which
+  // breaks onnxruntime's backend registration ("registerBackend" error). esm.sh
+  // keeps dependencies as separate modules, so onnxruntime loads correctly.
+  // For local development against your own build, swap the URL for:
+  //   '../packages/es11/dist/index.mjs'  (run: cd packages/es11 && yarn build)
+  import { getEkaScribeInstance } from 'https://esm.sh/@eka-care/ekascribe-ts-sdk@3.0.30';
 
+  // ──────────────────────────────────────────────────────────
+  // CONFIG — the client controls these in code (no UI form).
+  // In a real app these come from your auth backend / app settings.
+  // ──────────────────────────────────────────────────────────
+  const CONFIG = {
+    access_token: 'YOUR_ACCESS_TOKEN',   // from your auth system
+    env: 'PROD',                          // 'DEV' or 'PROD'
+  };
+
+  // Create the SDK instance ONCE on page load
   let ekascribe = null;
+  try {
+    ekascribe = getEkaScribeInstance({
+      access_token: CONFIG.access_token,
+      env: CONFIG.env,
+      // allianceConfig.baseUrl is REQUIRED — the constructor throws without it.
+      allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
+    });
+  } catch (err) {
+    console.error('[EkaScribe] Initialization failed:', err);
+  }
+
   let currentTxnId = null;
   let sessionState = 'idle'; // idle | recording | paused | stopped
   let timerInterval = null;
@@ -231,14 +215,11 @@
     document.getElementById('btnPoll').disabled = (s !== 'stopped');
   }
 
-  // ─── Start Recording (getInstance + init + start) ───────
+  // ─── Start Recording (getInstance + startRecordingV2) ───────
 
   async function handleStart() {
-    const accessToken = document.getElementById('accessToken').value.trim();
-    const templateId = document.getElementById('templateId').value.trim();
-
-    if (!accessToken) { log('Access token is required', 'error'); return; }
-    if (!templateId) { log('Template ID is required', 'error'); return; }
+    // Instance is created once at page load — handlers only call its methods, never re-create it.
+    if (!ekascribe) { log('SDK not initialized — check CONFIG / console errors', 'error'); setStatus('idle', 'Init failed'); return; }
 
     // 0. Request mic permission first before any API calls
     setStatus('processing', 'Requesting microphone permission...');
@@ -253,74 +234,29 @@
       return;
     }
 
-    setStatus('processing', 'Initializing...');
+    setStatus('processing', 'Starting...');
 
-    // 1. Get SDK instance
-    const env = document.getElementById('env').value;
-    const clientId = document.getElementById('clientId').value.trim();
-
-    ekascribe = getEkaScribeInstance({
-      access_token: accessToken,
-      env,
-      ...(clientId ? { clientId } : {}),
-    });
-
-   
-    // 3. Init transaction
-    currentTxnId = `test-${crypto.randomUUID()}`;
-    log(`Initializing transaction: ${currentTxnId}`, 'info');
+    // 1. Start recording — a single call. startRecordingV2 creates the session.
+    // txn_id (sessionId) must be <= 32 chars (server limit) — we cap it at 30.
+    currentTxnId = `rx-${crypto.randomUUID().replace(/-/g, '')}`.slice(0, 30);
+    log(`Starting recording: ${currentTxnId}`, 'info');
 
     try {
-      const initRes = await ekascribe.initTransaction({
-        mode: document.getElementById('mode').value,
-        input_language: [document.getElementById('inputLang').value],
-        output_format_template: [{ template_id: templateId }],
-        txn_id: currentTxnId,
-        transfer: 'vaded',
-        model_type: document.getElementById('modelType').value,
-        system_info: {
-          platform: 'web',
-          language: navigator.language || 'en',
-          time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        ...(document.getElementById('patientName').value.trim()
-          ? {
-              patient_details: {
-                username: document.getElementById('patientName').value.trim(),
-                age: 0,
-                biologicalSex: 'O',
-              },
-            }
-          : {}),
+      const startRes = await ekascribe.startRecordingV2({
+        sessionId: currentTxnId,
+        templates: ["clinical_notes_template"],
+        languageHint: ["en", "hi"],
+        sessionMode: "consultation",
+        model: "pro",
+        patientDetails: {
+          name: "Patient name",
+          gender: 'O',
+        }, 
       });
 
-      if (initRes.error_code) {
-        log(`Init failed: ${initRes.error_code} - ${initRes.message}`, 'error');
-        setStatus('idle', 'Init failed');
-        return;
-      }
-
-      log(`Transaction initialized (status: ${initRes.status_code})`, 'success');
-    } catch (err) {
-      log(`Init failed: ${err.message}`, 'error');
-      setStatus('idle', 'Init failed');
-      return;
-    }
-
-    // 4. Start recording - browser will prompt mic permission here
-    log('Requesting microphone access and starting recording...', 'info');
-
-    try {
-      const startRes = await ekascribe.startRecording();
-
-      if (startRes.error_code === 'microphone') {
-        log('Microphone permission denied. Allow mic access in browser settings and try again.', 'error');
-        setStatus('idle', 'Mic permission denied');
-        return;
-      }
-      if (startRes.error_code === 'vad_not_initialized') {
-        log('VAD failed to initialize. Please try again.', 'error');
-        setStatus('idle', 'VAD init failed');
+      if (startRes.error_code === 'txn_limit_exceeded') {
+        log('Transaction limit exceeded for this account.', 'error');
+        setStatus('idle', 'Limit exceeded');
         return;
       }
       if (startRes.error_code) {
@@ -329,6 +265,7 @@
         return;
       }
 
+      currentTxnId = startRes.txn_id || currentTxnId;
       log('Recording started - speak into your microphone', 'success');
       resetTimer();
       startTimer();
@@ -375,14 +312,27 @@
       const res = await ekascribe.endRecording();
       log(`End - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'error');
 
-      if (res.failed_files?.length) {
-        log(`Failed uploads: ${res.failed_files.join(', ')}`, 'warn');
-      }
       if (res.total_audio_files?.length) {
         log(`Total audio files: ${res.total_audio_files.length}`, 'info');
       }
       if (res.error_code) {
         log(`End error: ${res.error_code} - ${res.message}`, 'warn');
+      }
+
+      // Some chunks may have failed to upload. Their audio is held in memory and
+      // can be retried with retryUploadRecording(). Without a successful retry the
+      // transcript for those chunks will be missing (partial output).
+      if (res.failed_files?.length) {
+        log(`${res.failed_files.length} upload(s) failed: ${res.failed_files.join(', ')} — retrying...`, 'warn');
+        const retry = await ekascribe.retryUploadRecording();
+        log(`Retry - status: ${retry.status_code}: ${retry.message}`, retry.error_code ? 'error' : 'info');
+
+        if (retry.failed_files?.length) {
+          // Still failed after retry — these chunks are lost; output will be partial.
+          log(`${retry.failed_files.length} file(s) still failed after retry: ${retry.failed_files.join(', ')}. Output may be partial.`, 'error');
+        } else if (!retry.error_code) {
+          log('All previously-failed uploads succeeded on retry.', 'success');
+        }
       }
 
       stopTimer();
@@ -399,36 +349,38 @@
   async function handlePoll() {
     if (!ekascribe || !currentTxnId) return;
 
-    log(`Polling output for: ${currentTxnId}`, 'info');
+    log(`Fetching status for: ${currentTxnId}`, 'info');
     setStatus('processing', 'Fetching session output (polls up to 2 min)...');
     document.getElementById('outputSection').style.display = 'none';
 
     try {
-      const res = await ekascribe.pollSessionOutput({
-        txn_id: currentTxnId,
-        max_polling_time: 2 * 60 * 1000,
+      // getSessionStatus is the current method (pollSessionOutput is deprecated).
+      // Passing `poll` makes it poll until the session reaches a terminal state.
+      // 12 attempts × 5s ≈ 1 min. Returns an SDKResult: { success, data, error, status_code }.
+      const res = await ekascribe.getSessionStatus(currentTxnId, {
+        poll: { maxAttempts: 12, intervalMs: 5000 },
       });
 
-      log(`Output response - status: ${res.status_code}`, res.status_code === 200 ? 'success' : 'warn');
+      log(`Status response - code: ${res.status_code}`, res.success ? 'success' : 'warn');
 
-      if (res.response?.data) {
+      if (res.success) {
         document.getElementById('outputSection').style.display = 'block';
-        document.getElementById('outputContent').textContent = JSON.stringify(res.response.data, null, 2);
-        log('Output received - displayed above the log', 'success');
+        document.getElementById('outputContent').textContent = JSON.stringify(res.data, null, 2);
+        log(`Session status: ${res.data.status}`, 'success');
       } else {
-        log(`No output data: ${res.message || 'still processing'}`, 'warn');
+        log(`No output: ${res.error?.message || res.error?.code || 'still processing'}`, 'warn');
       }
 
       setStatus('stopped', 'Done');
     } catch (err) {
-      log(`Poll failed: ${err.message}`, 'error');
-      setStatus('stopped', 'Poll failed');
+      log(`Status fetch failed: ${err.message}`, 'error');
+      setStatus('stopped', 'Fetch failed');
     }
   }
 
   // Init
   updateButtons();
-  log('Ready. Fill in config and click Start Recording.', 'info');
+  log('Ready. Set the CONFIG object in the script, then click Start Recording.', 'info');
 </script>
 
 </body>

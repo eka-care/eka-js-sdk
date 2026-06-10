@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EkaScribe — Client Integration</title>
+  <title>EkaScribe — UI Controlled by SDK</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
 
-    .topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; }
+    .topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; display: flex; align-items: center; gap: 10px; }
     .topbar h1 { font-size: 18px; }
+    .topbar .mode-badge { font-size: 11px; background: #ede9fe; color: #6c5ce7; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
 
     .content { padding: 24px; max-width: 800px; margin: 0 auto; }
     .section-title { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
@@ -29,10 +30,20 @@
 
 <div class="topbar">
   <h1>My Clinic App</h1>
+  <span class="mode-badge">UI controlled by SDK</span>
 </div>
 
 <div class="content">
   <p class="section-title">Today's Patients</p>
+  <div style="margin:-6px 0 16px;">
+    <div style="font-size:12px; color:#888; margin-bottom:6px;">Create the instance <strong>once</strong> on load (widget enabled here), then call <code>startForPatient()</code> per patient:</div>
+    <pre style="background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:12px; font-family:'SF Mono',Consolas,monospace; font-size:12px; overflow-x:auto; color:#333; margin:0;">const ekascribe = getEkaScribeInstance({
+  access_token: '&lt;your token&gt;',
+  env: 'PROD',                                    // 'DEV' | 'PROD'
+  allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
+  widget: { enabled: true, sessionDefaults: { ... }, callbacks: { ... } },
+});</pre>
+  </div>
   <div class="patient-list" id="patientList"></div>
 </div>
 
@@ -42,47 +53,22 @@
   ╚══════════════════════════════════════════════════════════════╝
 -->
 <script type="module">
-  import { getEkaScribeInstance } from '../eka-sdk/ekascribe-v2rx/index.ts';
+  // ── SDK loaded straight from npm via CDN — no bundler, no build step. ──
+  // This is plain HTML + JS: a <script type="module"> and the import URL below.
+  // We use esm.sh (NOT jsdelivr's "+esm"): the SDK depends on onnxruntime-web
+  // for voice-activity detection, and jsdelivr flattens it into one bundle,
+  // which breaks onnxruntime's backend registration ("registerBackend" error).
+  // esm.sh keeps dependencies as separate modules, so onnxruntime loads correctly.
+  // (npm: @eka-care/ekascribe-ts-sdk)
+  import { getEkaScribeInstance } from 'https://esm.sh/@eka-care/ekascribe-ts-sdk@3.0.30';
 
-  // ── Step 1: Initialize SDK once (on page load) ──────────────
-  // These values come from your backend / environment config.
-  const ekascribe = getEkaScribeInstance({
-    access_token: 'YOUR_ACCESS_TOKEN',        // from your auth system
-    env: 'PROD',                                // 'DEV' or 'PROD'
-    allianceConfig: {
-      baseUrl: 'https://api.eka.care/voice/v1',
-    },
-    widget: {
-      enabled: true,
-      theme: 'light',                           // 'dark' or 'light'
-      position: { bottom: 20, right: 20 },     // initial position (px)
-      sessionDefaults: {
-        input_language: ['en', 'hi'],
-        output_format_template: [{ template_id: "7d03dd95-45b2-41e1-a5d3-fba98fee0418" }],
-        model_type: 'pro',
-        mode: 'consultation',
-      },
-      callbacks: {
-        onRecordingStart: (data) => {
-          console.log('[EkaScribe] Recording started', data.txn_id);
-        },
-        onRecordingStop: (data) => {
-          console.log('[EkaScribe] Recording stopped', data.txn_id, data.duration);
-        },
-        onProcessingComplete: (data) => {
-          console.log('[EkaScribe] Notes ready', data.txn_id);
-          // data.sessionData contains the structured output — use it to
-          // populate your EMR, display notes, etc.
-        },
-        onError: (data) => {
-          console.error('[EkaScribe] Error', data.error_code, data.message);
-        },
-      },
-    },
-  });
+  // Declared up front so the per-patient click handlers (below) can use it
+  // once initialization completes.
+  let ekascribe = null;
 
-  // ── Step 2: For each patient, just call startForPatient() ───
-  // The widget handles recording UI, pause/resume/stop, polling.
+  // ── Step 1: Render your patient list (your app's own UI) ────
+  // This is plain app code and does NOT depend on the SDK, so the list always
+  // renders — even if SDK init below fails (e.g. a placeholder access token).
 
   const patients = [
     { id: 'p-001', name: 'Ravi Kumar',   age: 45, gender: 'M', mobile: '9876543210' },
@@ -104,9 +90,14 @@
     btn.className = 'btn-mic';
     btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
     btn.addEventListener('click', () => {
+      if (!ekascribe) {
+        console.warn('[EkaScribe] SDK not ready — check your access token / init errors.');
+        return;
+      }
       // ── This is the only per-patient call ──
       ekascribe.startForPatient({
-        txn_id: `${p.id}-${Date.now()}`,
+        // txn_id must be <= 32 chars (server limit); this stays well under 30.
+        txn_id: `${p.id}-${Date.now()}`.slice(0, 30),
         patient_details: {
           username: p.name,
           age: p.age,
@@ -118,6 +109,49 @@
     row.appendChild(btn);
     list.appendChild(row);
   });
+
+  // ── Step 2: Initialize the SDK once (on app load) ──────────
+  // These values come from your backend / environment config.
+  // Replace 'YOUR_ACCESS_TOKEN' with a real token. The try/catch keeps an init
+  // error from blanking the page — the patient list above still renders.
+  try {
+    ekascribe = getEkaScribeInstance({
+      access_token: 'YOUR_ACCESS_TOKEN',        // from your auth system
+      env: 'PROD',                              // 'DEV' or 'PROD'
+      allianceConfig: {
+        baseUrl: 'https://api.eka.care/voice/v1',
+      },
+      widget: {
+        enabled: true,
+        theme: 'light',                         // 'dark' or 'light'
+        position: { bottom: 20, right: 20 },    // initial position (px)
+        sessionDefaults: {
+          input_language: ['en', 'hi'],
+          output_format_template: [{ template_id: "7d03dd95-45b2-41e1-a5d3-fba98fee0418" }],
+          model_type: 'pro',
+          mode: 'consultation',
+        },
+        callbacks: {
+          onRecordingStart: (data) => {
+            console.log('[EkaScribe] Recording started', data.txn_id);
+          },
+          onRecordingStop: (data) => {
+            console.log('[EkaScribe] Recording stopped', data.txn_id, data.duration);
+          },
+          onProcessingComplete: (data) => {
+            console.log('[EkaScribe] Notes ready', data.txn_id);
+            // data.sessionData contains the structured output — use it to
+            // populate your EMR, display notes, etc.
+          },
+          onError: (data) => {
+            console.error('[EkaScribe] Error', data.error_code, data.message);
+          },
+        },
+      },
+    });
+  } catch (err) {
+    console.error('[EkaScribe] Initialization failed:', err);
+  }
 </script>
 
 </body>
