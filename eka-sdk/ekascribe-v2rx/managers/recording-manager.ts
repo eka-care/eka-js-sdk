@@ -181,6 +181,8 @@ export class RecordingManager {
         };
       }
 
+      this.allianceClient.clearRecordingState();
+
       const result: SDKResult<void> = await this.allianceClient.startRecordingWithSession(
         this.storedSession,
         {
