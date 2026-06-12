@@ -40,7 +40,7 @@
     med-scribe-alliance-ts-sdk "2.0.32"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "3.0.31"
+  version "3.0.32"
   resolved "file:packages/es11"
   dependencies:
     marked "^18.0.4"

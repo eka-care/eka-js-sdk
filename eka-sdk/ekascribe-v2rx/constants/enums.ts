@@ -28,7 +28,6 @@ export enum RESULT_STATUS {
 }
 
 export enum ERROR_CODE {
-  MICROPHONE = 'microphone',
   TXN_INIT_FAILED = 'txn_init_failed',
   TXN_LIMIT_EXCEEDED = 'txn_limit_exceeded',
   INTERNAL_SERVER_ERROR = 'internal_server_error',
