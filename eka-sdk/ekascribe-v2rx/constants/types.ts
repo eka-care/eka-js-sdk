@@ -814,6 +814,10 @@ export type TGetV1SessionDetailsData = {
       patient_oid?: string;
     }>;
   };
+  input_language: string[];
+  request_templates: Record<string, []>;
+  consultation_mode: string;
+  model_type: string;
 };
 
 export type TGetV1SessionDetailsResponse = {
