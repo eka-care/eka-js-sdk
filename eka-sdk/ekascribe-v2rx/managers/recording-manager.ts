@@ -23,6 +23,7 @@ import {
   type GetSessionStatusResponse,
   type PollOptions,
   type PatchSessionResponse,
+  type SessionUploadInfo,
   SessionStatus,
   ScribeError,
 } from 'med-scribe-alliance-ts-sdk';
@@ -430,41 +431,34 @@ export class RecordingManager {
   }
 
   async processPreRecordedAudio({
-    uploadUrl,
+    upload,
     audioFile,
+    audioFileName = 'audio_1.mp3',
   }: {
-    uploadUrl: string;
+    upload: SessionUploadInfo;
     audioFile: File | Blob;
     audioFileName?: string;
   }): Promise<TStartRecordingResponse> {
     try {
-      const url = uploadUrl.endsWith('/') ? `${uploadUrl}audio_1.mp3` : `${uploadUrl}/audio_1.mp3`;
+      const result = await this.allianceClient.uploadAudioFile(audioFile, audioFileName, upload);
 
-      const res = await this.transport.request({
-        method: 'POST',
-        url,
-        body: audioFile,
-        headers: { 'Content-Type': 'audio/mp3' },
-      });
-
-      if (res.status < 200 || res.status >= 300) {
+      if (!result.success) {
         return {
           error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: res.status,
-          message: `Audio upload failed with status: ${res.status}`,
+          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: result.error.message || 'Audio upload failed.',
         };
       }
 
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
         message: 'Audio file uploaded successfully.',
       };
     } catch (error) {
-      const mapped = mapTransportError(error, 'Audio upload failed:');
       return {
-        error_code: mapped.error_code,
-        status_code: mapped.status_code,
-        message: mapped.message,
+        error_code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+        status_code: SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        message: `Failed to upload audio file. ${error}`,
       };
     }
   }

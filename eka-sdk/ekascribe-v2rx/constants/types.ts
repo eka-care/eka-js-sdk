@@ -86,6 +86,7 @@ import {
   API_STATUS,
   VAD_STATUS,
 } from './enums';
+import type { SessionUploadInfo } from 'med-scribe-alliance-ts-sdk';
 
 export type TGetConfigV2Response = {
   data?: {
@@ -793,7 +794,7 @@ export type TGetV1SessionDetailsData = {
   wid: string;
   created_at: number;
   expires_at: number;
-  upload_url: string;
+  upload_url: SessionUploadInfo;
   status: string;
   user_status: 'init' | 'recording_started' | 'commit' | string;
   transfer: string;
@@ -826,7 +827,7 @@ export type TStartRecordingForExistingSessionRequest = {
   txn_id: string;
   created_at: number;
   expires_at: string;
-  upload_url: string;
+  upload_url: SessionUploadInfo;
   business_id?: string;
   microphoneID?: string;
 };

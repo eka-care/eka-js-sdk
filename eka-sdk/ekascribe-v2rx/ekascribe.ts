@@ -34,6 +34,7 @@ import {
   type GetSessionStatusResponse,
   type PollOptions,
   type PatchSessionResponse,
+  type SessionUploadInfo,
   TransportMode,
 } from 'med-scribe-alliance-ts-sdk';
 
@@ -261,12 +262,13 @@ class EkaScribe {
    *
    * Client flow:
    * 1. createSession() — via sessions.createSession()
-   * 2. processPreRecordedAudio(uploadUrl, audioFile, audioFileName) — this method
+   * 2. processPreRecordedAudio(upload, audioFile, audioFileName) — this method
    * 3. endSession — via sessions.endSession()
    */
   processPreRecordedAudio(request: {
-    uploadUrl: string;
+    upload: SessionUploadInfo;
     audioFile: File | Blob;
+    audioFileName?: string;
   }): Promise<TStartRecordingResponse> {
     return this.recording.processPreRecordedAudio(request);
   }

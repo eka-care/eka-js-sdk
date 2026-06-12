@@ -595,8 +595,8 @@ Upload a pre-recorded audio file instead of live recording. Use this for non-rea
 
 ```ts
 const result = await ekascribe.processPreRecordedAudio({
-  uploadUrl: session.upload_url,       // from createSession response
-  audioFile: audioBlob,                // File or Blob
+  upload: session.upload_url,       // upload_url payload from createSession response
+  audioFile: audioBlob,             // File or Blob
 });
 ```
 
@@ -604,8 +604,9 @@ const result = await ekascribe.processPreRecordedAudio({
 
 ```ts
 {
-  uploadUrl: string;        // S3 upload URL from session
-  audioFile: File | Blob;   // the audio file
+  upload: SessionUploadInfo;   // upload_url payload from session (object)
+  audioFile: File | Blob;      // the audio file
+  audioFileName?: string;      // optional storage object name (default 'audio_1.mp3')
 }
 ```
 
@@ -699,7 +700,7 @@ type TGetV1SessionDetailsResponse = {
     wid: string;
     created_at: number;
     expires_at: number;
-    upload_url: string;
+    upload_url: SessionUploadInfo;
     status: string;
     user_status: 'init' | 'recording_started' | 'commit' | string;
     transfer: string;
