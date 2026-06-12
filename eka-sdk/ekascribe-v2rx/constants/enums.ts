@@ -40,6 +40,7 @@ export enum ERROR_CODE {
   UNKNOWN_ERROR = 'unknown_error',
   UNAUTHORIZED = 'unauthorized',
   FORBIDDEN = 'forbidden',
+  START_RECORDING_FAILED = 'start_recording_failed',
 }
 
 export enum PROCESSING_STATUS {
