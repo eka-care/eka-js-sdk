@@ -193,7 +193,7 @@ export class RecordingManager {
 
       if (!result.success) {
         return {
-          error_code: ERROR_CODE.MICROPHONE,
+          error_code: ERROR_CODE.START_RECORDING_FAILED,
           status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
           message: result.error.message || 'Failed to start recording.',
         };
@@ -237,7 +237,7 @@ export class RecordingManager {
 
       if (!result.success) {
         return {
-          error_code: ERROR_CODE.MICROPHONE,
+          error_code: ERROR_CODE.START_RECORDING_FAILED,
           status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
           message: result.error.message || 'Failed to start recording for existing session.',
         };
