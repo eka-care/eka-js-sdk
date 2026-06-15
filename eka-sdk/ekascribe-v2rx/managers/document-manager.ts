@@ -106,7 +106,6 @@ export class DocumentManager {
         method: 'POST',
         url: `${this.hosts.cookV1}/medai/ai-create-template`,
         body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 60000,
       });
 
