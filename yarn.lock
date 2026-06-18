@@ -40,11 +40,11 @@
     med-scribe-alliance-ts-sdk "2.0.34"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "3.0.35"
+  version "3.0.37"
   resolved "file:packages/es11"
   dependencies:
     marked "^18.0.4"
-    med-scribe-alliance-ts-sdk "2.0.34"
+    med-scribe-alliance-ts-sdk "^2.0.37"
 
 "@esbuild/darwin-arm64@0.25.12":
   version "0.25.12"
@@ -1305,20 +1305,20 @@ marked@^18.0.4:
   resolved "https://registry.npmjs.org/marked/-/marked-18.0.4.tgz"
   integrity sha512-c/BTaKzg0G6ezQx97DAkYU7k0HM6ys0FqYeKBL6hlBByZwy+ycA1+f0vDdjMHKKeEjdgkx0GOv9Il6D+85cOqA==
 
-med-scribe-alliance-ts-sdk@2.0.34:
-  version "2.0.34"
-  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.34.tgz"
-  integrity sha512-EPMZx16m+eAc+lZwYZnpid6w+aFU7JV09vH09G9egsk5qaTizdKiyj2dIp/fGgRhil09ztG5bI1iVpoVjaQECQ==
+med-scribe-alliance-ts-sdk@^2.0.37:
+  version "2.0.37"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.37.tgz"
+  integrity sha512-PC8DK7Q9MjUDGuqujs08jgQsHz4tLioO6lM9GlsndhwzsVZiqdq6hWc8iNZTnKUY2aVyeiGxtIphS9RDmFap+g==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
     "@ricky0123/vad-web" "^0.0.22"
     core-js "^3.48.0"
     zod "^4.4.3"
 
-med-scribe-alliance-ts-sdk@2.0.35:
-  version "2.0.35"
-  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.35.tgz"
-  integrity sha512-M0uWDI472j0e29JgCVbqyz3neV6DV1qwAxSdtrR83T6O3tjYUGhrvHuKDHccfdVf2RshgK7rV6dJxGhlDgjs5w==
+med-scribe-alliance-ts-sdk@2.0.34:
+  version "2.0.34"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.34.tgz"
+  integrity sha512-EPMZx16m+eAc+lZwYZnpid6w+aFU7JV09vH09G9egsk5qaTizdKiyj2dIp/fGgRhil09ztG5bI1iVpoVjaQECQ==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
     "@ricky0123/vad-web" "^0.0.22"
