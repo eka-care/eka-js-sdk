@@ -351,7 +351,7 @@ export class RecordingManager {
 
   async getSessionStatus(
     sessionId?: string,
-    options?: { poll?: PollOptions }
+    options?: { poll?: PollOptions; templateId?: string }
   ): Promise<SDKResult<GetSessionStatusResponse> & { status_code: number }> {
     const targetId = sessionId || this.txnID;
 

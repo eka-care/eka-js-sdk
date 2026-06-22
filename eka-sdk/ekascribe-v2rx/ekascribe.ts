@@ -244,7 +244,7 @@ class EkaScribe {
 
   getSessionStatus(
     sessionId?: string,
-    options?: { poll?: PollOptions }
+    options?: { poll?: PollOptions; templateId?: string }
   ): Promise<SDKResult<GetSessionStatusResponse>> {
     return this.recording.getSessionStatus(sessionId, options);
   }
