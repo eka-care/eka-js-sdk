@@ -279,6 +279,10 @@ export class RecordingManager {
     }
   }
 
+  forceAllowMoreChunks(): void {
+    this.allianceClient.forceAllowMoreChunks();
+  }
+
   resumeRecording(): TPauseRecordingResponse {
     try {
       this.allianceClient.resumeRecording();

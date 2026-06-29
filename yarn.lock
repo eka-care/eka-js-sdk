@@ -33,14 +33,14 @@
   integrity sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==
 
 "@eka-care/ekascribe-ts-sdk-legacy@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es6":
-  version "3.0.5"
+  version "3.0.6"
   resolved "file:packages/es6"
   dependencies:
     core-js "^3.38.0"
     med-scribe-alliance-ts-sdk "2.0.34"
 
 "@eka-care/ekascribe-ts-sdk@file:/Users/sanikagoyal/Desktop/eka.care/eka-js-sdk/packages/es11":
-  version "3.0.37"
+  version "3.0.39"
   resolved "file:packages/es11"
   dependencies:
     marked "^18.0.4"

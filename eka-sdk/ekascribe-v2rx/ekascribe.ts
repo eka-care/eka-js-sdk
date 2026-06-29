@@ -238,6 +238,14 @@ class EkaScribe {
     return this.recording.resumeRecording();
   }
 
+  /**
+   * Lifts the maximum chunk limit so recording can continue uploading audio
+   * chunks beyond the default cap.
+   */
+  forceAllowMoreChunks(): void {
+    return this.recording.forceAllowMoreChunks();
+  }
+
   endRecording(): Promise<TEndRecordingResponse> {
     return this.recording.endRecording();
   }
