@@ -11,7 +11,8 @@ import {
   TDeleteV1DocumentResponse,
   TPostV1ConvertToTemplateRequest,
   TPostV1ConvertToTemplateResponse,
-  TPostCookV1MediaAiCreateTemplateResponse,
+  TPostV1AiCreateTemplateRequest,
+  TPostV1AiCreateTemplateResponse,
 } from '../constants/types';
 import { ITransport } from '../transport/transport.interface';
 import { EkaHosts } from '../transport/hosts';
@@ -100,13 +101,30 @@ export class DocumentManager {
     }
   }
 
-  async aiGenerateTemplate(formData: FormData): Promise<TPostCookV1MediaAiCreateTemplateResponse> {
+  async aiGenerateTemplate({
+    file,
+    instruction,
+  }: TPostV1AiCreateTemplateRequest): Promise<TPostV1AiCreateTemplateResponse> {
     try {
-      const response = await this.transport.request<TPostCookV1MediaAiCreateTemplateResponse>({
+      const trimmedInstruction = instruction?.trim();
+
+      let body: FormData | { instruction: string };
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (trimmedInstruction) {
+          formData.append('instruction', trimmedInstruction);
+        }
+        body = formData;
+      } else {
+        body = { instruction: trimmedInstruction ?? '' };
+      }
+
+      const response = await this.transport.request<TPostV1AiCreateTemplateResponse>({
         method: 'POST',
-        url: `${this.hosts.cookV1}/medai/ai-create-template`,
-        body: formData,
-        timeout: 60000,
+        url: `${this.hosts.voiceV1}/template/ai-create-template`,
+        body,
+        timeout: 30000,
       });
 
       return { ...response.data, status_code: response.status };
@@ -115,7 +133,7 @@ export class DocumentManager {
       return {
         status_code: mapped.status_code,
         message: mapped.message,
-      } as TPostCookV1MediaAiCreateTemplateResponse;
+      } as TPostV1AiCreateTemplateResponse;
     }
   }
 

@@ -426,10 +426,14 @@ export interface TGetV1TemplatesResponse {
   error?: { code: string; message: string };
 }
 
-export type TPostCookV1MediaAiCreateTemplateResponse = {
+export interface TPostV1AiCreateTemplateRequest {
+  file?: File;
+  instruction?: string;
+}
+
+export type TPostV1AiCreateTemplateResponse = {
   title: string;
-  desc: string;
-  sections: TSection[];
+  template_instructions: string;
   status_code: number;
   message: string;
 };
