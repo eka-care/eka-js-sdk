@@ -1,6 +1,6 @@
 {
   "name": "@eka-care/ekascribe-ts-sdk-legacy",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "EkaScribe TypeScript SDK - ES6/ES2015 build with polyfills for legacy browser support",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "core-js": "^3.38.0",
-    "med-scribe-alliance-ts-sdk": "2.0.34"
+    "med-scribe-alliance-ts-sdk": "2.0.38"
   },
   "files": [
     "dist",
