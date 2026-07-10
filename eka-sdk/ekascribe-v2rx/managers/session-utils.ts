@@ -140,11 +140,17 @@ export class SessionUtils {
   async getSessionDetails({
     session_id,
     presigned = false,
+    version,
   }: TGetV1SessionDetailsRequest): Promise<TGetV1SessionDetailsResponse> {
     try {
+      const queryParams = new URLSearchParams({ presigned: String(presigned) });
+      if (version) {
+        queryParams.append('version', version);
+      }
+
       const response = await this.transport.request<TGetV1SessionDetailsResponse>({
         method: 'GET',
-        url: `${this.hosts.voiceV1}/sessions/${session_id}?presigned=${presigned}`,
+        url: `${this.hosts.voiceV1}/sessions/${session_id}?${queryParams.toString()}`,
       });
 
       return { ...response.data, status_code: response.status };
@@ -405,8 +411,11 @@ export class SessionUtils {
 
   // --- Alliance SDK methods ---
 
-  async createSession(request: CreateSessionRequest): Promise<SDKResult<CreateSessionResponse>> {
-    return this.allianceClient.createSession(request);
+  async createSession(
+    request: CreateSessionRequest,
+    version?: string
+  ): Promise<SDKResult<CreateSessionResponse>> {
+    return this.allianceClient.createSession(request, version);
   }
 
   async endSession(

@@ -238,6 +238,7 @@ export type TPostTransactionInitRequest = {
   patient_details?: TPatientDetails;
   model_type: string;
   version?: string;
+  api_version?: string;
   flavour?: string;
   batch_s3_url?: string;
   audio_file_names?: string[];
@@ -753,6 +754,7 @@ export type TPatchSessionContextResponse = {
 export type TGetV1SessionDetailsRequest = {
   session_id: string;
   presigned?: boolean;
+  version?: string;
 };
 
 export type TDocumentError = {

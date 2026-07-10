@@ -87,7 +87,8 @@ export class RecordingManager {
       };
 
       const result: SDKResult<CreateSessionResponse> = await this.allianceClient.createSession(
-        allianceRequest
+        allianceRequest,
+        request.api_version
       );
 
       if (!result.success) {
@@ -300,11 +301,11 @@ export class RecordingManager {
     }
   }
 
-  async endRecording(): Promise<TEndRecordingResponse> {
+  async endRecording(version?: string): Promise<TEndRecordingResponse> {
     try {
       this.tracker.addBreadcrumb('recording', 'endRecording', { txn_id: this.txnID });
 
-      const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording();
+      const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording(version);
 
       if (!result.success) {
         this.tracker.captureEvent('Session end failed', {
@@ -355,7 +356,7 @@ export class RecordingManager {
 
   async getSessionStatus(
     sessionId?: string,
-    options?: { poll?: PollOptions; templateId?: string }
+    options?: { poll?: PollOptions; templateId?: string; version?: string }
   ): Promise<SDKResult<GetSessionStatusResponse> & { status_code: number }> {
     const targetId = sessionId || this.txnID;
 
@@ -379,9 +380,10 @@ export class RecordingManager {
     };
   }
 
-  async retryUploadRecording(): Promise<TEndRecordingResponse> {
+  async retryUploadRecording(version?: string): Promise<TEndRecordingResponse> {
     try {
-      const result: SDKResult<RetryUploadResult> = await this.allianceClient.retryFailedUploads();
+      const result: SDKResult<RetryUploadResult> =
+        await this.allianceClient.retryFailedUploads(version);
 
       if (!result.success) {
         return {

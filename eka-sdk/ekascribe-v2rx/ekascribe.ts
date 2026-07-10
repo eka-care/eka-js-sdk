@@ -246,19 +246,19 @@ class EkaScribe {
     return this.recording.forceAllowMoreChunks();
   }
 
-  endRecording(): Promise<TEndRecordingResponse> {
-    return this.recording.endRecording();
+  endRecording(version?: string): Promise<TEndRecordingResponse> {
+    return this.recording.endRecording(version);
   }
 
   getSessionStatus(
     sessionId?: string,
-    options?: { poll?: PollOptions; templateId?: string }
+    options?: { poll?: PollOptions; templateId?: string; version?: string }
   ): Promise<SDKResult<GetSessionStatusResponse>> {
     return this.recording.getSessionStatus(sessionId, options);
   }
 
-  retryUploadRecording(): Promise<TEndRecordingResponse> {
-    return this.recording.retryUploadRecording();
+  retryUploadRecording(version?: string): Promise<TEndRecordingResponse> {
+    return this.recording.retryUploadRecording(version);
   }
 
   cancelSession(sessionId?: string): Promise<SDKResult<PatchSessionResponse>> {
