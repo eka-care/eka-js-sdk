@@ -840,6 +840,7 @@ export type TStartRecordingForExistingSessionRequest = {
   upload_url: SessionUploadInfo;
   business_id?: string;
   microphoneID?: string;
+  version?: string;
 };
 
 export type TPollingResponse = {

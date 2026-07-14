@@ -38,7 +38,7 @@
   ],
   "dependencies": {
     "marked": "^18.0.4",
-    "med-scribe-alliance-ts-sdk": "2.0.40"
+    "med-scribe-alliance-ts-sdk": "^2.0.40"
   },
   "devDependencies": {
     "vite-bundle-analyzer": "^1.3.6"

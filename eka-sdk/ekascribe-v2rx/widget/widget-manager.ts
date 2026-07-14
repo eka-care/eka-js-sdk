@@ -1,8 +1,5 @@
 import { marked } from 'marked';
-import type {
-  GetSessionStatusResponse,
-  TemplateEntryData,
-} from 'med-scribe-alliance-ts-sdk';
+import type { GetSessionStatusResponse, TemplateEntryData } from 'med-scribe-alliance-ts-sdk';
 import {
   WidgetState,
   type WidgetConfig,
@@ -50,7 +47,10 @@ export class WidgetManager {
 
   async startForPatient(patientConfig: StartForPatientConfig): Promise<void> {
     if (this.isStarting) {
-      this.callbacks.onError?.({ error_code: 'session_starting', message: 'A session is already being started.' });
+      this.callbacks.onError?.({
+        error_code: 'session_starting',
+        message: 'A session is already being started.',
+      });
       return;
     }
 
@@ -80,9 +80,10 @@ export class WidgetManager {
         patientDetails: patientConfig.patient_details
           ? {
               name: patientConfig.patient_details.username,
-              age: patientConfig.patient_details.age != null
-                ? String(patientConfig.patient_details.age)
-                : undefined,
+              age:
+                patientConfig.patient_details.age != null
+                  ? String(patientConfig.patient_details.age)
+                  : undefined,
               gender: patientConfig.patient_details.biologicalSex,
             }
           : undefined,
@@ -276,14 +277,11 @@ export class WidgetManager {
 
       if (targetData) {
         const content =
-          typeof targetData === 'string'
-            ? targetData
-            : JSON.stringify(targetData, null, 2);
+          typeof targetData === 'string' ? targetData : JSON.stringify(targetData, null, 2);
         result.notesHtml = marked.parse(content) as string;
       }
     }
 
     return result;
   }
-
 }

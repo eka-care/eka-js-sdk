@@ -234,6 +234,7 @@ export class RecordingManager {
         {
           uploadType: 'chunked',
           deviceId: request.microphoneID,
+          version: request.version,
         }
       );
 
@@ -301,11 +302,11 @@ export class RecordingManager {
     }
   }
 
-  async endRecording(version?: string): Promise<TEndRecordingResponse> {
+  async endRecording(): Promise<TEndRecordingResponse> {
     try {
       this.tracker.addBreadcrumb('recording', 'endRecording', { txn_id: this.txnID });
 
-      const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording(version);
+      const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording();
 
       if (!result.success) {
         this.tracker.captureEvent('Session end failed', {
@@ -380,10 +381,9 @@ export class RecordingManager {
     };
   }
 
-  async retryUploadRecording(version?: string): Promise<TEndRecordingResponse> {
+  async retryUploadRecording(): Promise<TEndRecordingResponse> {
     try {
-      const result: SDKResult<RetryUploadResult> =
-        await this.allianceClient.retryFailedUploads(version);
+      const result: SDKResult<RetryUploadResult> = await this.allianceClient.retryFailedUploads();
 
       if (!result.success) {
         return {
