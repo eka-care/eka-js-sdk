@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "core-js": "^3.38.0",
-    "med-scribe-alliance-ts-sdk": "2.0.38"
+    "med-scribe-alliance-ts-sdk": "2.0.42"
   },
   "files": [
     "dist",
