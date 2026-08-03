@@ -53,6 +53,7 @@ export type TGetStatusApiResponse = {
 };
 
 export type TGetStatusResponse = {
+  error_code?: ERROR_CODE;
   response?: TGetStatusApiResponse | null;
   status_code: number;
   message?: string;
@@ -89,6 +90,7 @@ import {
 import type { SessionUploadInfo } from 'med-scribe-alliance-ts-sdk';
 
 export type TGetConfigV2Response = {
+  error_code?: ERROR_CODE;
   data?: {
     supported_languages: TGetConfigItem[];
     supported_output_formats: TGetConfigItem[];
@@ -306,6 +308,7 @@ export type TEndV2RxResponse = {
 };
 
 export type TGetTransactionHistoryResponse = {
+  error_code?: ERROR_CODE;
   data?: TSessionHistoryData[];
   status?: string;
   status_code: number;
@@ -405,6 +408,7 @@ export interface TPostV1TemplateRequest {
 }
 
 export interface TPostV1TemplateResponse {
+  error_code?: ERROR_CODE;
   status_code: number;
   msg: string;
   template_id?: string;
@@ -422,6 +426,7 @@ export interface TTemplate {
 }
 
 export interface TGetV1TemplatesResponse {
+  error_code?: ERROR_CODE;
   items: TTemplate[];
   status_code: number;
   error?: { code: string; message: string };
@@ -433,6 +438,7 @@ export interface TPostV1AiCreateTemplateRequest {
 }
 
 export type TPostV1AiCreateTemplateResponse = {
+  error_code?: ERROR_CODE;
   title: string;
   template_instructions: string;
   status_code: number;
@@ -447,10 +453,12 @@ export interface TPostV1TemplateSectionRequest {
 }
 
 export interface TPostV1TemplateSectionResponse {
+  error_code?: ERROR_CODE;
   msg: string;
   section_id: string;
   status_code: number;
-  action: 'updated' | 'created_custom';
+  /** Absent when the call failed. */
+  action?: 'updated' | 'created_custom';
   error?: { code: string; message: string };
 }
 
@@ -465,6 +473,7 @@ export interface TSection {
 }
 
 export interface TGetV1TemplateSectionsResponse {
+  error_code?: ERROR_CODE;
   items: TSection[];
   status_code: number;
   error?: { code: string; message: string };
@@ -506,6 +515,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
 };
 
 export interface TPatchVoiceApiV2ConfigResponse extends TPatchVoiceApiV2ConfigRequest {
+  error_code?: ERROR_CODE;
   msg: string;
   status_code: number;
   error?: { code: string; message: string };
@@ -519,6 +529,7 @@ export type TPostV1ConvertToTemplateRequest = {
 };
 
 export type TPostV1ConvertToTemplateResponse = {
+  error_code?: ERROR_CODE;
   status: 'success' | 'failed';
   message: string;
   txn_id: string;
@@ -553,6 +564,7 @@ export type TPostV1FileUploadResponse = {
 };
 
 export type TPatchVoiceApiV3StatusResponse = {
+  error_code?: ERROR_CODE;
   status: string;
   message: string;
   txn_id: string;
@@ -633,6 +645,7 @@ export type TDoctorHeaderFooterInfo = {
 };
 
 export type TGetDoctorHeaderFooterResponse = {
+  error_code?: ERROR_CODE;
   data: TDoctorHeaderFooterInfo;
   status_code: number;
   message?: string;
@@ -648,12 +661,14 @@ export type TClinicInfo = {
 };
 
 export type TGetDoctorClinicsResponse = {
+  error_code?: ERROR_CODE;
   data: TClinicInfo[] | null;
   status_code: number;
   message?: string;
 };
 
 export type TDeleteTransactionResponse = {
+  error_code?: ERROR_CODE;
   status_code: number;
   message?: string;
   status?: string;
@@ -685,6 +700,7 @@ export type TSuggestedMedication = {
 };
 
 export type TSuggestedMedicationResponse = {
+  error_code?: ERROR_CODE;
   status_code: number;
   message?: string;
   session_id?: string;
@@ -702,6 +718,7 @@ export type TPostV1DocumentRequest = {
 };
 
 export type TPostV1DocumentResponse = {
+  error_code?: ERROR_CODE;
   status_code: number;
   status?: string;
   message?: string;
@@ -729,6 +746,7 @@ export type TPostV1DocumentResponse = {
 };
 
 export type TDeleteV1DocumentResponse = {
+  error_code?: ERROR_CODE;
   status_code: number;
   message?: string;
   [key: string]: unknown;
@@ -746,6 +764,7 @@ export type TPatchSessionContextRequest = {
 };
 
 export type TPatchSessionContextResponse = {
+  error_code?: ERROR_CODE;
   status_code: number;
   message?: string;
   [key: string]: unknown;
@@ -827,6 +846,7 @@ export type TGetV1SessionDetailsData = {
 };
 
 export type TGetV1SessionDetailsResponse = {
+  error_code?: ERROR_CODE;
   data?: TGetV1SessionDetailsData;
   status_code: number;
   message?: string;
@@ -844,6 +864,7 @@ export type TStartRecordingForExistingSessionRequest = {
 };
 
 export type TPollingResponse = {
+  error_code?: ERROR_CODE;
   response?: TGetStatusApiResponse | null;
   status_code: number;
   errorMessage?: string;

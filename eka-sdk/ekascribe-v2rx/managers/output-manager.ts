@@ -1,5 +1,4 @@
-import { ERROR_CODE } from '../constants/enums';
-import { mapTransportError } from '../utils/map-transport-error';
+import { mapTransportError, serverErrorCode } from '../utils/map-transport-error';
 import {
   TPartialResultCallback,
   TPollingResponse,
@@ -21,7 +20,7 @@ export class OutputManager {
       return await this.fetchV3Status(txn_id);
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch output templates,');
-      return { status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped };
     }
   }
 
@@ -30,7 +29,7 @@ export class OutputManager {
       return await this.fetchV3Status(txn_id, 'transcript=true', 15000);
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch output transcription,');
-      return { status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped };
     }
   }
 
@@ -39,23 +38,17 @@ export class OutputManager {
     chunkNumber: string
   ): Promise<TFetchChunkTranscriptResult> {
     try {
-      const response = await this.transport.request<
-        TChunkTranscriptResponse | { error: { code: string } }
-      >({
+      // Non-2xx responses reject in the transport and land in the catch below.
+      const response = await this.transport.request<TChunkTranscriptResponse>({
         method: 'GET',
         url: `${this.hosts.voiceV3}/transcript/${txnId}/${chunkNumber}`,
         timeout: 10000,
       });
 
-      if (response.status >= 400) {
-        const errorData = response.data as { error?: { code?: string } };
-        return { success: false, error: errorData?.error?.code ?? ERROR_CODE.UNKNOWN_ERROR };
-      }
-
-      return { success: true, data: response.data as TChunkTranscriptResponse };
+      return { success: true, data: response.data };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch chunk transcript,');
-      return { success: false, error: mapped.error_code };
+      return { success: false, error: serverErrorCode(error) ?? mapped.error_code };
     }
   }
 
@@ -154,7 +147,9 @@ export class OutputManager {
                 return createResponse(
                   status_code,
                   null,
-                  response?.error?.message || 'Backend error while fetching results.',
+                  response?.error?.message ||
+                    getResponse.message ||
+                    'Backend error while fetching results.',
                   'failed'
                 );
               }
@@ -205,7 +200,7 @@ export class OutputManager {
       };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch status,');
-      return { status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped };
     }
   }
 

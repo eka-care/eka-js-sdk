@@ -112,7 +112,7 @@ export class SessionUtils {
       };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch transactions,');
-      return { status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped };
     }
   }
 
@@ -126,7 +126,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to delete transaction,');
-      return { status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped };
     }
   }
 
@@ -156,10 +156,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch session details,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TGetV1SessionDetailsResponse;
+      return { ...mapped } as TGetV1SessionDetailsResponse;
     }
   }
 
@@ -173,10 +170,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch suggested medications,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TSuggestedMedicationResponse;
+      return { ...mapped } as TSuggestedMedicationResponse;
     }
   }
 
@@ -194,10 +188,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to add session context,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPatchSessionContextResponse;
+      return { ...mapped } as TPatchSessionContextResponse;
     }
   }
 
@@ -215,10 +206,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to remove session context,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPatchSessionContextResponse;
+      return { ...mapped } as TPatchSessionContextResponse;
     }
   }
 
@@ -238,10 +226,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update result summary,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPatchVoiceApiV3StatusResponse;
+      return { ...mapped } as TPatchVoiceApiV3StatusResponse;
     }
   }
 
@@ -257,7 +242,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch configurations,');
-      return { status_code: mapped.status_code, message: mapped.message } as TGetConfigV2Response;
+      return { ...mapped } as TGetConfigV2Response;
     }
   }
 
@@ -271,7 +256,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch configurations,');
-      return { status_code: mapped.status_code, message: mapped.message } as TGetConfigV2Response;
+      return { ...mapped } as TGetConfigV2Response;
     }
   }
 
@@ -289,10 +274,7 @@ export class SessionUtils {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update config,');
-      return {
-        status_code: mapped.status_code,
-        msg: mapped.message,
-      } as TPatchVoiceApiV2ConfigResponse;
+      return { ...mapped, msg: mapped.message, request_type: request.request_type, data: {} };
     }
   }
 
@@ -358,9 +340,8 @@ export class SessionUtils {
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch doctor header/footer,');
       return {
+        ...mapped,
         data: this.getDefaultHeaderFooterInfo(),
-        status_code: mapped.status_code,
-        message: mapped.message,
       };
     }
   }
@@ -405,7 +386,7 @@ export class SessionUtils {
       };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch doctor clinics,');
-      return { data: null, status_code: mapped.status_code, message: mapped.message };
+      return { ...mapped, data: null };
     }
   }
 

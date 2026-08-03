@@ -2,6 +2,11 @@ import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { mapTransportError } from '../utils/map-transport-error';
 import {
+  mapAllianceError,
+  allianceResultStatus,
+  confirmedSuccessStatus,
+} from '../utils/map-alliance-error';
+import {
   TPostTransactionInitRequest,
   TPostTransactionResponse,
   TStartRecordingResponse,
@@ -26,11 +31,16 @@ import {
   type SessionUploadInfo,
   SessionStatus,
   ScribeError,
+  UploadError,
 } from 'med-scribe-alliance-ts-sdk';
 
 export class RecordingManager {
   private txnID: string = '';
   private storedSession: CreateSessionResponse | null = null;
+
+  /** Server-confirmed end — separates a repeat endRecording() from a failed one. */
+  private sessionEnded = false;
+  private endedAudioFiles?: string[];
 
   constructor(
     private allianceClient: ScribeClient,
@@ -45,6 +55,25 @@ export class RecordingManager {
 
   get currentSession(): CreateSessionResponse | null {
     return this.storedSession;
+  }
+
+  /** Uniform response for audio files that could not be uploaded. */
+  private failedUploadResponse(failedFiles: string[]): TEndRecordingResponse {
+    return {
+      error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+      status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+      message: `${failedFiles.length} audio file(s) failed to upload.`,
+      failed_files: failedFiles,
+    };
+  }
+
+  /** Adopt a newly created session and clear any previous session's end state. */
+  private beginSession(session: CreateSessionResponse): void {
+    this.storedSession = session;
+    this.txnID = session.session_id;
+    this.sessionEnded = false;
+    this.endedAudioFiles = undefined;
+    this.tracker.setTransactionId(this.txnID);
   }
 
   // Backward compatible
@@ -92,29 +121,22 @@ export class RecordingManager {
       );
 
       if (!result.success) {
-        const errorCode =
-          result.error.code === 'txn_limit_exceeded'
-            ? ERROR_CODE.TXN_LIMIT_EXCEEDED
-            : ERROR_CODE.TXN_INIT_FAILED;
-
-        return {
-          error_code: errorCode,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Transaction initialization failed.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.TXN_INIT_FAILED,
+          'Transaction initialization failed.'
+        );
       }
 
-      this.storedSession = result.data;
-      this.txnID = result.data.session_id;
-      this.tracker.setTransactionId(this.txnID);
+      this.beginSession(result.data);
 
       this.tracker.captureEvent('Session started', {
         txn_id: this.txnID,
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
       });
 
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
         message: 'Transaction initialized successfully.',
         txn_id: result.data.session_id,
       };
@@ -138,28 +160,22 @@ export class RecordingManager {
       const result = await this.allianceClient.startRecording(options);
 
       if (!result.success) {
-        const errorCode =
-          result.error.code === 'txn_limit_exceeded'
-            ? ERROR_CODE.TXN_LIMIT_EXCEEDED
-            : ERROR_CODE.TXN_INIT_FAILED;
-
-        return {
-          error_code: errorCode,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Failed to start recording.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.TXN_INIT_FAILED,
+          'Failed to start recording.'
+        );
       }
 
-      this.storedSession = result.data;
-      this.txnID = result.data.session_id;
-      this.tracker.setTransactionId(this.txnID);
+      this.beginSession(result.data);
+
       this.tracker.captureEvent('Session started (v2)', {
         txn_id: this.txnID,
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
       });
 
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
         message: 'Recording started successfully.',
         txn_id: result.data.session_id,
       };
@@ -194,15 +210,19 @@ export class RecordingManager {
       );
 
       if (!result.success) {
-        return {
-          error_code: ERROR_CODE.START_RECORDING_FAILED,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Failed to start recording.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.START_RECORDING_FAILED,
+          'Failed to start recording.'
+        );
       }
 
+      this.sessionEnded = false;
+      this.endedAudioFiles = undefined;
+
+      // Attaches a recorder to an existing session — no HTTP call is made.
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording started successfully.',
         txn_id: this.txnID,
       };
@@ -239,19 +259,18 @@ export class RecordingManager {
       );
 
       if (!result.success) {
-        return {
-          error_code: ERROR_CODE.START_RECORDING_FAILED,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Failed to start recording for existing session.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.START_RECORDING_FAILED,
+          'Failed to start recording for existing session.'
+        );
       }
 
-      this.storedSession = constructedSession;
-      this.txnID = request.txn_id;
-      this.tracker.setTransactionId(this.txnID);
+      this.beginSession(constructedSession);
 
+      // No HTTP call is made on this path — see startRecording().
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording started for existing session.',
         txn_id: this.txnID,
       };
@@ -267,10 +286,11 @@ export class RecordingManager {
   pauseRecording(): TPauseRecordingResponse {
     try {
       this.allianceClient.pauseRecording();
+
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording paused.',
-        is_paused: true,
+        is_paused: this.allianceClient.isRecordingPaused(),
       };
     } catch (error) {
       return {
@@ -288,10 +308,11 @@ export class RecordingManager {
   resumeRecording(): TPauseRecordingResponse {
     try {
       this.allianceClient.resumeRecording();
+
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: 'Recording resumed.',
-        is_paused: false,
+        is_paused: this.allianceClient.isRecordingPaused(),
       };
     } catch (error) {
       return {
@@ -306,6 +327,23 @@ export class RecordingManager {
     try {
       this.tracker.addBreadcrumb('recording', 'endRecording', { txn_id: this.txnID });
 
+      // The alliance SDK silently no-ops here, so distinguish the two cases.
+      if (!this.allianceClient.isRecording()) {
+        if (this.sessionEnded) {
+          return {
+            status_code: SDK_STATUS_CODE.SUCCESS,
+            message: 'Recording already ended.',
+            total_audio_files: this.endedAudioFiles,
+          };
+        }
+
+        return {
+          error_code: ERROR_CODE.TXN_STATUS_MISMATCH,
+          status_code: SDK_STATUS_CODE.TXN_ERROR,
+          message: 'No active recording to end. Call startRecording() first.',
+        };
+      }
+
       const result: SDKResult<EndRecordingResult> = await this.allianceClient.endRecording();
 
       if (!result.success) {
@@ -314,37 +352,49 @@ export class RecordingManager {
           error: result.error.message,
         });
 
-        return {
-          error_code: ERROR_CODE.END_RECORDING_FAILED,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Failed to end recording.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.END_RECORDING_FAILED,
+          'Failed to end recording.'
+        );
       }
 
       this.tracker.captureEvent('Session ended', {
         txn_id: this.txnID,
         total_files: result.data.totalFiles,
         failed_files: result.data.failedUploads.length,
+        session_ended: result.data.sessionEnded,
       });
-
-      // Clear session to prevent startRecording() on an ended session.
-      // Keep txnID for getSessionStatus() / pollSessionOutput() / retryUploadRecording().
-      this.storedSession = null;
 
       if (result.data.failedUploads.length > 0) {
         return {
           error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: result.httpStatus ?? SDK_STATUS_CODE.AUDIO_ERROR,
+          status_code: SDK_STATUS_CODE.AUDIO_ERROR,
           message: `Recording ended but ${result.data.failedUploads.length} audio file(s) failed to upload.`,
           failed_files: result.data.failedUploads,
           total_audio_files: result.data.endSessionResponse?.audio_files,
         };
       }
 
+      // Uploads are in, but the server never confirmed the end — still needs finalizing.
+      if (!result.data.sessionEnded) {
+        return {
+          error_code: ERROR_CODE.END_RECORDING_FAILED,
+          status_code: result.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+          message: 'Recording stopped but the session could not be finalized.',
+        };
+      }
+
+      // Clear session to prevent startRecording() on an ended session.
+      // Keep txnID for getSessionStatus() / pollSessionOutput() / retryUploadRecording().
+      this.storedSession = null;
+      this.sessionEnded = true;
+      this.endedAudioFiles = result.data.endSessionResponse?.audio_files;
+
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
         message: 'Recording ended successfully.',
-        total_audio_files: result.data.endSessionResponse?.audio_files,
+        total_audio_files: this.endedAudioFiles,
       };
     } catch (error) {
       return {
@@ -375,9 +425,7 @@ export class RecordingManager {
     const result = await this.allianceClient.getSessionStatus(targetId, options);
     return {
       ...result,
-      status_code: result.success
-        ? result.httpStatus ?? SDK_STATUS_CODE.SUCCESS
-        : result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      status_code: allianceResultStatus(result),
     };
   }
 
@@ -386,17 +434,28 @@ export class RecordingManager {
       const result: SDKResult<RetryUploadResult> = await this.allianceClient.retryFailedUploads();
 
       if (!result.success) {
-        return {
-          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Retry upload failed.',
-        };
+        // Alliance >= 2.0.44 throws this; older versions report it on the payload.
+        if (result.error instanceof UploadError) {
+          return this.failedUploadResponse(result.error.failedFiles);
+        }
+
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.AUDIO_UPLOAD_FAILED,
+          'Retry upload failed.'
+        );
       }
 
+      const { retried, succeeded, stillFailed } = result.data;
+
+      if (stillFailed.length > 0) {
+        return this.failedUploadResponse(stillFailed);
+      }
+
+      // No single HTTP call backs the retry pass, so success is stated explicitly.
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
-        message: `Retried ${result.data.retried} files. ${result.data.succeeded} succeeded.`,
-        failed_files: result.data.stillFailed,
+        status_code: SDK_STATUS_CODE.SUCCESS,
+        message: `Retried ${retried} files. ${succeeded} succeeded.`,
       };
     } catch (error) {
       return {
@@ -427,12 +486,12 @@ export class RecordingManager {
     const result = await this.allianceClient.cancelSession(targetId);
     this.storedSession = null;
     this.txnID = '';
+    this.sessionEnded = false;
+    this.endedAudioFiles = undefined;
 
     return {
       ...result,
-      status_code: result.success
-        ? result.httpStatus ?? SDK_STATUS_CODE.SUCCESS
-        : result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
+      status_code: allianceResultStatus(result),
     };
   }
 
@@ -449,15 +508,15 @@ export class RecordingManager {
       const result = await this.allianceClient.uploadAudioFile(audioFile, audioFileName, upload);
 
       if (!result.success) {
-        return {
-          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: result.error.httpStatus ?? SDK_STATUS_CODE.INTERNAL_SERVER_ERROR,
-          message: result.error.message || 'Audio upload failed.',
-        };
+        return mapAllianceError(
+          result.error,
+          ERROR_CODE.AUDIO_UPLOAD_FAILED,
+          'Audio upload failed.'
+        );
       }
 
       return {
-        status_code: result.httpStatus ?? SDK_STATUS_CODE.SUCCESS,
+        status_code: confirmedSuccessStatus(result),
         message: 'Audio file uploaded successfully.',
       };
     } catch (error) {
@@ -485,25 +544,13 @@ export class RecordingManager {
         body: { audio_files: [] },
       });
 
-      if (response.status !== 200) {
-        return {
-          error_code: ERROR_CODE.TXN_COMMIT_FAILED,
-          status_code: response.status,
-          message: response.data.message || 'Transaction commit failed.',
-        };
-      }
-
+      // Non-2xx responses reject in the transport and land in the catch below.
       return {
-        status_code: SDK_STATUS_CODE.SUCCESS,
+        status_code: response.status,
         message: response.data.message || 'Transaction committed successfully.',
       };
     } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to commit transaction,');
-      return {
-        error_code: mapped.error_code,
-        status_code: mapped.status_code,
-        message: mapped.message,
-      };
+      return mapTransportError(error, 'Failed to commit transaction,');
     }
   }
 
@@ -523,17 +570,13 @@ export class RecordingManager {
         body: { audio_files: [] },
       });
 
+      // Non-2xx responses reject in the transport and land in the catch below.
       return {
         status_code: response.status,
         message: response.data.message || 'Transaction stopped.',
       };
     } catch (error) {
-      const mapped = mapTransportError(error, 'Failed to stop transaction,');
-      return {
-        error_code: mapped.error_code,
-        status_code: mapped.status_code,
-        message: mapped.message,
-      };
+      return mapTransportError(error, 'Failed to stop transaction,');
     }
   }
 
@@ -541,5 +584,7 @@ export class RecordingManager {
     await this.allianceClient.reset();
     this.txnID = '';
     this.storedSession = null;
+    this.sessionEnded = false;
+    this.endedAudioFiles = undefined;
   }
 }
