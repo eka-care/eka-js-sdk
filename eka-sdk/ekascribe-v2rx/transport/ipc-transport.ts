@@ -5,7 +5,7 @@ import {
   TransportRequest,
   TransportResponse,
 } from './transport.interface';
-import { TransportError } from './http-transport';
+import { TransportError, extractErrorMessage } from './http-transport';
 
 const IPC_TIMEOUT = 10000;
 
@@ -123,13 +123,15 @@ export class IpcTransport implements ITransport {
         resolve: (response: TransportResponse) => {
           clearTimeout(timeoutId);
 
-          if (response.status === 401) {
-            reject(new TransportError('Unauthorized', 401));
-            return;
-          }
-
-          if (response.status === 403) {
-            reject(new TransportError('Forbidden', 403));
+          // Mirror HttpTransport: every non-2xx rejects.
+          if (response.status < 200 || response.status >= 300) {
+            reject(
+              new TransportError(
+                extractErrorMessage(response.data, `Request failed with status ${response.status}`),
+                response.status,
+                response.data
+              )
+            );
             return;
           }
 

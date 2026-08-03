@@ -64,20 +64,15 @@ export class HttpTransport implements ITransport {
         credentials: 'include',
       });
 
-      if (response.status === 401) {
-        throw new TransportError('Unauthorized', 401);
-      }
+      const data = await this.parseBody<T>(response);
 
-      if (response.status === 403) {
-        throw new TransportError('Forbidden', 403);
-      }
-
-      let data: T;
-      const contentType = response.headers.get('content-type');
-      if (contentType?.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = (await response.text()) as unknown as T;
+      // Throwing routes non-2xx through mapTransportError, setting both codes.
+      if (!response.ok) {
+        throw new TransportError(
+          extractErrorMessage(data, response.statusText),
+          response.status,
+          data
+        );
       }
 
       return {
@@ -87,6 +82,21 @@ export class HttpTransport implements ITransport {
       };
     } finally {
       clearTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Never throws — a malformed body must not mask the HTTP status, or a 401 with
+   * an unparseable payload would skip the token refresh.
+   */
+  private async parseBody<T>(response: Response): Promise<T> {
+    try {
+      const contentType = response.headers.get('content-type');
+      return contentType?.includes('application/json')
+        ? await response.json()
+        : ((await response.text()) as unknown as T);
+    } catch {
+      return undefined as unknown as T;
     }
   }
 
@@ -145,8 +155,35 @@ export class HttpTransport implements ITransport {
 }
 
 export class TransportError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    /** Parsed error body, when the server sent one. */
+    public readonly body?: unknown
+  ) {
     super(message);
     this.name = 'TransportError';
   }
+}
+
+/** Read an error message from a response body, falling back to the status text. */
+export function extractErrorMessage(body: unknown, statusText: string): string {
+  if (typeof body === 'string' && body.trim()) {
+    return body;
+  }
+
+  if (body && typeof body === 'object') {
+    const { error, message, msg } = body as {
+      error?: { message?: string };
+      message?: string;
+      msg?: string;
+    };
+
+    const extracted = error?.message ?? message ?? msg;
+    if (extracted) {
+      return extracted;
+    }
+  }
+
+  return statusText || 'Request failed';
 }

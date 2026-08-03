@@ -41,7 +41,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch templates,');
-      return { status_code: mapped.status_code, items: [] } as TGetV1TemplatesResponse;
+      return { ...mapped, items: [] } as TGetV1TemplatesResponse;
     }
   }
 
@@ -60,10 +60,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to create template,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1TemplateResponse;
+      return { ...mapped } as TPostV1TemplateResponse;
     }
   }
 
@@ -83,7 +80,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update template,');
-      return { status_code: mapped.status_code, msg: mapped.message } as TPostV1TemplateResponse;
+      return { ...mapped, msg: mapped.message } as TPostV1TemplateResponse;
     }
   }
 
@@ -97,7 +94,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to delete template,');
-      return { status_code: mapped.status_code, msg: mapped.message } as TPostV1TemplateResponse;
+      return { ...mapped, msg: mapped.message } as TPostV1TemplateResponse;
     }
   }
 
@@ -130,10 +127,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to AI generate template,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1AiCreateTemplateResponse;
+      return { ...mapped } as TPostV1AiCreateTemplateResponse;
     }
   }
 
@@ -168,10 +162,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to convert transcription to template,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1ConvertToTemplateResponse;
+      return { ...mapped } as TPostV1ConvertToTemplateResponse;
     }
   }
 
@@ -187,7 +178,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch template sections,');
-      return { status_code: mapped.status_code, items: [] } as TGetV1TemplateSectionsResponse;
+      return { ...mapped, items: [] } as TGetV1TemplateSectionsResponse;
     }
   }
 
@@ -207,11 +198,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to create template section,');
-      return {
-        status_code: mapped.status_code,
-        msg: mapped.message,
-        section_id: '',
-      } as TPostV1TemplateSectionResponse;
+      return { ...mapped, msg: mapped.message, section_id: '' } as TPostV1TemplateSectionResponse;
     }
   }
 
@@ -233,10 +220,9 @@ export class DocumentManager {
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update template section,');
       return {
-        status_code: mapped.status_code,
+        ...mapped,
         msg: mapped.message,
-        section_id: '',
-        action: 'updated',
+        section_id,
       } as TPostV1TemplateSectionResponse;
     }
   }
@@ -251,10 +237,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to delete template section,');
-      return {
-        status_code: mapped.status_code,
-        msg: mapped.message,
-      } as TPostV1TemplateSectionResponse;
+      return { ...mapped, msg: mapped.message, section_id: sectionId } as TPostV1TemplateSectionResponse;
     }
   }
 
@@ -277,7 +260,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to fetch document,');
-      return { status_code: mapped.status_code } as TPostV1DocumentResponse;
+      return { ...mapped } as TPostV1DocumentResponse;
     }
   }
 
@@ -304,10 +287,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to create document,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1DocumentResponse;
+      return { ...mapped } as TPostV1DocumentResponse;
     }
   }
 
@@ -337,10 +317,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to update document,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1DocumentResponse;
+      return { ...mapped } as TPostV1DocumentResponse;
     }
   }
 
@@ -354,10 +331,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to delete document,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TDeleteV1DocumentResponse;
+      return { ...mapped } as TDeleteV1DocumentResponse;
     }
   }
 
@@ -375,10 +349,7 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to publish document,');
-      return {
-        status_code: mapped.status_code,
-        message: mapped.message,
-      } as TPostV1DocumentResponse;
+      return { ...mapped } as TPostV1DocumentResponse;
     }
   }
 }
