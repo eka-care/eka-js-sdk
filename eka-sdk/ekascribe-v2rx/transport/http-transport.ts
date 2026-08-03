@@ -85,10 +85,7 @@ export class HttpTransport implements ITransport {
     }
   }
 
-  /**
-   * Never throws — a malformed body must not mask the HTTP status, or a 401 with
-   * an unparseable payload would skip the token refresh.
-   */
+  /** Never throws — a bad body must not mask the status, or 401 would skip refresh. */
   private async parseBody<T>(response: Response): Promise<T> {
     try {
       const contentType = response.headers.get('content-type');

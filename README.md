@@ -243,6 +243,8 @@ type TPauseRecordingResponse = {
 };
 ```
 
+**What you need to handle:** both calls are no-ops when no recording is active. Read `is_paused` for the actual state rather than assuming the call took effect.
+
 ### Step 5: End Recording
 
 Stops the microphone, flushes pending audio, waits for all uploads, and ends the session on the server (triggers processing).
@@ -256,6 +258,9 @@ if (endResult.error_code) {
       // Some audio files failed to upload — retry
       await ekascribe.retryUploadRecording();
       break;
+    case 'txn_status_mismatch':
+      // Nothing was recording — never started, or already cancelled
+      break;
     case 'end_recording_failed':
     case 'internal_server_error':
       console.error(endResult.error_code, endResult.message);
@@ -263,6 +268,12 @@ if (endResult.error_code) {
   }
 }
 ```
+
+**What you need to handle:**
+
+- A success response means the server confirmed the session ended. Only then is processing triggered, so only then is it safe to poll for output.
+- `end_recording_failed` means the audio uploaded but the session was **not** finalized. The session is still recoverable — do not discard it.
+- Calling `endRecording()` again after it already succeeded is safe: it returns `200` with the original `total_audio_files` and does not re-end the session.
 
 #### Response: `TEndRecordingResponse`
 
@@ -548,7 +559,19 @@ If `endRecording()` returns `audio_upload_failed`, retry the failed uploads:
 
 ```ts
 const result = await ekascribe.retryUploadRecording();
+
+if (result.error_code === 'audio_upload_failed') {
+  // still failing — result.failed_files lists them; retry again or discard
+} else {
+  // all uploads recovered — finalize the session
+  await ekascribe.sessions.endSession(
+    { audio_files_sent: total, audio_files_uploaded: total },
+    sessionId
+  );
+}
 ```
+
+**What you need to handle:** a successful retry uploads the files but does **not** end the session — call `sessions.endSession()` yourself before polling for output.
 
 #### Response: `TEndRecordingResponse`
 
@@ -1001,18 +1024,49 @@ const ekascribe = getEkaScribeInstance({
 
 ---
 
+## Error Handling
+
+**Branch on `error_code`, not on `status_code`.** Every SDK method returns both on failure:
+
+- `error_code` — present only when the call failed. Absent means success.
+- `status_code` — the real HTTP status when a request was made (`404`, `500`, …), or an SDK code when no request happened (see table below).
+
+```ts
+const result = await ekascribe.getAllTemplates();
+
+if (result.error_code) {
+  console.error(result.error_code, result.status_code, result.message);
+  return;
+}
+// safe to read result.items here
+```
+
+On failure the response carries only `error_code`, `status_code` and `message` — **do not read data fields** (`items`, `data`, `txn_id`, …) without checking `error_code` first.
+
+### SDK status codes
+
+Used when no HTTP request took place, so they never collide with real HTTP statuses.
+
+| `status_code` | Meaning |
+|---|---|
+| `1001` | Audio error — one or more files failed to upload |
+| `1003` | Invalid session state for this call |
+| `1005` | Internal SDK error |
+
 ## Error Codes
 
 | Error Code | Description |
 |---|---|
-| `microphone` | Microphone access error (permission denied or unavailable) |
 | `txn_init_failed` | Failed to initialize session |
 | `txn_limit_exceeded` | Maximum concurrent sessions exceeded |
+| `start_recording_failed` | Failed to start recording (mic permission, device, or setup) |
 | `internal_server_error` | Unexpected server-side error |
-| `end_recording_failed` | Failed to end recording |
+| `end_recording_failed` | Recording stopped but the session could not be finalized |
 | `audio_upload_failed` | Audio file upload to server failed |
 | `txn_commit_failed` | Commit call failed |
 | `txn_status_mismatch` | Invalid operation for current session state |
+| `bad_request` | Request rejected by the server (4xx) |
+| `not_found` | Requested resource does not exist (404) |
 | `network_error` | Network connectivity issue |
 | `unknown_error` | Unclassified error |
 | `unauthorized` | Authentication failed (invalid or expired token) |

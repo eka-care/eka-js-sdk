@@ -3,10 +3,7 @@ import { SDK_STATUS_CODE } from '../constants/constant';
 import { ERROR_CODE } from '../constants/enums';
 import { MappedError } from './map-transport-error';
 
-/**
- * Map a failed alliance result. A missing `httpStatus` means no response was
- * received, so it falls back to INTERNAL_SERVER_ERROR — never 200.
- */
+/** Missing `httpStatus` means no response arrived — falls back to 1005, never 200. */
 export function mapAllianceError(
   error: ScribeError,
   fallbackErrorCode: ERROR_CODE,
@@ -19,11 +16,7 @@ export function mapAllianceError(
   };
 }
 
-/**
- * Status for an operation already confirmed successful. The alliance SDK omits
- * `httpStatus` when no HTTP round trip happened, so 200 is right here.
- * Never use it to decide *whether* something succeeded — that fabricates 200s.
- */
+/** For already-confirmed success only. Using it to *decide* success fabricates 200s. */
 export function confirmedSuccessStatus(result: { httpStatus?: number }): number {
   return result.httpStatus ?? SDK_STATUS_CODE.SUCCESS;
 }

@@ -70,10 +70,7 @@ function networkFailureDetail(error: unknown): string | null {
   return null;
 }
 
-/**
- * Normalise a thrown transport failure. `fallbackMessage` names the failed
- * operation (e.g. 'Failed to fetch templates,') and prefixes every message.
- */
+/** `fallbackMessage` names the failed operation and prefixes every message. */
 export function mapTransportError(error: unknown, fallbackMessage: string): MappedError {
   if (error instanceof TransportError) {
     const { error_code, message } = classifyStatus(error.status, error.message);

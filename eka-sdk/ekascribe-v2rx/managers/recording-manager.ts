@@ -31,14 +31,14 @@ import {
   type SessionUploadInfo,
   SessionStatus,
   ScribeError,
+  UploadError,
 } from 'med-scribe-alliance-ts-sdk';
 
 export class RecordingManager {
   private txnID: string = '';
   private storedSession: CreateSessionResponse | null = null;
 
-  /** Set once the server confirms the session ended — separates a repeat
-   * endRecording() (idempotent success) from one that never finalized (error). */
+  /** Server-confirmed end — separates a repeat endRecording() from a failed one. */
   private sessionEnded = false;
   private endedAudioFiles?: string[];
 
@@ -55,6 +55,16 @@ export class RecordingManager {
 
   get currentSession(): CreateSessionResponse | null {
     return this.storedSession;
+  }
+
+  /** Uniform response for audio files that could not be uploaded. */
+  private failedUploadResponse(failedFiles: string[]): TEndRecordingResponse {
+    return {
+      error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
+      status_code: SDK_STATUS_CODE.AUDIO_ERROR,
+      message: `${failedFiles.length} audio file(s) failed to upload.`,
+      failed_files: failedFiles,
+    };
   }
 
   /** Adopt a newly created session and clear any previous session's end state. */
@@ -424,6 +434,11 @@ export class RecordingManager {
       const result: SDKResult<RetryUploadResult> = await this.allianceClient.retryFailedUploads();
 
       if (!result.success) {
+        // Alliance >= 2.0.44 throws this; older versions report it on the payload.
+        if (result.error instanceof UploadError) {
+          return this.failedUploadResponse(result.error.failedFiles);
+        }
+
         return mapAllianceError(
           result.error,
           ERROR_CODE.AUDIO_UPLOAD_FAILED,
@@ -433,16 +448,11 @@ export class RecordingManager {
 
       const { retried, succeeded, stillFailed } = result.data;
 
-      // No single HTTP call here, so success is decided by what still failed.
       if (stillFailed.length > 0) {
-        return {
-          error_code: ERROR_CODE.AUDIO_UPLOAD_FAILED,
-          status_code: SDK_STATUS_CODE.AUDIO_ERROR,
-          message: `Retried ${retried} files. ${succeeded} succeeded, ${stillFailed.length} still failed.`,
-          failed_files: stillFailed,
-        };
+        return this.failedUploadResponse(stillFailed);
       }
 
+      // No single HTTP call backs the retry pass, so success is stated explicitly.
       return {
         status_code: SDK_STATUS_CODE.SUCCESS,
         message: `Retried ${retried} files. ${succeeded} succeeded.`,

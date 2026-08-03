@@ -1477,19 +1477,9 @@ marked@^18.0.4:
   resolved "https://registry.npmjs.org/marked/-/marked-18.0.4.tgz"
   integrity sha512-c/BTaKzg0G6ezQx97DAkYU7k0HM6ys0FqYeKBL6hlBByZwy+ycA1+f0vDdjMHKKeEjdgkx0GOv9Il6D+85cOqA==
 
-med-scribe-alliance-ts-sdk@2.0.43:
-  version "2.0.43"
-  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.43.tgz#60e41c6bb4ff10a48d62a00f96d5bb009063d9bf"
-  integrity sha512-cf6G8/9ndxrWHl/UrV6SK/m7AU/+oIrsP6nPuV/5zM+fawhtY4j0O2b9UJXI+ndy4BotFDLXFOPXXY5Fo98a0g==
-  dependencies:
-    "@breezystack/lamejs" "^1.2.7"
-    "@ricky0123/vad-web" "^0.0.22"
-    core-js "^3.48.0"
-    zod "^4.4.3"
-
 med-scribe-alliance-ts-sdk@2.0.44:
   version "2.0.44"
-  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.44.tgz#00bc73de13dc6edc0ea93879143108f29e002075"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.44.tgz"
   integrity sha512-rOw09eZjGMMK6EQzSOlj5NVszCLzLhZw2dE5hxZkxh3q4FX0r3r4COsaRxLYG96mPTb4IjV4DdeU1VF2YOlQNQ==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
