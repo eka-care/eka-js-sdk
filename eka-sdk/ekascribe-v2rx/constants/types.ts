@@ -95,6 +95,8 @@ export type TGetConfigV2Response = {
     supported_languages: TGetConfigItem[];
     supported_output_formats: TGetConfigItem[];
     consultation_modes: TGetConfigItem[];
+    supported_integrations: TGetConfigItem[];
+    integrations: TGetConfigItem[];
     max_selection: {
       supported_languages: number;
       supported_output_formats: number;
@@ -494,6 +496,7 @@ export type TPatchVoiceApiV2ConfigRequest = {
     auto_download?: boolean;
     auto_detect_language?: boolean;
     input_languages?: TGetConfigItem[];
+    integrations?: TGetConfigItem[];
     consultation_mode?: string;
     model_type?: string;
     output_format_template?: TGetConfigItem[];
