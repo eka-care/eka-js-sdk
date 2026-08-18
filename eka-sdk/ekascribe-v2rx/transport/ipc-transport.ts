@@ -6,6 +6,7 @@ import {
   TransportResponse,
 } from './transport.interface';
 import { TransportError, extractErrorMessage } from './http-transport';
+import { getCurrentTimezone } from './timezone';
 
 const IPC_TIMEOUT = 10000;
 
@@ -164,6 +165,11 @@ export class IpcTransport implements ITransport {
 
     if (this.flavour) {
       headers['flavour'] = this.flavour;
+    }
+
+    const timezone = getCurrentTimezone();
+    if (timezone) {
+      headers['X-timezone'] = timezone;
     }
 
     if (custom) {
