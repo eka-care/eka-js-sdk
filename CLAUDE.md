@@ -68,3 +68,7 @@ eka-sdk/ekascribe-v2rx/
 - Uses `@ricky0123/vad-web` for Voice Activity Detection
 - Uses AWS SDK for S3 uploads with retry wrapper
 - SharedWorker handles background audio uploads to reduce main thread load
+
+## Code Style
+
+- Comments must be one-liners only — no multi-line comments or JSDoc blocks

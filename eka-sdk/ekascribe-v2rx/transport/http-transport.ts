@@ -4,6 +4,7 @@ import {
   TransportRequest,
   TransportResponse,
 } from './transport.interface';
+import { getCurrentTimezone } from './timezone';
 
 const DEFAULT_TIMEOUT = 10000;
 
@@ -117,6 +118,11 @@ export class HttpTransport implements ITransport {
 
     if (this.flavour) {
       headers['flavour'] = this.flavour;
+    }
+
+    const timezone = getCurrentTimezone();
+    if (timezone) {
+      headers['X-timezone'] = timezone;
     }
 
     if (custom) {
