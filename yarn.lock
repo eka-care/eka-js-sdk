@@ -1487,10 +1487,10 @@ med-scribe-alliance-ts-sdk@2.0.45:
     core-js "^3.48.0"
     zod "^4.4.3"
 
-med-scribe-alliance-ts-sdk@2.0.47:
-  version "2.0.47"
-  resolved "https://registry.yarnpkg.com/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.47.tgz#2440d77ccc189b7b4fa750c9300bb11816342d05"
-  integrity sha512-qoTQOjoEg0eW0hE6fC6jn1eJftU58JTMzvulwjtmdj1adsCON8WQVNWK/N0dfeWOjIeiZ0aufZPjiXra99DlFw==
+med-scribe-alliance-ts-sdk@2.0.52:
+  version "2.0.52"
+  resolved "https://registry.npmjs.org/med-scribe-alliance-ts-sdk/-/med-scribe-alliance-ts-sdk-2.0.52.tgz"
+  integrity sha512-3YKFyojUFyBeuDc2qIuJdVFCFsvfEa33wPYrS7eNWb1tvTbsr/rKVHt4ZOVoJvy7oJEAzp/PKoiCcYN/IAYQ6A==
   dependencies:
     "@breezystack/lamejs" "^1.2.7"
     "@ricky0123/vad-web" "^0.0.22"

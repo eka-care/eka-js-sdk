@@ -277,6 +277,7 @@ class EkaScribe {
     upload: SessionUploadInfo;
     audioFile: File | Blob;
     audioFileName?: string;
+    storage_provider?: string | null;
   }): Promise<TStartRecordingResponse> {
     return this.recording.processPreRecordedAudio(request);
   }

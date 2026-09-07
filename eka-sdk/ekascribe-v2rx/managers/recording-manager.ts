@@ -32,6 +32,7 @@ import {
   SessionStatus,
   ScribeError,
   UploadError,
+  BACKEND_STORAGE_PROVIDER,
 } from 'med-scribe-alliance-ts-sdk';
 
 export class RecordingManager {
@@ -499,13 +500,17 @@ export class RecordingManager {
     upload,
     audioFile,
     audioFileName = 'audio_1.mp3',
+    storage_provider = BACKEND_STORAGE_PROVIDER,
   }: {
     upload: SessionUploadInfo;
     audioFile: File | Blob;
     audioFileName?: string;
+    storage_provider?: string | null;
   }): Promise<TStartRecordingResponse> {
     try {
-      const result = await this.allianceClient.uploadAudioFile(audioFile, audioFileName, upload);
+      const result = await this.allianceClient.uploadAudioFile(audioFile, audioFileName, upload, {
+        storageProvider: storage_provider,
+      });
 
       if (!result.success) {
         return mapAllianceError(
