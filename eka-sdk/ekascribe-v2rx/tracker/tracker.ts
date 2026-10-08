@@ -1,8 +1,6 @@
 import * as Sentry from '@sentry/browser';
 
-const SENTRY_DSN =
-  'https://06451c8d861702902d2e6b2088fa9b62@o1128948.ingest.us.sentry.io/4509207135387648';
-
+const SENTRY_DSN = '';
 export class Tracker {
   private enabled: boolean;
   private flavour?: string;

@@ -103,12 +103,12 @@ class EkaScribe {
     }
 
     // Initialize tracker
-    if (config.enableTracking) {
-      this.tracker.init(config.env);
-      if (config.flavour) {
-        this.tracker.setUser(config.flavour);
-      }
-    }
+    // if (config.enableTracking) {
+    //   this.tracker.init(config.env);
+    //   if (config.flavour) {
+    //     this.tracker.setUser(config.flavour);
+    //   }
+    // }
 
     // Initialize Alliance SDK (handles recording, audio, VAD, uploads)
     // baseUrl is required — Alliance SDK fetches well-known discovery from it
@@ -192,9 +192,9 @@ class EkaScribe {
         }
         if (config.flavour && config.flavour !== current.flavour) {
           current.flavour = config.flavour;
-          if (config.enableTracking) {
-            EkaScribe.instance.tracker.setUser(config.flavour);
-          }
+          // if (config.enableTracking) {
+          //   EkaScribe.instance.tracker.setUser(config.flavour);
+          // }
         }
         return EkaScribe.instance;
       }
