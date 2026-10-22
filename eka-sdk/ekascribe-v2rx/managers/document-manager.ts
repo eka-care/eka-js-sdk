@@ -121,7 +121,7 @@ export class DocumentManager {
         method: 'POST',
         url: `${this.hosts.voiceV1}/template/ai-create-template`,
         body,
-        timeout: 30000,
+        timeout: 90000,
       });
 
       return { ...response.data, status_code: response.status };
@@ -237,7 +237,11 @@ export class DocumentManager {
       return { ...response.data, status_code: response.status };
     } catch (error) {
       const mapped = mapTransportError(error, 'Failed to delete template section,');
-      return { ...mapped, msg: mapped.message, section_id: sectionId } as TPostV1TemplateSectionResponse;
+      return {
+        ...mapped,
+        msg: mapped.message,
+        section_id: sectionId,
+      } as TPostV1TemplateSectionResponse;
     }
   }
 
