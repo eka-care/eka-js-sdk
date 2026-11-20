@@ -468,7 +468,8 @@ export class RecordingManager {
   }
 
   async cancelSession(
-    sessionId?: string
+    sessionId?: string,
+    options?: { keepAlive?: boolean }
   ): Promise<SDKResult<PatchSessionResponse> & { status_code: number }> {
     const targetId = sessionId || this.txnID;
 
@@ -484,7 +485,7 @@ export class RecordingManager {
     }
 
     // Alliance SDK's cancelSession handles: forceStop() → reset() → clearSession → PATCH cancel on server
-    const result = await this.allianceClient.cancelSession(targetId);
+    const result = await this.allianceClient.cancelSession(targetId, options);
     this.storedSession = null;
     this.txnID = '';
     this.sessionEnded = false;
