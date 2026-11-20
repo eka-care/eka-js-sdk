@@ -595,6 +595,9 @@ await ekascribe.cancelSession();
 
 // Or cancel a specific session by ID
 await ekascribe.cancelSession('session-id');
+
+// Keep the request alive through page unload (e.g. in beforeunload/pagehide)
+await ekascribe.cancelSession('session-id', { keepAlive: true });
 ```
 
 #### Response: `SDKResult<PatchSessionResponse>`

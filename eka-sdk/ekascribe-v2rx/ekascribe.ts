@@ -261,8 +261,11 @@ class EkaScribe {
     return this.recording.retryUploadRecording();
   }
 
-  cancelSession(sessionId?: string): Promise<SDKResult<PatchSessionResponse>> {
-    return this.recording.cancelSession(sessionId);
+  cancelSession(
+    sessionId?: string,
+    options?: { keepAlive?: boolean }
+  ): Promise<SDKResult<PatchSessionResponse>> {
+    return this.recording.cancelSession(sessionId, options);
   }
 
   /**
